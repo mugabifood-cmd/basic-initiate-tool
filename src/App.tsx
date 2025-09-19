@@ -1,25 +1,81 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider } from './hooks/useAuth';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { Toaster } from '@/components/ui/toaster';
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import Auth from './pages/Auth';
+import Dashboard from './pages/Dashboard';
+import SchoolManagement from './pages/admin/SchoolManagement';
+import Approvals from './pages/admin/Approvals';
+import GenerateReports from './pages/admin/GenerateReports';
+import ReportManagement from './pages/admin/ReportManagement';
+import TeacherSubmissions from './pages/teacher/TeacherSubmissions';
+import MySubmissions from './pages/teacher/MySubmissions';
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <AuthProvider>
+        <Router>
+          <div className="App">
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/auth" element={<Auth />} />
+              
+              {/* Protected Routes */}
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } />
+              
+              {/* Admin Routes */}
+              <Route path="/admin/schools" element={
+                <ProtectedRoute roles={['admin']}>
+                  <SchoolManagement />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/approvals" element={
+                <ProtectedRoute roles={['admin']}>
+                  <Approvals />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/generate" element={
+                <ProtectedRoute roles={['admin']}>
+                  <GenerateReports />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/reports" element={
+                <ProtectedRoute roles={['admin']}>
+                  <ReportManagement />
+                </ProtectedRoute>
+              } />
+              
+              {/* Teacher Routes */}
+              <Route path="/teacher/submissions" element={
+                <ProtectedRoute roles={['teacher', 'headteacher']}>
+                  <TeacherSubmissions />
+                </ProtectedRoute>
+              } />
+              <Route path="/teacher/my-submissions" element={
+                <ProtectedRoute roles={['teacher', 'headteacher']}>
+                  <MySubmissions />
+                </ProtectedRoute>
+              } />
+              
+              {/* Default Redirects */}
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
+            <Toaster />
+            <Sonner />
+          </div>
+        </Router>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
