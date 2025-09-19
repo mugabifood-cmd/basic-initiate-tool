@@ -20,7 +20,10 @@ interface Class {
   stream: string;
   academic_year: string;
   term: string;
-  school: School;
+  schools: {
+    id: string;
+    name: string;
+  } | null;
 }
 
 interface Student {
@@ -100,7 +103,7 @@ export default function GenerateReports() {
         .order('name');
 
       if (error) throw error;
-      setClasses(data || []);
+      setClasses((data as any) || []);
     } catch (error: any) {
       toast({
         title: "Error fetching classes",

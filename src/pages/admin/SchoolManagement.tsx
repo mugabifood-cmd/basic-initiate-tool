@@ -30,7 +30,11 @@ interface Class {
   stream: string;
   academic_year: string;
   term: string;
-  schools: School;
+  schools: {
+    id: string;
+    name: string;
+    location: string;
+  } | null;
 }
 
 interface Student {
@@ -107,7 +111,7 @@ export default function SchoolManagement() {
         .order('name');
 
       setSchools(schoolsData || []);
-      setClasses(classesData || []);
+      setClasses((classesData as any) || []);
       setStudents(studentsData || []);
       setSubjects(subjectsData || []);
     } catch (error: any) {
@@ -459,7 +463,7 @@ export default function SchoolManagement() {
                         <TableCell className="font-medium">
                           {classItem.name} {classItem.stream}
                         </TableCell>
-                        <TableCell>{classItem.school?.name}</TableCell>
+                        <TableCell>{classItem.schools?.name}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{classItem.term}</Badge>
                         </TableCell>

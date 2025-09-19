@@ -27,22 +27,22 @@ interface Submission {
   students: {
     full_name: string;
     student_number: string;
-  };
+  } | null;
   subjects: {
     code: string;
     name: string;
-  };
+  } | null;
   classes: {
     name: string;
     stream: string;
     schools: {
       name: string;
-    };
-  };
+    } | null;
+  } | null;
   profiles: {
     full_name: string;
     initials: string;
-  };
+  } | null;
 }
 
 export default function Approvals() {
@@ -63,22 +63,22 @@ export default function Approvals() {
         .from('subject_submissions')
         .select(`
           *,
-          students (
+          students!inner (
             full_name,
             student_number
           ),
-          subjects (
+          subjects!inner (
             code,
             name
           ),
-          classes (
+          classes!inner (
             name,
             stream,
-            schools (
+            schools!inner (
               name
             )
           ),
-          profiles (
+          profiles!inner (
             full_name,
             initials
           )
@@ -88,7 +88,7 @@ export default function Approvals() {
 
       if (error) throw error;
       
-      setSubmissions(data || []);
+      setSubmissions((data as any) || []);
     } catch (error: any) {
       toast({
         title: "Error fetching submissions",
