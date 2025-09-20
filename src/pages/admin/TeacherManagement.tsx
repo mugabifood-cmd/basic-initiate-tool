@@ -30,10 +30,10 @@ interface TeacherAssignment {
   id: string;
   teacher_id: string;
   assignment_type: 'subject_teacher' | 'class_teacher';
-  subject_id?: string;
-  class_name?: string;
-  stream?: string;
-  subject?: { name: string; code: string };
+  subject_id?: string | null;
+  class_name?: string | null;
+  stream?: string | null;
+  subject?: { name: string; code: string } | null;
 }
 
 interface TeacherWithAssignments extends Teacher {
@@ -93,7 +93,13 @@ export default function TeacherManagement() {
             return { ...teacher, assignments: [] };
           }
 
-          return { ...teacher, assignments: assignments || [] };
+          return { 
+            ...teacher, 
+            assignments: (assignments || []).map(assignment => ({
+              ...assignment,
+              assignment_type: assignment.assignment_type as 'subject_teacher' | 'class_teacher'
+            }))
+          };
         })
       );
 
