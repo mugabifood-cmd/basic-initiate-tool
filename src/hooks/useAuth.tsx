@@ -18,7 +18,19 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, fullName: string, role: 'admin' | 'teacher' | 'headteacher') => Promise<{ error: any }>;
+  signUp: (
+    email: string, 
+    password: string, 
+    fullName: string, 
+    role: 'admin' | 'teacher' | 'headteacher',
+    assignments?: {
+      subjectAssignments: Array<{
+        subjectId: string;
+        classes: Array<{ className: string; stream: string }>;
+      }>;
+      classAssignment: { className: string; stream: string } | null;
+    }
+  ) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<{ error: any }>;
 }
@@ -108,7 +120,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signUp = async (email: string, password: string, fullName: string, role: 'admin' | 'teacher' | 'headteacher') => {
+  const signUp = async (
+    email: string, 
+    password: string, 
+    fullName: string, 
+    role: 'admin' | 'teacher' | 'headteacher',
+    assignments?: {
+      subjectAssignments: Array<{
+        subjectId: string;
+        classes: Array<{ className: string; stream: string }>;
+      }>;
+      classAssignment: { className: string; stream: string } | null;
+    }
+  ) => {
     try {
       const redirectUrl = `${window.location.origin}/`;
       
@@ -119,7 +143,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           emailRedirectTo: redirectUrl,
           data: {
             full_name: fullName,
-            role: role
+            role: role,
+            assignments: assignments
           }
         }
       });

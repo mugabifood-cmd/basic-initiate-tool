@@ -450,6 +450,54 @@ export type Database = {
           },
         ]
       }
+      teacher_assignments: {
+        Row: {
+          assignment_type: string
+          class_name: string | null
+          created_at: string
+          id: string
+          stream: string | null
+          subject_id: string | null
+          teacher_id: string
+          updated_at: string
+        }
+        Insert: {
+          assignment_type: string
+          class_name?: string | null
+          created_at?: string
+          id?: string
+          stream?: string | null
+          subject_id?: string | null
+          teacher_id: string
+          updated_at?: string
+        }
+        Update: {
+          assignment_type?: string
+          class_name?: string | null
+          created_at?: string
+          id?: string
+          stream?: string | null
+          subject_id?: string | null
+          teacher_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_teacher_assignments_subject"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_teacher_assignments_teacher"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
