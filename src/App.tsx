@@ -8,6 +8,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import Auth from './pages/Auth';
 import Dashboard from './pages/Dashboard';
 import SchoolManagement from './pages/admin/SchoolManagement';
+import TeacherManagement from './pages/admin/TeacherManagement';
 import Approvals from './pages/admin/Approvals';
 import GenerateReports from './pages/admin/GenerateReports';
 import ReportManagement from './pages/admin/ReportManagement';
@@ -37,6 +38,11 @@ const App = () => (
               <Route path="/admin/schools" element={
                 <ProtectedRoute roles={['admin']}>
                   <SchoolManagement />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/teachers" element={
+                <ProtectedRoute roles={['admin']}>
+                  <TeacherManagement />
                 </ProtectedRoute>
               } />
               <Route path="/admin/approvals" element={

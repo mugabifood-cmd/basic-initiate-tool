@@ -28,6 +28,13 @@ export default function Dashboard() {
           color: 'bg-blue-50 hover:bg-blue-100'
         },
         {
+          title: 'Teacher Management',
+          description: 'Manage teacher assignments and responsibilities',
+          icon: Users,
+          link: '/admin/teachers',
+          color: 'bg-indigo-50 hover:bg-indigo-100'
+        },
+        {
           title: 'Approve Submissions',
           description: 'Review and approve teacher submissions',
           icon: CheckCircle,

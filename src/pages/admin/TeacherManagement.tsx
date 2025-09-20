@@ -29,10 +29,10 @@ interface Subject {
 interface TeacherAssignment {
   id: string;
   teacher_id: string;
-  assignment_type: 'subject_teacher' | 'class_teacher';
-  subject_id?: string | null;
-  class_name?: string | null;
-  stream?: string | null;
+  assignment_type: string;
+  subject_id: string | null;
+  class_name: string | null;
+  stream: string | null;
   subject?: { name: string; code: string } | null;
 }
 
