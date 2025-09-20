@@ -49,17 +49,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
+        // Only synchronous state updates here
         setSession(session);
         setUser(session?.user ?? null);
+        setLoading(false);
         
+        // Defer Supabase calls with setTimeout to prevent deadlock
         if (session?.user) {
-          await fetchProfile(session.user.id);
+          setTimeout(() => {
+            fetchProfile(session.user.id);
+          }, 0);
         } else {
           setProfile(null);
         }
-        
-        setLoading(false);
       }
     );
 
@@ -67,11 +70,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setLoading(false);
       
       if (session?.user) {
-        fetchProfile(session.user.id);
-      } else {
-        setLoading(false);
+        setTimeout(() => {
+          fetchProfile(session.user.id);
+        }, 0);
       }
     });
 
