@@ -154,7 +154,7 @@ export default function Auth() {
 
   const updateClassSlot = (assignmentIndex: number, slotIndex: number, field: 'className' | 'stream', value: string) => {
     const updated = [...subjectAssignments];
-    updated[assignmentIndex].classSlots[slotIndex][field] = value;
+    updated[assignmentIndex].classSlots[slotIndex][field] = value === 'none' ? '' : value;
     setSubjectAssignments(updated);
   };
 
@@ -337,16 +337,16 @@ export default function Auth() {
                                      <div key={slotIndex} className="grid grid-cols-2 gap-3">
                                        <div>
                                          <Label className="text-xs text-muted-foreground">Class {slotIndex + 1}</Label>
-                                         <Select
-                                           value={slot.className}
-                                           onValueChange={(value) => updateClassSlot(index, slotIndex, 'className', value)}
-                                         >
+                                          <Select
+                                            value={slot.className || 'none'}
+                                            onValueChange={(value) => updateClassSlot(index, slotIndex, 'className', value)}
+                                          >
                                            <SelectTrigger className="h-8">
                                              <SelectValue placeholder="Select class" />
                                            </SelectTrigger>
-                                           <SelectContent>
-                                             <SelectItem value="">None</SelectItem>
-                                             {classes.map((className) => (
+                                            <SelectContent>
+                                              <SelectItem value="none">None</SelectItem>
+                                              {classes.map((className) => (
                                                <SelectItem 
                                                  key={className} 
                                                  value={className}
@@ -360,17 +360,17 @@ export default function Auth() {
                                        </div>
                                        <div>
                                          <Label className="text-xs text-muted-foreground">Stream</Label>
-                                         <Select
-                                           value={slot.stream}
-                                           onValueChange={(value) => updateClassSlot(index, slotIndex, 'stream', value)}
-                                           disabled={!slot.className}
-                                         >
+                                          <Select
+                                            value={slot.stream || 'none'}
+                                            onValueChange={(value) => updateClassSlot(index, slotIndex, 'stream', value)}
+                                            disabled={!slot.className}
+                                          >
                                            <SelectTrigger className="h-8">
                                              <SelectValue placeholder="Select stream" />
                                            </SelectTrigger>
-                                           <SelectContent>
-                                             <SelectItem value="">None</SelectItem>
-                                             {streams.map((stream) => (
+                                            <SelectContent>
+                                              <SelectItem value="none">None</SelectItem>
+                                              {streams.map((stream) => (
                                                <SelectItem key={stream} value={stream}>
                                                  {stream}
                                                </SelectItem>
@@ -398,16 +398,16 @@ export default function Auth() {
                           <div className="grid grid-cols-2 gap-4">
                              <div>
                                <Label htmlFor="class-teacher-class" className="text-sm">Class</Label>
-                               <Select
-                                 value={classAssignment.className}
-                                 onValueChange={(value) => setClassAssignment({ ...classAssignment, className: value, stream: '' })}
-                               >
+                                <Select
+                                  value={classAssignment.className || 'none'}
+                                  onValueChange={(value) => setClassAssignment({ ...classAssignment, className: value === 'none' ? '' : value, stream: '' })}
+                                >
                                  <SelectTrigger>
                                    <SelectValue placeholder="Select class" />
                                  </SelectTrigger>
-                                 <SelectContent>
-                                   <SelectItem value="">None</SelectItem>
-                                   {classes.map((className) => (
+                                  <SelectContent>
+                                    <SelectItem value="none">None</SelectItem>
+                                    {classes.map((className) => (
                                      <SelectItem key={className} value={className}>
                                        {className}
                                      </SelectItem>
@@ -417,17 +417,17 @@ export default function Auth() {
                              </div>
                              <div>
                                <Label htmlFor="class-teacher-stream" className="text-sm">Stream</Label>
-                               <Select
-                                 value={classAssignment.stream}
-                                 onValueChange={(value) => setClassAssignment({ ...classAssignment, stream: value })}
-                                 disabled={!classAssignment.className}
-                               >
+                                <Select
+                                  value={classAssignment.stream || 'none'}
+                                  onValueChange={(value) => setClassAssignment({ ...classAssignment, stream: value === 'none' ? '' : value })}
+                                  disabled={!classAssignment.className}
+                                >
                                  <SelectTrigger>
                                    <SelectValue placeholder="Select stream" />
                                  </SelectTrigger>
-                                 <SelectContent>
-                                   <SelectItem value="">None</SelectItem>
-                                   {streams.map((stream) => (
+                                  <SelectContent>
+                                    <SelectItem value="none">None</SelectItem>
+                                    {streams.map((stream) => (
                                      <SelectItem key={stream} value={stream}>
                                        {stream}
                                      </SelectItem>
