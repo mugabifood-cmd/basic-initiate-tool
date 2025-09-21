@@ -448,16 +448,16 @@ export default function TeacherManagement() {
                 <div>
                   <Label htmlFor="class-teacher-class" className="text-sm">Class</Label>
                   <Select
-                    value={classAssignment?.className || ''}
+                    value={classAssignment?.className || 'none'}
                     onValueChange={(value) => setClassAssignment(
-                      value ? { ...classAssignment, className: value, stream: classAssignment?.stream || '' } : null
+                      value !== 'none' ? { ...classAssignment, className: value, stream: classAssignment?.stream || '' } : null
                     )}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select class" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
                       {classes.map((className) => (
                         <SelectItem key={className} value={className}>
                           {className}
@@ -469,16 +469,16 @@ export default function TeacherManagement() {
                 <div>
                   <Label htmlFor="class-teacher-stream" className="text-sm">Stream</Label>
                   <Select
-                    value={classAssignment?.stream || ''}
+                    value={classAssignment?.stream || 'none'}
                     onValueChange={(value) => setClassAssignment(
-                      classAssignment && value ? { ...classAssignment, stream: value } : null
+                      classAssignment && value !== 'none' ? { ...classAssignment, stream: value } : null
                     )}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select stream" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
                       {streams.map((stream) => (
                         <SelectItem key={stream} value={stream}>
                           {stream}
