@@ -74,7 +74,7 @@ export default function Auth() {
         .order('name');
       
       if (classesData) {
-        const uniqueClasses = [...new Set(classesData.map(c => c.name))];
+        const uniqueClasses = [...new Set(classesData.map(c => c.name).filter(Boolean))];
         setClasses(uniqueClasses);
       }
 
@@ -85,7 +85,7 @@ export default function Auth() {
         .order('stream');
       
       if (streamsData) {
-        const uniqueStreams = [...new Set(streamsData.map(s => s.stream))];
+        const uniqueStreams = [...new Set(streamsData.map(s => s.stream).filter((v) => v && v.trim() !== ''))];
         setStreams(uniqueStreams);
       }
     };
@@ -313,11 +313,13 @@ export default function Auth() {
                                     <SelectValue placeholder="Select subject" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    {subjects.map((subject) => (
-                                      <SelectItem key={subject.id} value={subject.id}>
-                                        {subject.name} ({subject.code})
-                                      </SelectItem>
-                                    ))}
+                                    {subjects
+                                      .filter((subject) => subject && subject.id && subject.name)
+                                      .map((subject) => (
+                                        <SelectItem key={subject.id} value={subject.id}>
+                                          {subject.name}{subject.code ? ` (${subject.code})` : ''}
+                                        </SelectItem>
+                                      ))}
                                   </SelectContent>
                                 </Select>
                                 <Button
@@ -346,15 +348,17 @@ export default function Auth() {
                                            </SelectTrigger>
                                             <SelectContent>
                                               <SelectItem value="none">None</SelectItem>
-                                              {classes.map((className) => (
-                                               <SelectItem 
-                                                 key={className} 
-                                                 value={className}
-                                                 disabled={isClassDisabledForSlot(index, slotIndex, className)}
-                                               >
-                                                 {className}
-                                               </SelectItem>
-                                             ))}
+                                              {classes
+                                                .filter(Boolean)
+                                                .map((className) => (
+                                                  <SelectItem 
+                                                    key={className} 
+                                                    value={className}
+                                                    disabled={isClassDisabledForSlot(index, slotIndex, className)}
+                                                  >
+                                                    {className}
+                                                  </SelectItem>
+                                                ))}
                                            </SelectContent>
                                          </Select>
                                        </div>
@@ -370,11 +374,13 @@ export default function Auth() {
                                            </SelectTrigger>
                                             <SelectContent>
                                               <SelectItem value="none">None</SelectItem>
-                                              {streams.map((stream) => (
-                                               <SelectItem key={stream} value={stream}>
-                                                 {stream}
-                                               </SelectItem>
-                                             ))}
+                                              {streams
+                                                .filter((s) => s && s.trim() !== '')
+                                                .map((stream) => (
+                                                  <SelectItem key={stream} value={stream}>
+                                                    {stream}
+                                                  </SelectItem>
+                                                ))}
                                            </SelectContent>
                                          </Select>
                                        </div>
@@ -407,11 +413,13 @@ export default function Auth() {
                                  </SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="none">None</SelectItem>
-                                    {classes.map((className) => (
-                                     <SelectItem key={className} value={className}>
-                                       {className}
-                                     </SelectItem>
-                                   ))}
+                                    {classes
+                                      .filter(Boolean)
+                                      .map((className) => (
+                                       <SelectItem key={className} value={className}>
+                                         {className}
+                                       </SelectItem>
+                                     ))}
                                  </SelectContent>
                                </Select>
                              </div>
@@ -427,11 +435,13 @@ export default function Auth() {
                                  </SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="none">None</SelectItem>
-                                    {streams.map((stream) => (
-                                     <SelectItem key={stream} value={stream}>
-                                       {stream}
-                                     </SelectItem>
-                                   ))}
+                                    {streams
+                                      .filter((s) => s && s.trim() !== '')
+                                      .map((stream) => (
+                                       <SelectItem key={stream} value={stream}>
+                                         {stream}
+                                       </SelectItem>
+                                     ))}
                                  </SelectContent>
                                </Select>
                              </div>
