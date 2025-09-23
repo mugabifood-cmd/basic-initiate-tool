@@ -1,437 +1,485 @@
-import React, { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
-import { Minus, Plus, ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useTeacherAssignments, type SubjectAssignment, type ClassAssignment } from "@/hooks/useTeacherAssignments";
-import { Separator } from "@/components/ui/separator";
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { Edit, Trash2, Plus, Eye } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 interface Teacher {
   id: string;
   full_name: string;
-  user_id: string;
+  role: string;
+  subject?: string;
+  initials?: string;
 }
 
-interface TeacherAssignmentDB {
+interface Subject {
   id: string;
+  name: string;
+  code: string;
+}
+
+interface TeacherAssignment {
+  id: string;
+  teacher_id: string;
   assignment_type: string;
-  subject_id?: string;
-  class_name?: string;
-  stream?: string;
-  subjects?: { name: string };
+  subject_id: string | null;
+  class_name: string | null;
+  stream: string | null;
+  subject?: { name: string; code: string } | null;
 }
 
 interface TeacherWithAssignments extends Teacher {
-  assignments: TeacherAssignmentDB[];
+  assignments: TeacherAssignment[];
 }
 
-const TeacherManagement = () => {
-  const navigate = useNavigate();
+export default function TeacherManagement() {
   const [teachers, setTeachers] = useState<TeacherWithAssignments[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingTeacher, setEditingTeacher] = useState<TeacherWithAssignments | null>(null);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
-  const teacherAssignments = useTeacherAssignments();
+  // Edit form state
+  const [subjectAssignments, setSubjectAssignments] = useState<Array<{
+    id?: string;
+    subjectId: string;
+    classes: Array<{ className: string; stream: string }>;
+  }>>([]);
+  const [classAssignment, setClassAssignment] = useState<{
+    id?: string;
+    className: string;
+    stream: string;
+  } | null>(null);
+
+  const classes = ['S1', 'S2', 'S3', 'S4'];
+  const streams = ['East', 'West', 'All'];
 
   useEffect(() => {
     fetchTeachers();
+    fetchSubjects();
   }, []);
 
   const fetchTeachers = async () => {
     try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("profiles")
-        .select(`
-          id,
-          full_name,
-          user_id,
-          teacher_assignments (
-            id,
-            assignment_type,
-            subject_id,
-            class_name,
-            stream,
-            subjects (name)
-          )
-        `)
-        .eq("role", "teacher");
+      // Fetch teachers
+      const { data: teachersData, error: teachersError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('role', 'teacher');
 
-      if (error) throw error;
-      
-      const teachersWithAssignments = data?.map(teacher => ({
-        ...teacher,
-        assignments: teacher.teacher_assignments || []
-      })) || [];
+      if (teachersError) throw teachersError;
+
+      // Fetch assignments for each teacher
+      const teachersWithAssignments = await Promise.all(
+        teachersData.map(async (teacher) => {
+          const { data: assignments, error: assignmentsError } = await supabase
+            .from('teacher_assignments')
+            .select(`
+              *,
+              subject:subjects(name, code)
+            `)
+            .eq('teacher_id', teacher.id);
+
+          if (assignmentsError) {
+            console.error('Error fetching assignments:', assignmentsError);
+            return { ...teacher, assignments: [] };
+          }
+
+          return { 
+            ...teacher, 
+            assignments: (assignments || []).map(assignment => ({
+              ...assignment,
+              assignment_type: assignment.assignment_type as 'subject_teacher' | 'class_teacher'
+            }))
+          };
+        })
+      );
 
       setTeachers(teachersWithAssignments);
     } catch (error) {
-      console.error("Error fetching teachers:", error);
-      toast.error("Failed to fetch teachers");
+      console.error('Error fetching teachers:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch teachers",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSubjects = async () => {
+    const { data, error } = await supabase
+      .from('subjects')
+      .select('id, name, code')
+      .order('name');
+    
+    if (error) {
+      console.error('Error fetching subjects:', error);
+    } else {
+      setSubjects(data || []);
     }
   };
 
   const openEditDialog = (teacher: TeacherWithAssignments) => {
     setEditingTeacher(teacher);
     
+    // Parse existing assignments
+    const subjectAssignments: any[] = [];
+    let classAssignment: any = null;
+    
     // Group subject assignments by subject
-    const subjectMap = new Map<string, Array<{ className: string; stream: string }>>();
-    let classTeacherAssignment = null;
+    const subjectGroups: { [key: string]: any } = {};
     
     teacher.assignments.forEach(assignment => {
       if (assignment.assignment_type === 'subject_teacher' && assignment.subject_id) {
-        const classes = subjectMap.get(assignment.subject_id) || [];
-        classes.push({
-          className: assignment.class_name || '',
-          stream: assignment.stream || ''
+        if (!subjectGroups[assignment.subject_id]) {
+          subjectGroups[assignment.subject_id] = {
+            subjectId: assignment.subject_id,
+            classes: []
+          };
+        }
+        subjectGroups[assignment.subject_id].classes.push({
+          className: assignment.class_name!,
+          stream: assignment.stream!
         });
-        subjectMap.set(assignment.subject_id, classes);
       } else if (assignment.assignment_type === 'class_teacher') {
-        classTeacherAssignment = {
-          className: assignment.class_name || '',
-          stream: assignment.stream || ''
+        classAssignment = {
+          id: assignment.id,
+          className: assignment.class_name!,
+          stream: assignment.stream!
         };
       }
     });
     
-    const subjectAssignments = Array.from(subjectMap.entries()).map(([subjectId, classes]) => ({
-      id: Date.now().toString() + Math.random().toString(),
-      subjectId,
-      classes
-    }));
-    
-    // Set the assignments in the hook
-    teacherAssignments.setAssignments(subjectAssignments, classTeacherAssignment);
-    
-    setEditDialogOpen(true);
+    setSubjectAssignments(Object.values(subjectGroups));
+    setClassAssignment(classAssignment);
+    setIsEditDialogOpen(true);
   };
 
   const saveAssignments = async () => {
     if (!editingTeacher) return;
-
+    
     try {
       // Delete existing assignments
-      await deleteTeacherAssignments(editingTeacher.id);
-
-      // Insert subject assignments
-      for (const subjectAssignment of teacherAssignments.subjectAssignments) {
-        if (!subjectAssignment.subjectId) continue;
-        
-        for (const classSlot of subjectAssignment.classes) {
-          if (!classSlot.className || !classSlot.stream) continue;
-          
-          const { error } = await supabase
-            .from("teacher_assignments")
-            .insert({
-              teacher_id: editingTeacher.id,
-              assignment_type: "subject_teacher",
-              subject_id: subjectAssignment.subjectId,
-              class_name: classSlot.className,
-              stream: classSlot.stream,
-            });
-
-          if (error) throw error;
+      await supabase
+        .from('teacher_assignments')
+        .delete()
+        .eq('teacher_id', editingTeacher.id);
+      
+      const newAssignments = [];
+      
+      // Add subject assignments
+      for (const assignment of subjectAssignments) {
+        for (const classInfo of assignment.classes) {
+          newAssignments.push({
+            teacher_id: editingTeacher.id,
+            assignment_type: 'subject_teacher',
+            subject_id: assignment.subjectId,
+            class_name: classInfo.className,
+            stream: classInfo.stream
+          });
         }
       }
-
-      // Insert class teacher assignment
-      if (teacherAssignments.classAssignment?.className && teacherAssignments.classAssignment?.stream) {
+      
+      // Add class assignment
+      if (classAssignment && classAssignment.className && classAssignment.stream) {
+        newAssignments.push({
+          teacher_id: editingTeacher.id,
+          assignment_type: 'class_teacher',
+          class_name: classAssignment.className,
+          stream: classAssignment.stream
+        });
+      }
+      
+      if (newAssignments.length > 0) {
         const { error } = await supabase
-          .from("teacher_assignments")
-          .insert({
-            teacher_id: editingTeacher.id,
-            assignment_type: "class_teacher",
-            class_name: teacherAssignments.classAssignment.className,
-            stream: teacherAssignments.classAssignment.stream,
-          });
-
+          .from('teacher_assignments')
+          .insert(newAssignments);
+        
         if (error) throw error;
       }
-
-      toast.success("Teacher assignments updated successfully");
-      setEditDialogOpen(false);
+      
+      toast({
+        title: "Success",
+        description: "Assignments updated successfully"
+      });
+      
+      setIsEditDialogOpen(false);
       fetchTeachers();
     } catch (error) {
-      console.error("Error saving assignments:", error);
-      toast.error("Failed to save assignments");
+      console.error('Error saving assignments:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save assignments",
+        variant: "destructive"
+      });
     }
   };
 
   const deleteTeacherAssignments = async (teacherId: string) => {
     try {
       const { error } = await supabase
-        .from("teacher_assignments")
+        .from('teacher_assignments')
         .delete()
-        .eq("teacher_id", teacherId);
-
+        .eq('teacher_id', teacherId);
+      
       if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Teacher assignments deleted successfully"
+      });
+      
+      fetchTeachers();
     } catch (error) {
-      console.error("Error deleting assignments:", error);
-      throw error;
+      console.error('Error deleting assignments:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete assignments",
+        variant: "destructive"
+      });
     }
   };
 
-  const handleDeleteTeacher = async (teacherId: string) => {
-    try {
-      await deleteTeacherAssignments(teacherId);
-      toast.success("Teacher assignments deleted successfully");
-      fetchTeachers();
-    } catch (error) {
-      toast.error("Failed to delete teacher assignments");
+  const addSubjectAssignment = () => {
+    setSubjectAssignments([...subjectAssignments, { subjectId: '', classes: [] }]);
+  };
+
+  const removeSubjectAssignment = (index: number) => {
+    setSubjectAssignments(subjectAssignments.filter((_, i) => i !== index));
+  };
+
+  const updateSubjectAssignment = (index: number, subjectId: string) => {
+    const updated = [...subjectAssignments];
+    updated[index].subjectId = subjectId;
+    setSubjectAssignments(updated);
+  };
+
+  const toggleClassForSubject = (assignmentIndex: number, className: string, stream: string) => {
+    const updated = [...subjectAssignments];
+    const existingClassIndex = updated[assignmentIndex].classes.findIndex(
+      c => c.className === className && c.stream === stream
+    );
+    
+    if (existingClassIndex >= 0) {
+      updated[assignmentIndex].classes.splice(existingClassIndex, 1);
+    } else {
+      updated[assignmentIndex].classes.push({ className, stream });
     }
+    
+    setSubjectAssignments(updated);
   };
 
   if (loading) {
-    return <div className="container mx-auto p-6">Loading...</div>;
+    return <div className="p-6">Loading...</div>;
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="mb-6">
-        <Button
-          variant="outline"
-          onClick={() => navigate('/dashboard')}
-          className="mb-4"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Dashboard
-        </Button>
-      </div>
-      
+    <div className="p-6 space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Teacher Management</CardTitle>
+          <CardTitle>Teacher Assignment Management</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {teachers.map((teacher) => {
-              const subjectAssignments = teacher.assignments.filter(a => a.assignment_type === 'subject_teacher');
-              const classAssignment = teacher.assignments.find(a => a.assignment_type === 'class_teacher');
-              
-              return (
-                <div key={teacher.id} className="border rounded p-4">
-                  <div className="flex justify-between items-start">
-                    <div className="space-y-2">
-                      <h3 className="font-medium">{teacher.full_name}</h3>
-                      
-                      <div>
-                        <p className="text-sm text-muted-foreground mb-1">Subject Assignments:</p>
-                        {subjectAssignments.length > 0 ? (
-                          <div className="flex flex-wrap gap-1">
-                            {subjectAssignments.map((assignment, index) => (
-                              <span key={index} className="text-xs bg-secondary px-2 py-1 rounded">
-                                {assignment.subjects?.name} - {assignment.class_name} {assignment.stream}
-                              </span>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="text-sm text-muted-foreground">No subject assignments</span>
-                        )}
-                      </div>
-                      
-                      <div>
-                        <p className="text-sm text-muted-foreground mb-1">Class Teacher:</p>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Teacher Name</TableHead>
+                  <TableHead>Subject Assignments</TableHead>
+                  <TableHead>Class Teacher</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {teachers.map((teacher) => {
+                  const subjectAssignments = teacher.assignments.filter(a => a.assignment_type === 'subject_teacher');
+                  const classAssignment = teacher.assignments.find(a => a.assignment_type === 'class_teacher');
+                  
+                  return (
+                    <TableRow key={teacher.id}>
+                      <TableCell className="font-medium">{teacher.full_name}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {subjectAssignments.map((assignment, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs">
+                              {assignment.subject?.name} - {assignment.class_name} {assignment.stream}
+                            </Badge>
+                          ))}
+                          {subjectAssignments.length === 0 && (
+                            <span className="text-muted-foreground text-sm">No subject assignments</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
                         {classAssignment ? (
-                          <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                          <Badge variant="outline">
                             {classAssignment.class_name} {classAssignment.stream}
-                          </span>
+                          </Badge>
                         ) : (
-                          <span className="text-sm text-muted-foreground">No class assignment</span>
+                          <span className="text-muted-foreground text-sm">No class assignment</span>
                         )}
-                      </div>
-                    </div>
-                    
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openEditDialog(teacher)}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDeleteTeacher(teacher.id)}
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openEditDialog(teacher)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => deleteTeacherAssignments(teacher.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           </div>
         </CardContent>
       </Card>
 
       {/* Edit Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Teacher Assignments - {editingTeacher?.full_name}</DialogTitle>
           </DialogHeader>
           
           <div className="space-y-6">
+            {/* Subject Teacher Assignments */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h4 className="text-sm font-medium">Subject Assignments</h4>
+                <Label className="text-base font-medium">Subject Teacher</Label>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={teacherAssignments.addSubjectAssignment}
+                  onClick={addSubjectAssignment}
                 >
-                  <Plus className="h-4 w-4 mr-1" />
+                  <Plus className="h-4 w-4 mr-2" />
                   Add Subject
                 </Button>
               </div>
-
-              {teacherAssignments.subjectAssignments.map((assignment) => (
-                <div key={assignment.id} className="border p-4 rounded-lg space-y-3">
+              
+              {subjectAssignments.map((assignment, index) => (
+                <div key={index} className="border rounded-lg p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium">Subject</Label>
+                    <Select
+                      value={assignment.subjectId}
+                      onValueChange={(value) => updateSubjectAssignment(index, value)}
+                    >
+                      <SelectTrigger className="w-full max-w-xs">
+                        <SelectValue placeholder="Select subject" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {subjects.map((subject) => (
+                          <SelectItem key={subject.id} value={subject.id}>
+                            {subject.name} ({subject.code})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <Button
                       type="button"
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
-                      onClick={() => teacherAssignments.removeSubjectAssignment(assignment.id)}
+                      onClick={() => removeSubjectAssignment(index)}
                     >
-                      <Minus className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                   
-                  <Select
-                    value={assignment.subjectId}
-                    onValueChange={(value) => teacherAssignments.updateSubjectAssignment(assignment.id, value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select subject" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {teacherAssignments.subjects.map((subject) => (
-                        <SelectItem key={subject.id} value={subject.id}>
-                          {subject.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-sm font-medium">Classes & Streams</Label>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => teacherAssignments.addClassSlot(assignment.id)}
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add Class
-                      </Button>
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">Classes & Streams</Label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {classes.map((className) =>
+                        streams.map((stream) => (
+                          <div key={`${className}-${stream}`} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`subject-${index}-${className}-${stream}`}
+                              checked={assignment.classes.some(
+                                c => c.className === className && c.stream === stream
+                              )}
+                              onCheckedChange={() => toggleClassForSubject(index, className, stream)}
+                            />
+                            <Label
+                              htmlFor={`subject-${index}-${className}-${stream}`}
+                              className="text-sm"
+                            >
+                              {className} {stream}
+                            </Label>
+                          </div>
+                        ))
+                      )}
                     </div>
-                    
-                    {assignment.classes.map((classSlot, slotIndex) => (
-                      <div key={slotIndex} className="flex gap-2 items-center">
-                        <Select
-                          value={classSlot.className}
-                          onValueChange={(value) => teacherAssignments.updateClassSlot(assignment.id, slotIndex, "className", value)}
-                        >
-                          <SelectTrigger className="flex-1">
-                            <SelectValue placeholder="Select class" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {teacherAssignments.classes.map((className) => (
-                              <SelectItem key={className} value={className}>
-                                {className}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        
-                        <Select
-                          value={classSlot.stream}
-                          onValueChange={(value) => teacherAssignments.updateClassSlot(assignment.id, slotIndex, "stream", value)}
-                          disabled={!classSlot.className}
-                        >
-                          <SelectTrigger className="flex-1">
-                            <SelectValue placeholder="Select stream" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {teacherAssignments.streams
-                              .filter(stream => !teacherAssignments.isClassDisabledForSlot(assignment.id, slotIndex, classSlot.className, stream))
-                              .map((stream) => (
-                                <SelectItem key={stream} value={stream}>
-                                  {stream}
-                                </SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
-                        
-                        {assignment.classes.length > 1 && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => teacherAssignments.removeClassSlot(assignment.id, slotIndex)}
-                          >
-                            <Minus className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    ))}
                   </div>
                 </div>
               ))}
-
-              <Separator />
-
-              <div className="space-y-3">
-                <Label className="text-sm font-medium">Class Teacher Assignment (Optional)</Label>
-                <div className="flex gap-2">
+              
+              {subjectAssignments.length === 0 && (
+                <p className="text-sm text-muted-foreground">No subject assignments added yet.</p>
+              )}
+            </div>
+            
+            <Separator />
+            
+            {/* Class Teacher Assignment */}
+            <div className="space-y-3">
+              <Label className="text-base font-medium">Class Teacher</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="class-teacher-class" className="text-sm">Class</Label>
                   <Select
-                    value={teacherAssignments.classAssignment?.className || ""}
-                    onValueChange={(value) => 
-                      teacherAssignments.setClassAssignment(prev => prev ? { ...prev, className: value } : { className: value, stream: "" })
-                    }
+                    value={classAssignment?.className || 'none'}
+                    onValueChange={(value) => setClassAssignment(
+                      value !== 'none' ? { ...classAssignment, className: value, stream: classAssignment?.stream || '' } : null
+                    )}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select class" />
                     </SelectTrigger>
                     <SelectContent>
-                      {teacherAssignments.classes.map((className) => (
+                      <SelectItem value="none">None</SelectItem>
+                      {classes.map((className) => (
                         <SelectItem key={className} value={className}>
                           {className}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  
+                </div>
+                <div>
+                  <Label htmlFor="class-teacher-stream" className="text-sm">Stream</Label>
                   <Select
-                    value={teacherAssignments.classAssignment?.stream || ""}
-                    onValueChange={(value) => 
-                      teacherAssignments.setClassAssignment(prev => prev ? { ...prev, stream: value } : { className: "", stream: value })
-                    }
-                    disabled={!teacherAssignments.classAssignment?.className}
+                    value={classAssignment?.stream || 'none'}
+                    onValueChange={(value) => setClassAssignment(
+                      classAssignment && value !== 'none' ? { ...classAssignment, stream: value } : null
+                    )}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select stream" />
                     </SelectTrigger>
                     <SelectContent>
-                      {teacherAssignments.streams.map((stream) => (
+                      <SelectItem value="none">None</SelectItem>
+                      {streams.map((stream) => (
                         <SelectItem key={stream} value={stream}>
                           {stream}
                         </SelectItem>
@@ -441,20 +489,18 @@ const TeacherManagement = () => {
                 </div>
               </div>
             </div>
-
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={saveAssignments}>
-                Save Assignments
-              </Button>
-            </div>
+          </div>
+          
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={saveAssignments}>
+              Save Assignments
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
     </div>
   );
-};
-
-export default TeacherManagement;
+}
