@@ -495,14 +495,14 @@ export default function TeacherManagement() {
                                 Class {slotIndex + 1}
                               </Label>
                               <Select
-                                value={slot.className}
-                                onValueChange={(value) => updateClassSlot(index, slotIndex, 'className', value)}
+                                value={slot.className || "none"}
+                                onValueChange={(value) => updateClassSlot(index, slotIndex, 'className', value === 'none' ? '' : value)}
                               >
                                 <SelectTrigger>
                                   <SelectValue placeholder="Select class" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="">None</SelectItem>
+                                  <SelectItem value="none">None</SelectItem>
                                   {availableClasses.map((cls) => (
                                     <SelectItem key={cls.name} value={cls.name}>
                                       {cls.name}
@@ -517,15 +517,15 @@ export default function TeacherManagement() {
                                 Stream {slotIndex + 1}
                               </Label>
                               <Select
-                                value={slot.stream}
-                                onValueChange={(value) => updateClassSlot(index, slotIndex, 'stream', value)}
+                                value={slot.stream || "none"}
+                                onValueChange={(value) => updateClassSlot(index, slotIndex, 'stream', value === 'none' ? '' : value)}
                                 disabled={!slot.className}
                               >
                                 <SelectTrigger>
                                   <SelectValue placeholder="Select stream" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="">None</SelectItem>
+                                  <SelectItem value="none">None</SelectItem>
                                   {availableStreamsForClass.map((stream) => (
                                     <SelectItem key={stream} value={stream}>
                                       {stream}
