@@ -5,12 +5,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Trash2, Plus, Eye } from 'lucide-react';
+import { Edit, Trash2, Plus, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface Teacher {
   id: string;
@@ -24,6 +24,17 @@ interface Subject {
   id: string;
   name: string;
   code: string;
+}
+
+interface Class {
+  id: string;
+  name: string;
+  stream: string;
+}
+
+interface ClassSlot {
+  className: string;
+  stream: string;
 }
 
 interface TeacherAssignment {
@@ -41,8 +52,11 @@ interface TeacherWithAssignments extends Teacher {
 }
 
 export default function TeacherManagement() {
+  const navigate = useNavigate();
   const [teachers, setTeachers] = useState<TeacherWithAssignments[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [classes, setClasses] = useState<Class[]>([]);
+  const [availableStreams, setAvailableStreams] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingTeacher, setEditingTeacher] = useState<TeacherWithAssignments | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -51,7 +65,7 @@ export default function TeacherManagement() {
   const [subjectAssignments, setSubjectAssignments] = useState<Array<{
     id?: string;
     subjectId: string;
-    classes: Array<{ className: string; stream: string }>;
+    classSlots: ClassSlot[];
   }>>([]);
   const [classAssignment, setClassAssignment] = useState<{
     id?: string;
@@ -59,12 +73,10 @@ export default function TeacherManagement() {
     stream: string;
   } | null>(null);
 
-  const classes = ['S1', 'S2', 'S3', 'S4'];
-  const streams = ['East', 'West', 'All'];
-
   useEffect(() => {
     fetchTeachers();
     fetchSubjects();
+    fetchClasses();
   }, []);
 
   const fetchTeachers = async () => {
@@ -129,6 +141,22 @@ export default function TeacherManagement() {
     }
   };
 
+  const fetchClasses = async () => {
+    const { data, error } = await supabase
+      .from('classes')
+      .select('id, name, stream')
+      .order('name');
+    
+    if (error) {
+      console.error('Error fetching classes:', error);
+    } else {
+      setClasses(data || []);
+      // Extract unique streams
+      const streams = [...new Set((data || []).map(c => c.stream))];
+      setAvailableStreams(streams);
+    }
+  };
+
   const openEditDialog = (teacher: TeacherWithAssignments) => {
     setEditingTeacher(teacher);
     
@@ -144,13 +172,20 @@ export default function TeacherManagement() {
         if (!subjectGroups[assignment.subject_id]) {
           subjectGroups[assignment.subject_id] = {
             subjectId: assignment.subject_id,
-            classes: []
+            classSlots: [{ className: '', stream: '' }, { className: '', stream: '' }, { className: '', stream: '' }, { className: '', stream: '' }]
           };
         }
-        subjectGroups[assignment.subject_id].classes.push({
-          className: assignment.class_name!,
-          stream: assignment.stream!
-        });
+        
+        // Find the first empty slot and fill it
+        const emptySlotIndex = subjectGroups[assignment.subject_id].classSlots.findIndex(
+          (slot: ClassSlot) => !slot.className
+        );
+        if (emptySlotIndex !== -1) {
+          subjectGroups[assignment.subject_id].classSlots[emptySlotIndex] = {
+            className: assignment.class_name!,
+            stream: assignment.stream!
+          };
+        }
       } else if (assignment.assignment_type === 'class_teacher') {
         classAssignment = {
           id: assignment.id,
@@ -179,14 +214,16 @@ export default function TeacherManagement() {
       
       // Add subject assignments
       for (const assignment of subjectAssignments) {
-        for (const classInfo of assignment.classes) {
-          newAssignments.push({
-            teacher_id: editingTeacher.id,
-            assignment_type: 'subject_teacher',
-            subject_id: assignment.subjectId,
-            class_name: classInfo.className,
-            stream: classInfo.stream
-          });
+        for (const slot of assignment.classSlots) {
+          if (slot.className && slot.stream) {
+            newAssignments.push({
+              teacher_id: editingTeacher.id,
+              assignment_type: 'subject_teacher',
+              subject_id: assignment.subjectId,
+              class_name: slot.className,
+              stream: slot.stream
+            });
+          }
         }
       }
       
@@ -251,7 +288,10 @@ export default function TeacherManagement() {
   };
 
   const addSubjectAssignment = () => {
-    setSubjectAssignments([...subjectAssignments, { subjectId: '', classes: [] }]);
+    setSubjectAssignments([...subjectAssignments, { 
+      subjectId: '', 
+      classSlots: [{ className: '', stream: '' }, { className: '', stream: '' }, { className: '', stream: '' }, { className: '', stream: '' }]
+    }]);
   };
 
   const removeSubjectAssignment = (index: number) => {
@@ -264,19 +304,37 @@ export default function TeacherManagement() {
     setSubjectAssignments(updated);
   };
 
-  const toggleClassForSubject = (assignmentIndex: number, className: string, stream: string) => {
+  const updateClassSlot = (assignmentIndex: number, slotIndex: number, field: 'className' | 'stream', value: string) => {
     const updated = [...subjectAssignments];
-    const existingClassIndex = updated[assignmentIndex].classes.findIndex(
-      c => c.className === className && c.stream === stream
-    );
+    updated[assignmentIndex].classSlots[slotIndex][field] = value;
+    setSubjectAssignments(updated);
+  };
+
+  const getUsedClasses = (currentAssignmentIndex: number, currentSlotIndex: number) => {
+    const used = new Set<string>();
     
-    if (existingClassIndex >= 0) {
-      updated[assignmentIndex].classes.splice(existingClassIndex, 1);
-    } else {
-      updated[assignmentIndex].classes.push({ className, stream });
+    // Add classes from other assignments
+    subjectAssignments.forEach((assignment, assignmentIndex) => {
+      if (assignmentIndex !== currentAssignmentIndex) {
+        assignment.classSlots.forEach(slot => {
+          if (slot.className) used.add(slot.className);
+        });
+      } else {
+        // Add classes from other slots in the same assignment
+        assignment.classSlots.forEach((slot, slotIndex) => {
+          if (slotIndex !== currentSlotIndex && slot.className) {
+            used.add(slot.className);
+          }
+        });
+      }
+    });
+    
+    // Add class teacher assignment
+    if (classAssignment?.className) {
+      used.add(classAssignment.className);
     }
     
-    setSubjectAssignments(updated);
+    return used;
   };
 
   if (loading) {
@@ -285,6 +343,18 @@ export default function TeacherManagement() {
 
   return (
     <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">Teacher Assignment Management</h1>
+        <Button
+          variant="outline"
+          onClick={() => navigate('/dashboard')}
+          className="flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Dashboard
+        </Button>
+      </div>
+      
       <Card>
         <CardHeader>
           <CardTitle>Teacher Assignment Management</CardTitle>
@@ -408,27 +478,65 @@ export default function TeacherManagement() {
                   </div>
                   
                   <div>
-                    <Label className="text-sm font-medium mb-2 block">Classes & Streams</Label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {classes.map((className) =>
-                        streams.map((stream) => (
-                          <div key={`${className}-${stream}`} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`subject-${index}-${className}-${stream}`}
-                              checked={assignment.classes.some(
-                                c => c.className === className && c.stream === stream
-                              )}
-                              onCheckedChange={() => toggleClassForSubject(index, className, stream)}
-                            />
-                            <Label
-                              htmlFor={`subject-${index}-${className}-${stream}`}
-                              className="text-sm"
-                            >
-                              {className} {stream}
-                            </Label>
+                    <Label className="text-sm font-medium mb-3 block">Classes & Streams</Label>
+                    <div className="space-y-3">
+                      {assignment.classSlots.map((slot, slotIndex) => {
+                        const usedClasses = getUsedClasses(index, slotIndex);
+                        const availableClasses = classes.filter(cls => !usedClasses.has(cls.name) || cls.name === slot.className);
+                        const selectedClass = classes.find(cls => cls.name === slot.className);
+                        const availableStreamsForClass = selectedClass ? 
+                          [...new Set(classes.filter(cls => cls.name === selectedClass.name).map(cls => cls.stream))] : 
+                          [];
+                        
+                        return (
+                          <div key={slotIndex} className="grid grid-cols-2 gap-3">
+                            <div>
+                              <Label htmlFor={`class-${index}-${slotIndex}`} className="text-xs text-gray-600">
+                                Class {slotIndex + 1}
+                              </Label>
+                              <Select
+                                value={slot.className}
+                                onValueChange={(value) => updateClassSlot(index, slotIndex, 'className', value)}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select class" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="">None</SelectItem>
+                                  {availableClasses.map((cls) => (
+                                    <SelectItem key={cls.name} value={cls.name}>
+                                      {cls.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            <div>
+                              <Label htmlFor={`stream-${index}-${slotIndex}`} className="text-xs text-gray-600">
+                                Stream {slotIndex + 1}
+                              </Label>
+                              <Select
+                                value={slot.stream}
+                                onValueChange={(value) => updateClassSlot(index, slotIndex, 'stream', value)}
+                                disabled={!slot.className}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select stream" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="">None</SelectItem>
+                                  {availableStreamsForClass.map((stream) => (
+                                    <SelectItem key={stream} value={stream}>
+                                      {stream}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
-                        ))
-                      )}
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
@@ -458,7 +566,7 @@ export default function TeacherManagement() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">None</SelectItem>
-                      {classes.map((className) => (
+                      {[...new Set(classes.map(cls => cls.name))].map((className) => (
                         <SelectItem key={className} value={className}>
                           {className}
                         </SelectItem>
@@ -473,17 +581,20 @@ export default function TeacherManagement() {
                     onValueChange={(value) => setClassAssignment(
                       classAssignment && value !== 'none' ? { ...classAssignment, stream: value } : null
                     )}
+                    disabled={!classAssignment?.className}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select stream" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">None</SelectItem>
-                      {streams.map((stream) => (
-                        <SelectItem key={stream} value={stream}>
-                          {stream}
-                        </SelectItem>
-                      ))}
+                      {classAssignment?.className && 
+                        [...new Set(classes.filter(cls => cls.name === classAssignment.className).map(cls => cls.stream))].map((stream) => (
+                          <SelectItem key={stream} value={stream}>
+                            {stream}
+                          </SelectItem>
+                        ))
+                      }
                     </SelectContent>
                   </Select>
                 </div>
