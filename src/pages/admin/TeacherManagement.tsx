@@ -262,7 +262,11 @@ export default function TeacherManagement() {
     }
   };
 
-  const deleteTeacherAssignments = async (teacherId: string) => {
+  const deleteTeacherAssignments = async (teacherId: string, teacherName: string) => {
+    if (!confirm(`Are you sure you want to delete all assignments for ${teacherName}? This action cannot be undone.`)) {
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('teacher_assignments')
@@ -408,13 +412,13 @@ export default function TeacherManagement() {
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => deleteTeacherAssignments(teacher.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                           <Button
+                             variant="outline"
+                             size="sm"
+                             onClick={() => deleteTeacherAssignments(teacher.id, teacher.full_name)}
+                           >
+                             <Trash2 className="h-4 w-4" />
+                           </Button>
                         </div>
                       </TableCell>
                     </TableRow>
