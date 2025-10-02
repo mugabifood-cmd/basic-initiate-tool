@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -73,6 +74,15 @@ export default function SchoolManagement() {
     school_id: '', code: '', name: ''
   });
 
+  // Edit and delete states
+  const [editingSchool, setEditingSchool] = useState<School | null>(null);
+  const [editingClass, setEditingClass] = useState<Class | null>(null);
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
+  const [deleteItem, setDeleteItem] = useState<{ type: string; id: string; name: string } | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -136,6 +146,7 @@ export default function SchoolManagement() {
 
       toast({ title: "School created successfully" });
       setSchoolForm({ name: '', location: '', po_box: '', telephone: '', email: '', website: '', motto: '' });
+      setIsCreateDialogOpen(false);
       fetchData();
     } catch (error: any) {
       toast({
@@ -157,6 +168,7 @@ export default function SchoolManagement() {
 
       toast({ title: "Class created successfully" });
       setClassForm({ school_id: '', name: '', stream: '', academic_year: '2025', term: 'ONE' });
+      setIsCreateDialogOpen(false);
       fetchData();
     } catch (error: any) {
       toast({
@@ -178,6 +190,7 @@ export default function SchoolManagement() {
 
       toast({ title: "Student created successfully" });
       setStudentForm({ school_id: '', student_number: '', full_name: '', gender: 'MALE', house: '', age: 16 });
+      setIsCreateDialogOpen(false);
       fetchData();
     } catch (error: any) {
       toast({
@@ -199,6 +212,7 @@ export default function SchoolManagement() {
 
       toast({ title: "Subject created successfully" });
       setSubjectForm({ school_id: '', code: '', name: '' });
+      setIsCreateDialogOpen(false);
       fetchData();
     } catch (error: any) {
       toast({
@@ -207,6 +221,195 @@ export default function SchoolManagement() {
         variant: "destructive"
       });
     }
+  };
+
+  // Update handlers
+  const handleUpdateSchool = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSchool) return;
+
+    try {
+      const { error } = await supabase
+        .from('schools')
+        .update(schoolForm)
+        .eq('id', editingSchool.id);
+
+      if (error) throw error;
+
+      toast({ title: "School updated successfully" });
+      setEditingSchool(null);
+      setIsEditDialogOpen(false);
+      fetchData();
+    } catch (error: any) {
+      toast({
+        title: "Error updating school",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleUpdateClass = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingClass) return;
+
+    try {
+      const { error } = await supabase
+        .from('classes')
+        .update(classForm)
+        .eq('id', editingClass.id);
+
+      if (error) throw error;
+
+      toast({ title: "Class updated successfully" });
+      setEditingClass(null);
+      setIsEditDialogOpen(false);
+      fetchData();
+    } catch (error: any) {
+      toast({
+        title: "Error updating class",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleUpdateStudent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingStudent) return;
+
+    try {
+      const { error } = await supabase
+        .from('students')
+        .update({ ...studentForm, age: Number(studentForm.age) })
+        .eq('id', editingStudent.id);
+
+      if (error) throw error;
+
+      toast({ title: "Student updated successfully" });
+      setEditingStudent(null);
+      setIsEditDialogOpen(false);
+      fetchData();
+    } catch (error: any) {
+      toast({
+        title: "Error updating student",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleUpdateSubject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSubject) return;
+
+    try {
+      const { error } = await supabase
+        .from('subjects')
+        .update(subjectForm)
+        .eq('id', editingSubject.id);
+
+      if (error) throw error;
+
+      toast({ title: "Subject updated successfully" });
+      setEditingSubject(null);
+      setIsEditDialogOpen(false);
+      fetchData();
+    } catch (error: any) {
+      toast({
+        title: "Error updating subject",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Delete handler
+  const handleDelete = async () => {
+    if (!deleteItem) return;
+
+    try {
+      let query;
+      switch (deleteItem.type) {
+        case 'schools':
+          query = supabase.from('schools').delete().eq('id', deleteItem.id);
+          break;
+        case 'classes':
+          query = supabase.from('classes').delete().eq('id', deleteItem.id);
+          break;
+        case 'students':
+          query = supabase.from('students').delete().eq('id', deleteItem.id);
+          break;
+        case 'subjects':
+          query = supabase.from('subjects').delete().eq('id', deleteItem.id);
+          break;
+        default:
+          throw new Error('Invalid table type');
+      }
+
+      const { error } = await query;
+      if (error) throw error;
+
+      toast({ title: `${deleteItem.type.slice(0, -1)} deleted successfully` });
+      setDeleteItem(null);
+      fetchData();
+    } catch (error: any) {
+      toast({
+        title: "Error deleting item",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Edit handlers
+  const handleEditSchool = (school: School) => {
+    setEditingSchool(school);
+    setSchoolForm({
+      name: school.name,
+      location: school.location || '',
+      po_box: school.po_box || '',
+      telephone: school.telephone || '',
+      email: school.email || '',
+      website: school.website || '',
+      motto: school.motto || ''
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditClass = (classItem: Class) => {
+    setEditingClass(classItem);
+    setClassForm({
+      school_id: classItem.schools?.id || '',
+      name: classItem.name,
+      stream: classItem.stream,
+      academic_year: classItem.academic_year,
+      term: classItem.term
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditStudent = (student: Student) => {
+    setEditingStudent(student);
+    setStudentForm({
+      school_id: '', // We don't have this in the student data
+      student_number: student.student_number,
+      full_name: student.full_name,
+      gender: student.gender,
+      house: student.house || '',
+      age: student.age
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditSubject = (subject: Subject) => {
+    setEditingSubject(subject);
+    setSubjectForm({
+      school_id: '', // We don't have this in the subject data
+      code: subject.code,
+      name: subject.name
+    });
+    setIsEditDialogOpen(true);
   };
 
   if (loading) {
@@ -249,9 +452,12 @@ export default function SchoolManagement() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Schools</CardTitle>
-                <Dialog>
+                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button>
+                    <Button onClick={() => {
+                      setSchoolForm({ name: '', location: '', po_box: '', telephone: '', email: '', website: '', motto: '' });
+                      setIsCreateDialogOpen(true);
+                    }}>
                       <Plus className="w-4 h-4 mr-2" />
                       Add School
                     </Button>
@@ -325,6 +531,83 @@ export default function SchoolManagement() {
                     </form>
                   </DialogContent>
                 </Dialog>
+                
+                {/* Edit School Dialog */}
+                <Dialog open={isEditDialogOpen && editingSchool !== null} onOpenChange={(open) => {
+                  if (!open) {
+                    setIsEditDialogOpen(false);
+                    setEditingSchool(null);
+                  }
+                }}>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Edit School</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleUpdateSchool} className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="edit-school-name">School Name</Label>
+                          <Input
+                            id="edit-school-name"
+                            value={schoolForm.name}
+                            onChange={(e) => setSchoolForm({ ...schoolForm, name: e.target.value })}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-location">Location</Label>
+                          <Input
+                            id="edit-location"
+                            value={schoolForm.location}
+                            onChange={(e) => setSchoolForm({ ...schoolForm, location: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-po-box">P.O Box</Label>
+                          <Input
+                            id="edit-po-box"
+                            value={schoolForm.po_box}
+                            onChange={(e) => setSchoolForm({ ...schoolForm, po_box: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-telephone">Telephone</Label>
+                          <Input
+                            id="edit-telephone"
+                            value={schoolForm.telephone}
+                            onChange={(e) => setSchoolForm({ ...schoolForm, telephone: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-email">Email</Label>
+                          <Input
+                            id="edit-email"
+                            type="email"
+                            value={schoolForm.email}
+                            onChange={(e) => setSchoolForm({ ...schoolForm, email: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-website">Website</Label>
+                          <Input
+                            id="edit-website"
+                            value={schoolForm.website}
+                            onChange={(e) => setSchoolForm({ ...schoolForm, website: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-motto">School Motto</Label>
+                        <Input
+                          id="edit-motto"
+                          value={schoolForm.motto}
+                          onChange={(e) => setSchoolForm({ ...schoolForm, motto: e.target.value })}
+                        />
+                      </div>
+                      <Button type="submit" className="w-full">Update School</Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -349,10 +632,14 @@ export default function SchoolManagement() {
                         </TableCell>
                         <TableCell>
                           <div className="flex space-x-2">
-                            <Button variant="outline" size="sm">
+                            <Button variant="outline" size="sm" onClick={() => handleEditSchool(school)}>
                               <Edit className="w-4 h-4" />
                             </Button>
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setDeleteItem({ type: 'schools', id: school.id, name: school.name })}
+                            >
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
@@ -445,6 +732,82 @@ export default function SchoolManagement() {
                     </form>
                   </DialogContent>
                 </Dialog>
+
+                {/* Edit Class Dialog */}
+                <Dialog open={isEditDialogOpen && editingClass !== null} onOpenChange={(open) => {
+                  if (!open) {
+                    setIsEditDialogOpen(false);
+                    setEditingClass(null);
+                  }
+                }}>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Edit Class</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleUpdateClass} className="space-y-4">
+                      <div>
+                        <Label htmlFor="edit-class-school">School</Label>
+                        <Select value={classForm.school_id} onValueChange={(value) => setClassForm({ ...classForm, school_id: value })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select school" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {schools.map((school) => (
+                              <SelectItem key={school.id} value={school.id}>
+                                {school.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="edit-class-name">Class Name</Label>
+                          <Input
+                            id="edit-class-name"
+                            placeholder="e.g., S.1, S.2"
+                            value={classForm.name}
+                            onChange={(e) => setClassForm({ ...classForm, name: e.target.value })}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-stream">Stream</Label>
+                          <Input
+                            id="edit-stream"
+                            placeholder="e.g., East, West, Boarding"
+                            value={classForm.stream}
+                            onChange={(e) => setClassForm({ ...classForm, stream: e.target.value })}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-academic-year">Academic Year</Label>
+                          <Input
+                            id="edit-academic-year"
+                            value={classForm.academic_year}
+                            onChange={(e) => setClassForm({ ...classForm, academic_year: e.target.value })}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-term">Term</Label>
+                          <Select value={classForm.term} onValueChange={(value) => setClassForm({ ...classForm, term: value })}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="ONE">Term One</SelectItem>
+                              <SelectItem value="TWO">Term Two</SelectItem>
+                              <SelectItem value="THREE">Term Three</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <Button type="submit" className="w-full">Update Class</Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -470,10 +833,14 @@ export default function SchoolManagement() {
                         <TableCell>{classItem.academic_year}</TableCell>
                         <TableCell>
                           <div className="flex space-x-2">
-                            <Button variant="outline" size="sm">
+                            <Button variant="outline" size="sm" onClick={() => handleEditClass(classItem)}>
                               <Edit className="w-4 h-4" />
                             </Button>
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setDeleteItem({ type: 'classes', id: classItem.id, name: `${classItem.name} ${classItem.stream}` })}
+                            >
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
@@ -573,6 +940,74 @@ export default function SchoolManagement() {
                     </form>
                   </DialogContent>
                 </Dialog>
+
+                {/* Edit Student Dialog */}
+                <Dialog open={isEditDialogOpen && editingStudent !== null} onOpenChange={(open) => {
+                  if (!open) {
+                    setIsEditDialogOpen(false);
+                    setEditingStudent(null);
+                  }
+                }}>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Edit Student</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleUpdateStudent} className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="edit-student-number">Student Number</Label>
+                          <Input
+                            id="edit-student-number"
+                            value={studentForm.student_number}
+                            onChange={(e) => setStudentForm({ ...studentForm, student_number: e.target.value })}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-full-name">Full Name</Label>
+                          <Input
+                            id="edit-full-name"
+                            value={studentForm.full_name}
+                            onChange={(e) => setStudentForm({ ...studentForm, full_name: e.target.value })}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-gender">Gender</Label>
+                          <Select value={studentForm.gender} onValueChange={(value) => setStudentForm({ ...studentForm, gender: value })}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="MALE">Male</SelectItem>
+                              <SelectItem value="FEMALE">Female</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-house">House</Label>
+                          <Input
+                            id="edit-house"
+                            value={studentForm.house}
+                            onChange={(e) => setStudentForm({ ...studentForm, house: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-age">Age</Label>
+                          <Input
+                            id="edit-age"
+                            type="number"
+                            value={studentForm.age}
+                            onChange={(e) => setStudentForm({ ...studentForm, age: Number(e.target.value) })}
+                            min="10"
+                            max="25"
+                          />
+                        </div>
+                      </div>
+                      <Button type="submit" className="w-full">Update Student</Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -598,10 +1033,14 @@ export default function SchoolManagement() {
                         <TableCell>{student.age}</TableCell>
                         <TableCell>
                           <div className="flex space-x-2">
-                            <Button variant="outline" size="sm">
+                            <Button variant="outline" size="sm" onClick={() => handleEditStudent(student)}>
                               <Edit className="w-4 h-4" />
                             </Button>
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setDeleteItem({ type: 'students', id: student.id, name: student.full_name })}
+                            >
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
@@ -672,6 +1111,45 @@ export default function SchoolManagement() {
                     </form>
                   </DialogContent>
                 </Dialog>
+
+                {/* Edit Subject Dialog */}
+                <Dialog open={isEditDialogOpen && editingSubject !== null} onOpenChange={(open) => {
+                  if (!open) {
+                    setIsEditDialogOpen(false);
+                    setEditingSubject(null);
+                  }
+                }}>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Edit Subject</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleUpdateSubject} className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="edit-subject-code">Subject Code</Label>
+                          <Input
+                            id="edit-subject-code"
+                            placeholder="e.g., 535, 112"
+                            value={subjectForm.code}
+                            onChange={(e) => setSubjectForm({ ...subjectForm, code: e.target.value })}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-subject-name">Subject Name</Label>
+                          <Input
+                            id="edit-subject-name"
+                            placeholder="e.g., Biology, English"
+                            value={subjectForm.name}
+                            onChange={(e) => setSubjectForm({ ...subjectForm, name: e.target.value })}
+                            required
+                          />
+                        </div>
+                      </div>
+                      <Button type="submit" className="w-full">Update Subject</Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -689,10 +1167,14 @@ export default function SchoolManagement() {
                         <TableCell>{subject.name}</TableCell>
                         <TableCell>
                           <div className="flex space-x-2">
-                            <Button variant="outline" size="sm">
+                            <Button variant="outline" size="sm" onClick={() => handleEditSubject(subject)}>
                               <Edit className="w-4 h-4" />
                             </Button>
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setDeleteItem({ type: 'subjects', id: subject.id, name: subject.name })}
+                            >
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
@@ -706,6 +1188,24 @@ export default function SchoolManagement() {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteItem !== null} onOpenChange={(open) => !open && setDeleteItem(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete <strong>{deleteItem?.name}</strong>. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
