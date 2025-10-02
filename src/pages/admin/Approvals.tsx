@@ -78,7 +78,7 @@ export default function Approvals() {
               name
             )
           ),
-          profiles!inner (
+          profiles!teacher_id (
             full_name,
             initials
           )
