@@ -45,6 +45,13 @@ interface Student {
   gender: string;
   house: string;
   age: number;
+  class_students?: {
+    classes: {
+      id: string;
+      name: string;
+      stream: string;
+    } | null;
+  }[];
 }
 
 interface Subject {
@@ -68,7 +75,7 @@ export default function SchoolManagement() {
     school_id: '', name: '', stream: '', academic_year: '2025', term: 'ONE'
   });
   const [studentForm, setStudentForm] = useState({
-    school_id: '', student_number: '', full_name: '', gender: 'MALE', house: '', age: 16
+    school_id: '', student_number: '', full_name: '', gender: 'MALE', house: '', age: 16, class_id: ''
   });
   const [subjectForm, setSubjectForm] = useState({
     school_id: '', code: '', name: ''
@@ -108,10 +115,17 @@ export default function SchoolManagement() {
         `)
         .order('name');
       
-      // Fetch students
+      // Fetch students with class information
       const { data: studentsData } = await supabase
         .from('students')
-        .select('*')
+        .select(`
+          *,
+          class_students (
+            classes (
+              id, name, stream
+            )
+          )
+        `)
         .order('full_name');
       
       // Fetch subjects
@@ -182,14 +196,36 @@ export default function SchoolManagement() {
   const handleCreateStudent = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const { error } = await supabase
+      // Create student
+      const { data: studentData, error: studentError } = await supabase
         .from('students')
-        .insert([{ ...studentForm, age: Number(studentForm.age) }]);
+        .insert([{ 
+          school_id: studentForm.school_id,
+          student_number: studentForm.student_number,
+          full_name: studentForm.full_name,
+          gender: studentForm.gender,
+          house: studentForm.house,
+          age: Number(studentForm.age)
+        }])
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (studentError) throw studentError;
+
+      // Link student to class
+      if (studentForm.class_id && studentData) {
+        const { error: classStudentError } = await supabase
+          .from('class_students')
+          .insert([{
+            student_id: studentData.id,
+            class_id: studentForm.class_id
+          }]);
+
+        if (classStudentError) throw classStudentError;
+      }
 
       toast({ title: "Student created successfully" });
-      setStudentForm({ school_id: '', student_number: '', full_name: '', gender: 'MALE', house: '', age: 16 });
+      setStudentForm({ school_id: '', student_number: '', full_name: '', gender: 'MALE', house: '', age: 16, class_id: '' });
       setIsCreateDialogOpen(false);
       fetchData();
     } catch (error: any) {
@@ -279,12 +315,38 @@ export default function SchoolManagement() {
     if (!editingStudent) return;
 
     try {
-      const { error } = await supabase
+      // Update student
+      const { error: studentError } = await supabase
         .from('students')
-        .update({ ...studentForm, age: Number(studentForm.age) })
+        .update({ 
+          student_number: studentForm.student_number,
+          full_name: studentForm.full_name,
+          gender: studentForm.gender,
+          house: studentForm.house,
+          age: Number(studentForm.age)
+        })
         .eq('id', editingStudent.id);
 
-      if (error) throw error;
+      if (studentError) throw studentError;
+
+      // Update class assignment
+      if (studentForm.class_id) {
+        // Delete existing class assignment
+        await supabase
+          .from('class_students')
+          .delete()
+          .eq('student_id', editingStudent.id);
+
+        // Insert new class assignment
+        const { error: classStudentError } = await supabase
+          .from('class_students')
+          .insert([{
+            student_id: editingStudent.id,
+            class_id: studentForm.class_id
+          }]);
+
+        if (classStudentError) throw classStudentError;
+      }
 
       toast({ title: "Student updated successfully" });
       setEditingStudent(null);
@@ -392,12 +454,13 @@ export default function SchoolManagement() {
   const handleEditStudent = (student: Student) => {
     setEditingStudent(student);
     setStudentForm({
-      school_id: '', // We don't have this in the student data
+      school_id: '', 
       student_number: student.student_number,
       full_name: student.full_name,
       gender: student.gender,
       house: student.house || '',
-      age: student.age
+      age: student.age,
+      class_id: student.class_students?.[0]?.classes?.id || ''
     });
     setIsEditDialogOpen(true);
   };
@@ -870,20 +933,37 @@ export default function SchoolManagement() {
                       <DialogTitle>Create New Student</DialogTitle>
                     </DialogHeader>
                     <form onSubmit={handleCreateStudent} className="space-y-4">
-                      <div>
-                        <Label htmlFor="student-school">School</Label>
-                        <Select value={studentForm.school_id} onValueChange={(value) => setStudentForm({ ...studentForm, school_id: value })}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select school" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {schools.map((school) => (
-                              <SelectItem key={school.id} value={school.id}>
-                                {school.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="student-school">School</Label>
+                          <Select value={studentForm.school_id} onValueChange={(value) => setStudentForm({ ...studentForm, school_id: value })}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select school" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {schools.map((school) => (
+                                <SelectItem key={school.id} value={school.id}>
+                                  {school.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="student-class">Class</Label>
+                          <Select value={studentForm.class_id} onValueChange={(value) => setStudentForm({ ...studentForm, class_id: value })}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select class" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {classes.map((classItem) => (
+                                <SelectItem key={classItem.id} value={classItem.id}>
+                                  {classItem.name} {classItem.stream}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
@@ -953,6 +1033,21 @@ export default function SchoolManagement() {
                       <DialogTitle>Edit Student</DialogTitle>
                     </DialogHeader>
                     <form onSubmit={handleUpdateStudent} className="space-y-4">
+                      <div>
+                        <Label htmlFor="edit-student-class">Class</Label>
+                        <Select value={studentForm.class_id} onValueChange={(value) => setStudentForm({ ...studentForm, class_id: value })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select class" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {classes.map((classItem) => (
+                              <SelectItem key={classItem.id} value={classItem.id}>
+                                {classItem.name} {classItem.stream}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="edit-student-number">Student Number</Label>
@@ -1015,6 +1110,7 @@ export default function SchoolManagement() {
                     <TableRow>
                       <TableHead>Student Number</TableHead>
                       <TableHead>Full Name</TableHead>
+                      <TableHead>Class</TableHead>
                       <TableHead>Gender</TableHead>
                       <TableHead>House</TableHead>
                       <TableHead>Age</TableHead>
@@ -1026,6 +1122,15 @@ export default function SchoolManagement() {
                       <TableRow key={student.id}>
                         <TableCell className="font-medium">{student.student_number}</TableCell>
                         <TableCell>{student.full_name}</TableCell>
+                        <TableCell>
+                          {student.class_students?.[0]?.classes ? (
+                            <Badge variant="secondary">
+                              {student.class_students[0].classes.name} {student.class_students[0].classes.stream}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground">No class</span>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <Badge variant="outline">{student.gender}</Badge>
                         </TableCell>
