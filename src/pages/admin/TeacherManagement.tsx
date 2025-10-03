@@ -232,6 +232,7 @@ export default function TeacherManagement() {
         newAssignments.push({
           teacher_id: editingTeacher.id,
           assignment_type: 'class_teacher',
+          subject_id: null,
           class_name: classAssignment.className,
           stream: classAssignment.stream
         });
