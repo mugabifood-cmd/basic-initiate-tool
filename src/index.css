@@ -11,8 +11,9 @@ All colors MUST be HSL.
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
 
-    --card: 0 0% 100%;
+    --card: 210 40% 98%;
     --card-foreground: 222.2 84% 4.9%;
+    --card-hover: 210 40% 96%;
 
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
@@ -37,6 +38,9 @@ All colors MUST be HSL.
     --ring: 222.2 84% 4.9%;
 
     --radius: 0.5rem;
+    
+    --card-shadow: 222.2 47.4% 11.2%;
+    --card-glow: 210 40% 70%;
 
     --sidebar-background: 0 0% 98%;
 
@@ -59,8 +63,9 @@ All colors MUST be HSL.
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
 
-    --card: 222.2 84% 4.9%;
+    --card: 217.2 32.6% 12%;
     --card-foreground: 210 40% 98%;
+    --card-hover: 217.2 32.6% 15%;
 
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
@@ -83,6 +88,9 @@ All colors MUST be HSL.
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
+    
+    --card-shadow: 210 40% 98%;
+    --card-glow: 217.2 91.2% 59.8%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -101,5 +109,17 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .card-shine {
+    @apply transition-all duration-300 ease-in-out;
+    @apply hover:shadow-lg hover:scale-[1.02];
+    box-shadow: 0 4px 6px -1px hsl(var(--card-shadow) / 0.1), 0 2px 4px -1px hsl(var(--card-shadow) / 0.06);
+  }
+  
+  .card-shine:hover {
+    box-shadow: 0 20px 25px -5px hsl(var(--card-glow) / 0.2), 0 10px 10px -5px hsl(var(--card-glow) / 0.1);
   }
 }
