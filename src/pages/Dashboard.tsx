@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { LogOut, Users, FileText, CheckCircle, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 export default function Dashboard() {
   const { profile, signOut } = useAuth();
@@ -77,23 +78,24 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-card shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div>
-              <h1 className="text-xl font-semibold text-gray-900">
+              <h1 className="text-xl font-semibold">
                 O-Level Report Card System
               </h1>
             </div>
             <div className="flex items-center space-x-4">
               <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">{profile?.full_name}</p>
+                <p className="text-sm font-medium">{profile?.full_name}</p>
                 <Badge className={getRoleColor(profile?.role || '')}>
                   {profile?.role?.toUpperCase()}
                 </Badge>
               </div>
+              <ThemeToggle />
               <Button variant="outline" size="sm" onClick={signOut}>
                 <LogOut className="w-4 h-4 mr-2" />
                 Sign Out
@@ -106,10 +108,10 @@ export default function Dashboard() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <h2 className="text-2xl font-bold mb-2">
             Welcome back, {profile?.full_name}!
           </h2>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             {profile?.role === 'admin' 
               ? 'Manage your school\'s report card system from this dashboard.'
               : 'Submit marks and manage your subject submissions.'
@@ -138,30 +140,30 @@ export default function Dashboard() {
 
         {/* Quick Stats */}
         <div className="mt-12">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Overview</h3>
+          <h3 className="text-lg font-semibold mb-4">Quick Overview</h3>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card>
               <CardContent className="p-4">
-                <div className="text-2xl font-bold text-blue-600">0</div>
-                <div className="text-sm text-gray-600">Pending Submissions</div>
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">0</div>
+                <div className="text-sm text-muted-foreground">Pending Submissions</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <div className="text-2xl font-bold text-green-600">0</div>
-                <div className="text-sm text-gray-600">Approved Submissions</div>
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">0</div>
+                <div className="text-sm text-muted-foreground">Approved Submissions</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <div className="text-2xl font-bold text-purple-600">0</div>
-                <div className="text-sm text-gray-600">Generated Reports</div>
+                <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">0</div>
+                <div className="text-sm text-muted-foreground">Generated Reports</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <div className="text-2xl font-bold text-orange-600">0</div>
-                <div className="text-sm text-gray-600">Total Students</div>
+                <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">0</div>
+                <div className="text-sm text-muted-foreground">Total Students</div>
               </CardContent>
             </Card>
           </div>
