@@ -486,7 +486,8 @@ export default function TeacherManagement() {
                     <div className="space-y-3">
                       {assignment.classSlots.map((slot, slotIndex) => {
                         const usedClasses = getUsedClasses(index, slotIndex);
-                        const availableClasses = classes.filter(cls => !usedClasses.has(cls.name) || cls.name === slot.className);
+                        const uniqueClassNames = [...new Set(classes.map(cls => cls.name))];
+                        const availableClassNames = uniqueClassNames.filter(name => !usedClasses.has(name) || name === slot.className);
                         const selectedClass = classes.find(cls => cls.name === slot.className);
                         const availableStreamsForClass = selectedClass ? 
                           [...new Set(classes.filter(cls => cls.name === selectedClass.name).map(cls => cls.stream))] : 
@@ -507,9 +508,9 @@ export default function TeacherManagement() {
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="none">None</SelectItem>
-                                  {availableClasses.map((cls) => (
-                                    <SelectItem key={cls.name} value={cls.name}>
-                                      {cls.name}
+                                  {availableClassNames.map((className) => (
+                                    <SelectItem key={className} value={className}>
+                                      {className}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
