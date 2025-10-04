@@ -45,9 +45,11 @@ export default function GenerateReports() {
   const [selectedStudent, setSelectedStudent] = useState('');
   const [templateId, setTemplateId] = useState('1');
   const [generationType, setGenerationType] = useState<'individual' | 'class' | 'stream'>('individual');
+  const [recentReports, setRecentReports] = useState<any[]>([]);
 
   useEffect(() => {
     fetchSchools();
+    fetchRecentReports();
   }, []);
 
   useEffect(() => {
@@ -141,6 +143,33 @@ export default function GenerateReports() {
     }
   };
 
+  const fetchRecentReports = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('report_cards')
+        .select(`
+          *,
+          students (
+            full_name,
+            student_number
+          ),
+          classes (
+            name,
+            stream,
+            academic_year,
+            term
+          )
+        `)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+      setRecentReports(data || []);
+    } catch (error: any) {
+      console.error('Error fetching recent reports:', error);
+    }
+  };
+
   const handleGenerate = async () => {
     if (!selectedClass) {
       toast({
@@ -197,8 +226,9 @@ export default function GenerateReports() {
         description: `Started generating ${targetStudents.length} report card${targetStudents.length > 1 ? 's' : ''}.`
       });
 
-      // Reset form
+      // Reset form and refresh recent reports
       setSelectedStudent('');
+      fetchRecentReports();
       
     } catch (error: any) {
       console.error('Report generation error:', error);
@@ -437,13 +467,55 @@ export default function GenerateReports() {
         {/* Recent Generations */}
         <Card className="mt-8">
           <CardHeader>
-            <CardTitle>Recent Generations</CardTitle>
+            <CardTitle className="flex items-center justify-between">
+              <span>Recent Generations</span>
+              {recentReports.length > 0 && (
+                <Link to="/admin/reports">
+                  <Button variant="outline" size="sm">
+                    View All
+                  </Button>
+                </Link>
+              )}
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8 text-gray-500">
-              <p>No recent report card generations found.</p>
-              <p className="text-sm">Generated report cards will appear here.</p>
-            </div>
+            {recentReports.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <p>No recent report card generations found.</p>
+                <p className="text-sm">Generated report cards will appear here.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {recentReports.map((report) => (
+                  <div
+                    key={report.id}
+                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900">
+                        {report.students.full_name}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        {report.classes.name} {report.classes.stream} - {report.classes.term} {report.classes.academic_year}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <p className="text-sm font-medium text-gray-900">
+                          {report.overall_average?.toFixed(1) || 'N/A'}%
+                        </p>
+                        <Badge variant="outline" className="text-xs">
+                          {report.overall_grade || 'N/A'}
+                        </Badge>
+                      </div>
+                      <Badge className={report.status === 'published' ? 'bg-green-500' : 'bg-yellow-500'}>
+                        {report.status}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </main>
