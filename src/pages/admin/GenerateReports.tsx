@@ -201,9 +201,10 @@ export default function GenerateReports() {
       setSelectedStudent('');
       
     } catch (error: any) {
+      console.error('Report generation error:', error);
       toast({
         title: "Generation Failed",
-        description: error.message,
+        description: error.message || "Failed to send a request to the Edge Function. Please try again.",
         variant: "destructive"
       });
     } finally {

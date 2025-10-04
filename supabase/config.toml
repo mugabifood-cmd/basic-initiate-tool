@@ -1,1 +1,4 @@
 project_id = "ivqgmbhadlqgsilekknv"
+
+[functions.generate-report-cards]
+verify_jwt = true
