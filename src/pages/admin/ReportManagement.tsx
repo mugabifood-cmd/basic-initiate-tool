@@ -4,11 +4,13 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ArrowLeft, Eye, Edit, Trash2, Printer, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import ReportCardPreview from '@/components/ReportCardPreview';
 
 interface ReportCard {
   id: string;
@@ -35,6 +37,8 @@ export default function ReportManagement() {
   const [reportCards, setReportCards] = useState<ReportCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchReportCards();
@@ -101,11 +105,8 @@ export default function ReportManagement() {
   };
 
   const handlePreview = (reportCard: ReportCard) => {
-    // TODO: Implement preview modal
-    toast({
-      title: "Preview",
-      description: "Preview functionality coming soon"
-    });
+    setSelectedReportId(reportCard.id);
+    setPreviewOpen(true);
   };
 
   const handleEdit = (reportCard: ReportCard) => {
@@ -291,6 +292,16 @@ export default function ReportManagement() {
           </CardContent>
         </Card>
       </main>
+
+      {/* Preview Dialog */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Report Card Preview</DialogTitle>
+          </DialogHeader>
+          {selectedReportId && <ReportCardPreview reportId={selectedReportId} />}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
