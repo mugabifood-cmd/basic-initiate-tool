@@ -11,8 +11,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { Plus, Edit, Trash2, ArrowLeft } from 'lucide-react';
+import { Plus, Edit, Trash2, ArrowLeft, Upload, Image as ImageIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface School {
   id: string;
@@ -23,6 +24,7 @@ interface School {
   email: string;
   website: string;
   motto: string;
+  logo_url?: string | null;
 }
 
 interface Class {
@@ -45,6 +47,7 @@ interface Student {
   gender: string;
   house: string;
   age: number;
+  photo_url?: string | null;
   class_students?: {
     classes: {
       id: string;
@@ -80,6 +83,11 @@ export default function SchoolManagement() {
   const [subjectForm, setSubjectForm] = useState({
     school_id: '', code: '', name: ''
   });
+
+  // File upload states
+  const [schoolLogoFile, setSchoolLogoFile] = useState<File | null>(null);
+  const [studentPhotoFile, setStudentPhotoFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   // Edit and delete states
   const [editingSchool, setEditingSchool] = useState<School | null>(null);
@@ -149,17 +157,73 @@ export default function SchoolManagement() {
     }
   };
 
+  const uploadSchoolLogo = async (schoolId: string): Promise<string | null> => {
+    if (!schoolLogoFile) return null;
+
+    const fileExt = schoolLogoFile.name.split('.').pop();
+    const fileName = `${schoolId}-${Date.now()}.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('school-logos')
+      .upload(filePath, schoolLogoFile, { upsert: true });
+
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('school-logos')
+      .getPublicUrl(filePath);
+
+    return publicUrl;
+  };
+
+  const uploadStudentPhoto = async (studentId: string): Promise<string | null> => {
+    if (!studentPhotoFile) return null;
+
+    const fileExt = studentPhotoFile.name.split('.').pop();
+    const fileName = `${studentId}-${Date.now()}.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('student-photos')
+      .upload(filePath, studentPhotoFile, { upsert: true });
+
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('student-photos')
+      .getPublicUrl(filePath);
+
+    return publicUrl;
+  };
+
   const handleCreateSchool = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const { error } = await supabase
+      setUploading(true);
+      
+      const { data: schoolData, error } = await supabase
         .from('schools')
-        .insert([schoolForm]);
+        .insert([schoolForm])
+        .select()
+        .single();
 
       if (error) throw error;
 
+      // Upload logo if provided
+      if (schoolLogoFile && schoolData) {
+        const logoUrl = await uploadSchoolLogo(schoolData.id);
+        if (logoUrl) {
+          await supabase
+            .from('schools')
+            .update({ logo_url: logoUrl })
+            .eq('id', schoolData.id);
+        }
+      }
+
       toast({ title: "School created successfully" });
       setSchoolForm({ name: '', location: '', po_box: '', telephone: '', email: '', website: '', motto: '' });
+      setSchoolLogoFile(null);
       setIsCreateDialogOpen(false);
       fetchData();
     } catch (error: any) {
@@ -168,6 +232,8 @@ export default function SchoolManagement() {
         description: error.message,
         variant: "destructive"
       });
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -196,6 +262,8 @@ export default function SchoolManagement() {
   const handleCreateStudent = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      setUploading(true);
+      
       // Create student
       const { data: studentData, error: studentError } = await supabase
         .from('students')
@@ -212,6 +280,17 @@ export default function SchoolManagement() {
 
       if (studentError) throw studentError;
 
+      // Upload photo if provided
+      if (studentPhotoFile && studentData) {
+        const photoUrl = await uploadStudentPhoto(studentData.id);
+        if (photoUrl) {
+          await supabase
+            .from('students')
+            .update({ photo_url: photoUrl })
+            .eq('id', studentData.id);
+        }
+      }
+
       // Link student to class
       if (studentForm.class_id && studentData) {
         const { error: classStudentError } = await supabase
@@ -226,6 +305,7 @@ export default function SchoolManagement() {
 
       toast({ title: "Student created successfully" });
       setStudentForm({ school_id: '', student_number: '', full_name: '', gender: 'MALE', house: '', age: 16, class_id: '' });
+      setStudentPhotoFile(null);
       setIsCreateDialogOpen(false);
       fetchData();
     } catch (error: any) {
@@ -234,6 +314,8 @@ export default function SchoolManagement() {
         description: error.message,
         variant: "destructive"
       });
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -265,15 +347,24 @@ export default function SchoolManagement() {
     if (!editingSchool) return;
 
     try {
+      setUploading(true);
+      
+      // Upload new logo if provided
+      let logoUrl = editingSchool.logo_url;
+      if (schoolLogoFile) {
+        logoUrl = await uploadSchoolLogo(editingSchool.id);
+      }
+
       const { error } = await supabase
         .from('schools')
-        .update(schoolForm)
+        .update({ ...schoolForm, logo_url: logoUrl })
         .eq('id', editingSchool.id);
 
       if (error) throw error;
 
       toast({ title: "School updated successfully" });
       setEditingSchool(null);
+      setSchoolLogoFile(null);
       setIsEditDialogOpen(false);
       fetchData();
     } catch (error: any) {
@@ -282,6 +373,8 @@ export default function SchoolManagement() {
         description: error.message,
         variant: "destructive"
       });
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -315,6 +408,14 @@ export default function SchoolManagement() {
     if (!editingStudent) return;
 
     try {
+      setUploading(true);
+      
+      // Upload new photo if provided
+      let photoUrl = editingStudent.photo_url;
+      if (studentPhotoFile) {
+        photoUrl = await uploadStudentPhoto(editingStudent.id);
+      }
+
       // Update student
       const { error: studentError } = await supabase
         .from('students')
@@ -323,7 +424,8 @@ export default function SchoolManagement() {
           full_name: studentForm.full_name,
           gender: studentForm.gender,
           house: studentForm.house,
-          age: Number(studentForm.age)
+          age: Number(studentForm.age),
+          photo_url: photoUrl
         })
         .eq('id', editingStudent.id);
 
@@ -350,6 +452,7 @@ export default function SchoolManagement() {
 
       toast({ title: "Student updated successfully" });
       setEditingStudent(null);
+      setStudentPhotoFile(null);
       setIsEditDialogOpen(false);
       fetchData();
     } catch (error: any) {
@@ -358,6 +461,8 @@ export default function SchoolManagement() {
         description: error.message,
         variant: "destructive"
       });
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -590,7 +695,28 @@ export default function SchoolManagement() {
                           onChange={(e) => setSchoolForm({ ...schoolForm, motto: e.target.value })}
                         />
                       </div>
-                      <Button type="submit" className="w-full">Create School</Button>
+                      <div>
+                        <Label htmlFor="school-logo">School Logo</Label>
+                        <div className="flex items-center gap-4">
+                          <Input
+                            id="school-logo"
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,image/jpg"
+                            onChange={(e) => setSchoolLogoFile(e.target.files?.[0] || null)}
+                            className="flex-1"
+                          />
+                          {schoolLogoFile && (
+                            <Badge variant="secondary" className="flex items-center gap-1">
+                              <ImageIcon className="w-3 h-3" />
+                              Selected
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">Max size: 5MB. Formats: JPG, PNG, WEBP</p>
+                      </div>
+                      <Button type="submit" className="w-full" disabled={uploading}>
+                        {uploading ? 'Creating...' : 'Create School'}
+                      </Button>
                     </form>
                   </DialogContent>
                 </Dialog>
@@ -667,7 +793,39 @@ export default function SchoolManagement() {
                           onChange={(e) => setSchoolForm({ ...schoolForm, motto: e.target.value })}
                         />
                       </div>
-                      <Button type="submit" className="w-full">Update School</Button>
+                      <div>
+                        <Label htmlFor="edit-school-logo">School Logo</Label>
+                        <div className="space-y-2">
+                          {editingSchool?.logo_url && (
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-12 w-12">
+                                <AvatarImage src={editingSchool.logo_url} alt="Current logo" />
+                                <AvatarFallback>Logo</AvatarFallback>
+                              </Avatar>
+                              <span className="text-xs text-muted-foreground">Current logo</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-4">
+                            <Input
+                              id="edit-school-logo"
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp,image/jpg"
+                              onChange={(e) => setSchoolLogoFile(e.target.files?.[0] || null)}
+                              className="flex-1"
+                            />
+                            {schoolLogoFile && (
+                              <Badge variant="secondary" className="flex items-center gap-1">
+                                <Upload className="w-3 h-3" />
+                                New file
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">Max size: 5MB. Formats: JPG, PNG, WEBP</p>
+                        </div>
+                      </div>
+                      <Button type="submit" className="w-full" disabled={uploading}>
+                        {uploading ? 'Updating...' : 'Update School'}
+                      </Button>
                     </form>
                   </DialogContent>
                 </Dialog>
@@ -1016,7 +1174,28 @@ export default function SchoolManagement() {
                           />
                         </div>
                       </div>
-                      <Button type="submit" className="w-full">Create Student</Button>
+                      <div>
+                        <Label htmlFor="student-photo">Student Photo</Label>
+                        <div className="flex items-center gap-4">
+                          <Input
+                            id="student-photo"
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,image/jpg"
+                            onChange={(e) => setStudentPhotoFile(e.target.files?.[0] || null)}
+                            className="flex-1"
+                          />
+                          {studentPhotoFile && (
+                            <Badge variant="secondary" className="flex items-center gap-1">
+                              <ImageIcon className="w-3 h-3" />
+                              Selected
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">Max size: 5MB. Formats: JPG, PNG, WEBP</p>
+                      </div>
+                      <Button type="submit" className="w-full" disabled={uploading}>
+                        {uploading ? 'Creating...' : 'Create Student'}
+                      </Button>
                     </form>
                   </DialogContent>
                 </Dialog>
@@ -1099,7 +1278,39 @@ export default function SchoolManagement() {
                           />
                         </div>
                       </div>
-                      <Button type="submit" className="w-full">Update Student</Button>
+                      <div>
+                        <Label htmlFor="edit-student-photo">Student Photo</Label>
+                        <div className="space-y-2">
+                          {editingStudent?.photo_url && (
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-12 w-12">
+                                <AvatarImage src={editingStudent.photo_url} alt="Current photo" />
+                                <AvatarFallback>{editingStudent.full_name.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                              <span className="text-xs text-muted-foreground">Current photo</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-4">
+                            <Input
+                              id="edit-student-photo"
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp,image/jpg"
+                              onChange={(e) => setStudentPhotoFile(e.target.files?.[0] || null)}
+                              className="flex-1"
+                            />
+                            {studentPhotoFile && (
+                              <Badge variant="secondary" className="flex items-center gap-1">
+                                <Upload className="w-3 h-3" />
+                                New file
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">Max size: 5MB. Formats: JPG, PNG, WEBP</p>
+                        </div>
+                      </div>
+                      <Button type="submit" className="w-full" disabled={uploading}>
+                        {uploading ? 'Updating...' : 'Update Student'}
+                      </Button>
                     </form>
                   </DialogContent>
                 </Dialog>
@@ -1108,6 +1319,7 @@ export default function SchoolManagement() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>Photo</TableHead>
                       <TableHead>Student Number</TableHead>
                       <TableHead>Full Name</TableHead>
                       <TableHead>Class</TableHead>
@@ -1120,6 +1332,12 @@ export default function SchoolManagement() {
                   <TableBody>
                     {students.map((student) => (
                       <TableRow key={student.id}>
+                        <TableCell>
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={student.photo_url || undefined} alt={student.full_name} />
+                            <AvatarFallback>{student.full_name.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                        </TableCell>
                         <TableCell className="font-medium">{student.student_number}</TableCell>
                         <TableCell>{student.full_name}</TableCell>
                         <TableCell>

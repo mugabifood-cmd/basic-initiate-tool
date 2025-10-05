@@ -43,19 +43,30 @@ export default function ReportCardPreview({ reportId }: ReportCardPreviewProps) 
             student_number,
             gender,
             house,
-            photo_url
+            photo_url,
+            school_id
           ),
           classes (
             name,
             stream,
             academic_year,
-            term
+            term,
+            school_id
           )
         `)
         .eq('id', reportId)
         .single();
 
       if (reportError) throw reportError;
+
+      // Fetch school information
+      const { data: school, error: schoolError } = await supabase
+        .from('schools')
+        .select('*')
+        .eq('id', report.classes.school_id)
+        .single();
+
+      if (schoolError) throw schoolError;
 
       // Fetch subject submissions with teacher info
       const { data: submissions, error: submissionsError } = await supabase
@@ -92,7 +103,7 @@ export default function ReportCardPreview({ reportId }: ReportCardPreviewProps) 
         teacher_initials: sub.profiles?.initials || 'N/A'
       }));
 
-      setReportData(report);
+      setReportData({ ...report, school });
       setSubjectGrades(grades);
     } catch (error: any) {
       console.error('Error fetching report data:', error);
@@ -136,18 +147,27 @@ export default function ReportCardPreview({ reportId }: ReportCardPreviewProps) 
         <div className="flex items-start justify-between p-3">
           {/* School Logo - Left */}
           <div className="w-20 h-20 flex-shrink-0">
-            <div className="w-full h-full bg-gray-100 border border-gray-300 flex items-center justify-center text-xs">
-              Logo
-            </div>
+            {reportData.school?.logo_url ? (
+              <img src={reportData.school.logo_url} alt="School Logo" className="w-full h-full object-contain border border-gray-300" />
+            ) : (
+              <div className="w-full h-full bg-gray-100 border border-gray-300 flex items-center justify-center text-xs">
+                Logo
+              </div>
+            )}
           </div>
 
           {/* School Info - Center */}
           <div className="flex-1 text-center px-4">
-            <h1 className="text-xl font-bold text-blue-700 uppercase mb-1">School Name</h1>
-            <p className="text-xs mb-1">Location: School Address</p>
-            <p className="text-xs mb-1">P.O BOX: Contact Details</p>
-            <p className="text-xs mb-1">TEL: Phone Numbers</p>
-            <p className="text-xs text-blue-600 mb-1">Email: school@email.com | Website: www.school.com</p>
+            <h1 className="text-xl font-bold text-blue-700 uppercase mb-1">{reportData.school?.name || 'School Name'}</h1>
+            {reportData.school?.motto && <p className="text-xs italic text-blue-600 mb-1">"{reportData.school.motto}"</p>}
+            <p className="text-xs mb-1">Location: {reportData.school?.location || 'School Address'}</p>
+            <p className="text-xs mb-1">P.O BOX: {reportData.school?.po_box || 'Contact Details'}</p>
+            <p className="text-xs mb-1">TEL: {reportData.school?.telephone || 'Phone Numbers'}</p>
+            <p className="text-xs text-blue-600 mb-1">
+              {reportData.school?.email && `Email: ${reportData.school.email}`}
+              {reportData.school?.email && reportData.school?.website && ' | '}
+              {reportData.school?.website && `Website: ${reportData.school.website}`}
+            </p>
             <h2 className="text-lg font-bold text-blue-700 mt-2">TERM {reportData.classes.term?.toUpperCase()} REPORT CARD {reportData.classes.academic_year}</h2>
           </div>
 
