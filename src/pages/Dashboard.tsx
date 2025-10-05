@@ -5,9 +5,33 @@ import { Badge } from '@/components/ui/badge';
 import { LogOut, Users, FileText, CheckCircle, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Dashboard() {
   const { profile, signOut } = useAuth();
+
+  // Fetch real-time stats
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ['dashboard-stats'],
+    queryFn: async () => {
+      const [pendingResult, approvedResult, reportsResult, studentsResult] = await Promise.all([
+        supabase.from('subject_submissions').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+        supabase.from('subject_submissions').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
+        supabase.from('report_cards').select('id', { count: 'exact', head: true }),
+        supabase.from('students').select('id', { count: 'exact', head: true })
+      ]);
+
+      return {
+        pending: pendingResult.count || 0,
+        approved: approvedResult.count || 0,
+        reports: reportsResult.count || 0,
+        students: studentsResult.count || 0
+      };
+    },
+    refetchInterval: 5000 // Refresh every 5 seconds
+  });
 
   const getRoleColor = (role: string) => {
     switch (role) {
@@ -144,25 +168,49 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card>
               <CardContent className="p-4">
-                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">0</div>
+                {statsLoading ? (
+                  <Skeleton className="h-8 w-16 mb-2" />
+                ) : (
+                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                    {stats?.pending || 0}
+                  </div>
+                )}
                 <div className="text-sm text-muted-foreground">Pending Submissions</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">0</div>
+                {statsLoading ? (
+                  <Skeleton className="h-8 w-16 mb-2" />
+                ) : (
+                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    {stats?.approved || 0}
+                  </div>
+                )}
                 <div className="text-sm text-muted-foreground">Approved Submissions</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">0</div>
+                {statsLoading ? (
+                  <Skeleton className="h-8 w-16 mb-2" />
+                ) : (
+                  <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                    {stats?.reports || 0}
+                  </div>
+                )}
                 <div className="text-sm text-muted-foreground">Generated Reports</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">0</div>
+                {statsLoading ? (
+                  <Skeleton className="h-8 w-16 mb-2" />
+                ) : (
+                  <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                    {stats?.students || 0}
+                  </div>
+                )}
                 <div className="text-sm text-muted-foreground">Total Students</div>
               </CardContent>
             </Card>
