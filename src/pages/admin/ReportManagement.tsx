@@ -4,7 +4,11 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Eye, Edit, Trash2, Printer, FileText, Download, Share2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,6 +25,14 @@ interface ReportCard {
   overall_grade: string;
   generated_at: string;
   created_at: string;
+  class_teacher_comment?: string;
+  headteacher_comment?: string;
+  overall_achievement?: string;
+  term_ended_on?: string;
+  next_term_begins?: string;
+  fees_balance?: number;
+  fees_next_term?: number;
+  other_requirements?: string;
   students: {
     full_name: string;
     student_number: string;
@@ -39,6 +51,9 @@ export default function ReportManagement() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingReport, setEditingReport] = useState<ReportCard | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchReportCards();
@@ -110,11 +125,48 @@ export default function ReportManagement() {
   };
 
   const handleEdit = (reportCard: ReportCard) => {
-    // TODO: Implement edit modal
-    toast({
-      title: "Edit",
-      description: "Edit functionality coming soon"
-    });
+    setEditingReport(reportCard);
+    setEditOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingReport) return;
+
+    try {
+      setSaving(true);
+      const { error } = await supabase
+        .from('report_cards')
+        .update({
+          class_teacher_comment: editingReport.class_teacher_comment,
+          headteacher_comment: editingReport.headteacher_comment,
+          overall_achievement: editingReport.overall_achievement,
+          term_ended_on: editingReport.term_ended_on,
+          next_term_begins: editingReport.next_term_begins,
+          fees_balance: editingReport.fees_balance,
+          fees_next_term: editingReport.fees_next_term,
+          other_requirements: editingReport.other_requirements,
+          status: editingReport.status
+        })
+        .eq('id', editingReport.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Report card updated",
+        description: "Changes have been saved successfully"
+      });
+
+      setEditOpen(false);
+      fetchReportCards();
+    } catch (error: any) {
+      toast({
+        title: "Error saving changes",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handlePrint = (reportCard: ReportCard) => {
@@ -403,6 +455,144 @@ export default function ReportManagement() {
             <DialogTitle>Report Card Preview</DialogTitle>
           </DialogHeader>
           {selectedReportId && <ReportCardPreview reportId={selectedReportId} />}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Report Card</DialogTitle>
+          </DialogHeader>
+          {editingReport && (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Student</Label>
+                <Input 
+                  value={`${editingReport.students.full_name} (${editingReport.students.student_number})`} 
+                  disabled 
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Class</Label>
+                <Input 
+                  value={`${editingReport.classes.name} ${editingReport.classes.stream}`} 
+                  disabled 
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select 
+                  value={editingReport.status} 
+                  onValueChange={(value) => setEditingReport({...editingReport, status: value})}
+                >
+                  <SelectTrigger id="status">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="published">Published</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="term_ended">Term Ended On</Label>
+                  <Input 
+                    id="term_ended"
+                    type="date" 
+                    value={editingReport.term_ended_on || ''} 
+                    onChange={(e) => setEditingReport({...editingReport, term_ended_on: e.target.value})}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="next_term">Next Term Begins</Label>
+                  <Input 
+                    id="next_term"
+                    type="date" 
+                    value={editingReport.next_term_begins || ''} 
+                    onChange={(e) => setEditingReport({...editingReport, next_term_begins: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="fees_balance">Fees Balance</Label>
+                  <Input 
+                    id="fees_balance"
+                    type="number" 
+                    step="0.01"
+                    value={editingReport.fees_balance || ''} 
+                    onChange={(e) => setEditingReport({...editingReport, fees_balance: parseFloat(e.target.value)})}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="fees_next_term">Fees Next Term</Label>
+                  <Input 
+                    id="fees_next_term"
+                    type="number" 
+                    step="0.01"
+                    value={editingReport.fees_next_term || ''} 
+                    onChange={(e) => setEditingReport({...editingReport, fees_next_term: parseFloat(e.target.value)})}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="class_teacher_comment">Class Teacher's Comment</Label>
+                <Textarea 
+                  id="class_teacher_comment"
+                  value={editingReport.class_teacher_comment || ''} 
+                  onChange={(e) => setEditingReport({...editingReport, class_teacher_comment: e.target.value})}
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="headteacher_comment">Head Teacher's Comment</Label>
+                <Textarea 
+                  id="headteacher_comment"
+                  value={editingReport.headteacher_comment || ''} 
+                  onChange={(e) => setEditingReport({...editingReport, headteacher_comment: e.target.value})}
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="overall_achievement">Overall Achievement</Label>
+                <Textarea 
+                  id="overall_achievement"
+                  value={editingReport.overall_achievement || ''} 
+                  onChange={(e) => setEditingReport({...editingReport, overall_achievement: e.target.value})}
+                  rows={2}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="other_requirements">Other Requirements</Label>
+                <Textarea 
+                  id="other_requirements"
+                  value={editingReport.other_requirements || ''} 
+                  onChange={(e) => setEditingReport({...editingReport, other_requirements: e.target.value})}
+                  rows={2}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveEdit} disabled={saving}>
+              {saving ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
