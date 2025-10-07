@@ -141,7 +141,7 @@ export default function ReportCardPreview({ reportId }: ReportCardPreviewProps) 
   }
 
   return (
-    <div id="report-card-preview" className="bg-white text-black p-6 max-w-5xl mx-auto" style={{ fontFamily: 'Arial, sans-serif', fontSize: '11px' }}>
+    <div id="report-card-preview" className="bg-white text-black p-6 mx-auto" style={{ fontFamily: 'Arial, sans-serif', fontSize: '10px', maxWidth: '210mm', width: '100%' }}>
       {/* Header with Logo and Student Photo */}
       <div className="border border-black mb-2">
         <div className="flex items-start justify-between p-3">
