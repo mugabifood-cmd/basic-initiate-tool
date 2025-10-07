@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -169,64 +169,90 @@ export default function ReportManagement() {
     }
   };
 
-  const handlePrint = (reportCard: ReportCard) => {
-    // TODO: Implement print functionality
-    toast({
-      title: "Print",
-      description: "Print functionality coming soon"
-    });
-  };
-
-  const handleDownload = async (reportCard: ReportCard) => {
+  const handlePrint = async (reportCard: ReportCard) => {
     try {
       setSelectedReportId(reportCard.id);
       setPreviewOpen(true);
       
       // Wait for dialog to render
-      setTimeout(async () => {
-        const element = document.getElementById('report-card-preview');
-        if (!element) {
-          toast({
-            title: "Error",
-            description: "Could not find report card to download",
-            variant: "destructive"
-          });
-          return;
-        }
-
-        const html2canvas = (await import('html2canvas')).default;
-        const jsPDF = (await import('jspdf')).default;
-
-        const canvas = await html2canvas(element, {
-          scale: 2,
-          useCORS: true,
-          logging: false
-        });
-
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({
-          orientation: 'portrait',
-          unit: 'mm',
-          format: 'a4'
-        });
-
-        const imgWidth = 210;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        
-        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-        pdf.save(`${reportCard.students.full_name}_Report_Card.pdf`);
-
-        setPreviewOpen(false);
-        
-        toast({
-          title: "Download complete",
-          description: "Report card has been downloaded successfully"
-        });
+      setTimeout(() => {
+        window.print();
       }, 500);
     } catch (error: any) {
       toast({
+        title: "Error printing",
+        description: error.message || "Could not print report card",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDownload = async (reportCard: ReportCard) => {
+    try {
+      toast({
+        title: "Preparing download",
+        description: "Please wait while we generate the PDF..."
+      });
+
+      setSelectedReportId(reportCard.id);
+      setPreviewOpen(true);
+      
+      // Wait for dialog to render
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const element = document.getElementById('report-card-preview');
+      if (!element) {
+        throw new Error("Could not find report card preview");
+      }
+
+      const html2canvas = (await import('html2canvas')).default;
+      const jsPDF = (await import('jspdf')).default;
+
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const imgWidth = 210;
+      const pageHeight = 297;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+      
+      const fileName = `${reportCard.students.full_name.replace(/\s+/g, '_')}_Report_Card.pdf`;
+      pdf.save(fileName);
+
+      setPreviewOpen(false);
+      
+      toast({
+        title: "Download complete",
+        description: "Report card has been downloaded successfully"
+      });
+    } catch (error: any) {
+      console.error('Download error:', error);
+      setPreviewOpen(false);
+      toast({
         title: "Error downloading report",
-        description: error.message,
+        description: error.message || "Failed to generate PDF",
         variant: "destructive"
       });
     }
@@ -235,10 +261,11 @@ export default function ReportManagement() {
   const handleShare = async (reportCard: ReportCard) => {
     try {
       if (!navigator.share) {
+        // Fallback: copy link to clipboard
+        await navigator.clipboard.writeText(window.location.href);
         toast({
-          title: "Share not supported",
-          description: "Your browser doesn't support the share feature",
-          variant: "destructive"
+          title: "Link copied",
+          description: "Report card link has been copied to clipboard"
         });
         return;
       }
@@ -254,10 +281,22 @@ export default function ReportManagement() {
         description: "Report card link has been shared"
       });
     } catch (error: any) {
-      if (error.name !== 'AbortError') {
+      if (error.name === 'AbortError') {
+        // User cancelled the share, don't show error
+        return;
+      }
+      
+      // Fallback: copy to clipboard
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        toast({
+          title: "Link copied",
+          description: "Report card link has been copied to clipboard instead"
+        });
+      } catch (clipboardError) {
         toast({
           title: "Error sharing",
-          description: error.message,
+          description: "Could not share or copy link",
           variant: "destructive"
         });
       }
@@ -450,9 +489,12 @@ export default function ReportManagement() {
 
       {/* Preview Dialog */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto print:max-w-full">
           <DialogHeader>
             <DialogTitle>Report Card Preview</DialogTitle>
+            <DialogDescription>
+              Preview of the student report card
+            </DialogDescription>
           </DialogHeader>
           {selectedReportId && <ReportCardPreview reportId={selectedReportId} />}
         </DialogContent>
@@ -463,6 +505,9 @@ export default function ReportManagement() {
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Report Card</DialogTitle>
+            <DialogDescription>
+              Update report card details, comments, and status
+            </DialogDescription>
           </DialogHeader>
           {editingReport && (
             <div className="space-y-4 py-4">
