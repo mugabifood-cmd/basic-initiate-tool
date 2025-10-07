@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ArrowLeft, Eye, Edit, Trash2, Printer, FileText } from 'lucide-react';
+import { ArrowLeft, Eye, Edit, Trash2, Printer, FileText, Download, Share2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -123,6 +123,93 @@ export default function ReportManagement() {
       title: "Print",
       description: "Print functionality coming soon"
     });
+  };
+
+  const handleDownload = async (reportCard: ReportCard) => {
+    try {
+      setSelectedReportId(reportCard.id);
+      setPreviewOpen(true);
+      
+      // Wait for dialog to render
+      setTimeout(async () => {
+        const element = document.getElementById('report-card-preview');
+        if (!element) {
+          toast({
+            title: "Error",
+            description: "Could not find report card to download",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        const html2canvas = (await import('html2canvas')).default;
+        const jsPDF = (await import('jspdf')).default;
+
+        const canvas = await html2canvas(element, {
+          scale: 2,
+          useCORS: true,
+          logging: false
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'a4'
+        });
+
+        const imgWidth = 210;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+        pdf.save(`${reportCard.students.full_name}_Report_Card.pdf`);
+
+        setPreviewOpen(false);
+        
+        toast({
+          title: "Download complete",
+          description: "Report card has been downloaded successfully"
+        });
+      }, 500);
+    } catch (error: any) {
+      toast({
+        title: "Error downloading report",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleShare = async (reportCard: ReportCard) => {
+    try {
+      if (!navigator.share) {
+        toast({
+          title: "Share not supported",
+          description: "Your browser doesn't support the share feature",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      await navigator.share({
+        title: `Report Card - ${reportCard.students.full_name}`,
+        text: `Report card for ${reportCard.students.full_name} - ${reportCard.classes.name} ${reportCard.classes.stream}`,
+        url: window.location.href
+      });
+
+      toast({
+        title: "Shared successfully",
+        description: "Report card link has been shared"
+      });
+    } catch (error: any) {
+      if (error.name !== 'AbortError') {
+        toast({
+          title: "Error sharing",
+          description: error.message,
+          variant: "destructive"
+        });
+      }
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -250,6 +337,22 @@ export default function ReportManagement() {
                               title="Print"
                             >
                               <Printer className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDownload(report)}
+                              title="Download"
+                            >
+                              <Download className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleShare(report)}
+                              title="Share"
+                            >
+                              <Share2 className="w-4 h-4" />
                             </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
