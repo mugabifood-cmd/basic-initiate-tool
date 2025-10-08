@@ -2,7 +2,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, Users, FileText, CheckCircle, Settings } from 'lucide-react';
+import { LogOut, Users, FileText, CheckCircle, Settings, MessageSquare } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { supabase } from '@/integrations/supabase/client';
@@ -79,6 +79,13 @@ export default function Dashboard() {
           icon: FileText,
           link: '/admin/reports',
           color: 'bg-orange-50 hover:bg-orange-100'
+        },
+        {
+          title: 'Report Comments Settings',
+          description: 'Configure grade-based comments for report cards',
+          icon: MessageSquare,
+          link: '/admin/comments',
+          color: 'bg-pink-50 hover:bg-pink-100'
         }
       ];
     } else {

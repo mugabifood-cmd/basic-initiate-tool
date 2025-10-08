@@ -13,6 +13,7 @@ import TeacherManagement from './pages/admin/TeacherManagement';
 import Approvals from './pages/admin/Approvals';
 import GenerateReports from './pages/admin/GenerateReports';
 import ReportManagement from './pages/admin/ReportManagement';
+import CommentSettings from './pages/admin/CommentSettings';
 import TeacherSubmissions from './pages/teacher/TeacherSubmissions';
 import MySubmissions from './pages/teacher/MySubmissions';
 
@@ -60,6 +61,11 @@ const App = () => (
                 <Route path="/admin/reports" element={
                   <ProtectedRoute roles={['admin']}>
                     <ReportManagement />
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/comments" element={
+                  <ProtectedRoute roles={['admin']}>
+                    <CommentSettings />
                   </ProtectedRoute>
                 } />
                 

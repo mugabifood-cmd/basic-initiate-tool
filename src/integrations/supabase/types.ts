@@ -91,6 +91,33 @@ export type Database = {
           },
         ]
       }
+      grade_comments: {
+        Row: {
+          class_teacher_comment: string
+          created_at: string | null
+          grade: string
+          headteacher_comment: string
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          class_teacher_comment: string
+          created_at?: string | null
+          grade: string
+          headteacher_comment: string
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          class_teacher_comment?: string
+          created_at?: string | null
+          grade?: string
+          headteacher_comment?: string
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
