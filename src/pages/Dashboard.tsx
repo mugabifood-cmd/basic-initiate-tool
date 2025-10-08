@@ -155,7 +155,7 @@ export default function Dashboard() {
                 <CardHeader>
                   <div className="flex items-center space-x-2">
                     <item.icon className="w-6 h-6 text-gray-700" />
-                    <CardTitle className="text-lg text-zinc-950">{item.title}</CardTitle>
+                    <CardTitle className="text-lg text-sky-700">{item.title}</CardTitle>
                   </div>
                   <CardDescription className="mt-2 text-orange-600">
                     {item.description}
