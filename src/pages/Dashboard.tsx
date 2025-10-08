@@ -8,21 +8,32 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { Skeleton } from '@/components/ui/skeleton';
-
 export default function Dashboard() {
-  const { profile, signOut } = useAuth();
+  const {
+    profile,
+    signOut
+  } = useAuth();
 
   // Fetch real-time stats
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const {
+    data: stats,
+    isLoading: statsLoading
+  } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: async () => {
-      const [pendingResult, approvedResult, reportsResult, studentsResult] = await Promise.all([
-        supabase.from('subject_submissions').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
-        supabase.from('subject_submissions').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
-        supabase.from('report_cards').select('id', { count: 'exact', head: true }),
-        supabase.from('students').select('id', { count: 'exact', head: true })
-      ]);
-
+      const [pendingResult, approvedResult, reportsResult, studentsResult] = await Promise.all([supabase.from('subject_submissions').select('id', {
+        count: 'exact',
+        head: true
+      }).eq('status', 'pending'), supabase.from('subject_submissions').select('id', {
+        count: 'exact',
+        head: true
+      }).eq('status', 'approved'), supabase.from('report_cards').select('id', {
+        count: 'exact',
+        head: true
+      }), supabase.from('students').select('id', {
+        count: 'exact',
+        head: true
+      })]);
       return {
         pending: pendingResult.count || 0,
         approved: approvedResult.count || 0,
@@ -32,84 +43,74 @@ export default function Dashboard() {
     },
     refetchInterval: 5000 // Refresh every 5 seconds
   });
-
   const getRoleColor = (role: string) => {
     switch (role) {
-      case 'admin': return 'bg-red-100 text-red-800';
-      case 'headteacher': return 'bg-purple-100 text-purple-800';
-      case 'teacher': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'admin':
+        return 'bg-red-100 text-red-800';
+      case 'headteacher':
+        return 'bg-purple-100 text-purple-800';
+      case 'teacher':
+        return 'bg-blue-100 text-blue-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
-
   const getMenuItems = () => {
     if (profile?.role === 'admin') {
-      return [
-        {
-          title: 'School Management',
-          description: 'Manage schools, classes, students, and subjects',
-          icon: Settings,
-          link: '/admin/schools',
-          color: 'bg-blue-50 hover:bg-blue-100'
-        },
-        {
-          title: 'Teacher Management',
-          description: 'Manage teacher assignments and responsibilities',
-          icon: Users,
-          link: '/admin/teachers',
-          color: 'bg-indigo-50 hover:bg-indigo-100'
-        },
-        {
-          title: 'Approve Submissions',
-          description: 'Review and approve teacher submissions',
-          icon: CheckCircle,
-          link: '/admin/approvals',
-          color: 'bg-green-50 hover:bg-green-100'
-        },
-        {
-          title: 'Generate Report Cards',
-          description: 'Create report cards for students',
-          icon: FileText,
-          link: '/admin/generate',
-          color: 'bg-purple-50 hover:bg-purple-100'
-        },
-        {
-          title: 'Report Card Management',
-          description: 'View, edit, and manage generated report cards',
-          icon: FileText,
-          link: '/admin/reports',
-          color: 'bg-orange-50 hover:bg-orange-100'
-        },
-        {
-          title: 'Report Comments Settings',
-          description: 'Configure grade-based comments for report cards',
-          icon: MessageSquare,
-          link: '/admin/comments',
-          color: 'bg-pink-50 hover:bg-pink-100'
-        }
-      ];
+      return [{
+        title: 'School Management',
+        description: 'Manage schools, classes, students, and subjects',
+        icon: Settings,
+        link: '/admin/schools',
+        color: 'bg-blue-50 hover:bg-blue-100'
+      }, {
+        title: 'Teacher Management',
+        description: 'Manage teacher assignments and responsibilities',
+        icon: Users,
+        link: '/admin/teachers',
+        color: 'bg-indigo-50 hover:bg-indigo-100'
+      }, {
+        title: 'Approve Submissions',
+        description: 'Review and approve teacher submissions',
+        icon: CheckCircle,
+        link: '/admin/approvals',
+        color: 'bg-green-50 hover:bg-green-100'
+      }, {
+        title: 'Generate Report Cards',
+        description: 'Create report cards for students',
+        icon: FileText,
+        link: '/admin/generate',
+        color: 'bg-purple-50 hover:bg-purple-100'
+      }, {
+        title: 'Report Card Management',
+        description: 'View, edit, and manage generated report cards',
+        icon: FileText,
+        link: '/admin/reports',
+        color: 'bg-orange-50 hover:bg-orange-100'
+      }, {
+        title: 'Report Comments Settings',
+        description: 'Configure grade-based comments for report cards',
+        icon: MessageSquare,
+        link: '/admin/comments',
+        color: 'bg-pink-50 hover:bg-pink-100'
+      }];
     } else {
-      return [
-        {
-          title: 'Submit Marks',
-          description: 'Enter marks and comments for your subjects',
-          icon: FileText,
-          link: '/teacher/submissions',
-          color: 'bg-blue-50 hover:bg-blue-100'
-        },
-        {
-          title: 'My Submissions',
-          description: 'View your submitted marks and their status',
-          icon: CheckCircle,
-          link: '/teacher/my-submissions',
-          color: 'bg-green-50 hover:bg-green-100'
-        }
-      ];
+      return [{
+        title: 'Submit Marks',
+        description: 'Enter marks and comments for your subjects',
+        icon: FileText,
+        link: '/teacher/submissions',
+        color: 'bg-blue-50 hover:bg-blue-100'
+      }, {
+        title: 'My Submissions',
+        description: 'View your submitted marks and their status',
+        icon: CheckCircle,
+        link: '/teacher/my-submissions',
+        color: 'bg-green-50 hover:bg-green-100'
+      }];
     }
   };
-
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="bg-card shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -143,30 +144,25 @@ export default function Dashboard() {
             Welcome back, {profile?.full_name}!
           </h2>
           <p className="text-muted-foreground">
-            {profile?.role === 'admin' 
-              ? 'Manage your school\'s report card system from this dashboard.'
-              : 'Submit marks and manage your subject submissions.'
-            }
+            {profile?.role === 'admin' ? 'Manage your school\'s report card system from this dashboard.' : 'Submit marks and manage your subject submissions.'}
           </p>
         </div>
 
         {/* Menu Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {getMenuItems().map((item, index) => (
-            <Link key={index} to={item.link}>
+          {getMenuItems().map((item, index) => <Link key={index} to={item.link}>
               <Card className={`cursor-pointer transition-colors ${item.color}`}>
                 <CardHeader>
                   <div className="flex items-center space-x-2">
                     <item.icon className="w-6 h-6 text-gray-700" />
-                    <CardTitle className="text-lg">{item.title}</CardTitle>
+                    <CardTitle className="text-lg text-zinc-950">{item.title}</CardTitle>
                   </div>
                   <CardDescription className="mt-2">
                     {item.description}
                   </CardDescription>
                 </CardHeader>
               </Card>
-            </Link>
-          ))}
+            </Link>)}
         </div>
 
         {/* Quick Stats */}
@@ -175,55 +171,38 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card>
               <CardContent className="p-4">
-                {statsLoading ? (
-                  <Skeleton className="h-8 w-16 mb-2" />
-                ) : (
-                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                {statsLoading ? <Skeleton className="h-8 w-16 mb-2" /> : <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                     {stats?.pending || 0}
-                  </div>
-                )}
+                  </div>}
                 <div className="text-sm text-muted-foreground">Pending Submissions</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                {statsLoading ? (
-                  <Skeleton className="h-8 w-16 mb-2" />
-                ) : (
-                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                {statsLoading ? <Skeleton className="h-8 w-16 mb-2" /> : <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                     {stats?.approved || 0}
-                  </div>
-                )}
+                  </div>}
                 <div className="text-sm text-muted-foreground">Approved Submissions</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                {statsLoading ? (
-                  <Skeleton className="h-8 w-16 mb-2" />
-                ) : (
-                  <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                {statsLoading ? <Skeleton className="h-8 w-16 mb-2" /> : <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                     {stats?.reports || 0}
-                  </div>
-                )}
+                  </div>}
                 <div className="text-sm text-muted-foreground">Generated Reports</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                {statsLoading ? (
-                  <Skeleton className="h-8 w-16 mb-2" />
-                ) : (
-                  <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                {statsLoading ? <Skeleton className="h-8 w-16 mb-2" /> : <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
                     {stats?.students || 0}
-                  </div>
-                )}
+                  </div>}
                 <div className="text-sm text-muted-foreground">Total Students</div>
               </CardContent>
             </Card>
           </div>
         </div>
       </main>
-    </div>
-  );
+    </div>;
 }
