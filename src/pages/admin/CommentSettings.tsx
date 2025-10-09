@@ -24,7 +24,7 @@ export default function CommentSettings() {
                 <TabsTrigger value="grades" className="w-full justify-start text-lime-300">
                   Grade Settings
                 </TabsTrigger>
-                <TabsTrigger value="comments" className="w-full justify-start">
+                <TabsTrigger value="comments" className="w-full justify-start text-yellow-400">
                   Report Comments
                 </TabsTrigger>
               </TabsList>
