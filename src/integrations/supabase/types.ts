@@ -91,6 +91,33 @@ export type Database = {
           },
         ]
       }
+      grade_boundaries: {
+        Row: {
+          created_at: string | null
+          grade: string
+          id: string
+          max_score: number
+          min_score: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          grade: string
+          id?: string
+          max_score: number
+          min_score: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          grade?: string
+          id?: string
+          max_score?: number
+          min_score?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       grade_comments: {
         Row: {
           class_teacher_comment: string
