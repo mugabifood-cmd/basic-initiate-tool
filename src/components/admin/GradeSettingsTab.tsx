@@ -203,7 +203,7 @@ export default function GradeSettingsTab() {
           </TableHeader>
           <TableBody>
             {boundaries.map(boundary => <TableRow key={boundary.id}>
-                <TableCell className="font-bold text-lg bg-gray-900">{boundary.grade}</TableCell>
+                <TableCell className="font-bold text-lg bg-slate-100">{boundary.grade}</TableCell>
                 <TableCell>{boundary.min_score}</TableCell>
                 <TableCell>{boundary.max_score}</TableCell>
                 <TableCell className="text-right">
