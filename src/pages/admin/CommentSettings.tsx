@@ -21,7 +21,7 @@ export default function CommentSettings() {
           <CardContent>
             <Tabs defaultValue="comments" orientation="vertical" className="flex gap-6">
               <TabsList className="flex flex-col h-fit w-48 bg-blue-700">
-                <TabsTrigger value="grades" className="w-full justify-start">
+                <TabsTrigger value="grades" className="w-full justify-start text-lime-300">
                   Grade Settings
                 </TabsTrigger>
                 <TabsTrigger value="comments" className="w-full justify-start">
