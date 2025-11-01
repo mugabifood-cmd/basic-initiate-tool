@@ -40,6 +40,9 @@ interface SubjectEntry {
   a3Score: string;
   teacherInitials: string;
   identifier: string;
+  percentage20: string;
+  percentage80: string;
+  percentage100: string;
 }
 
 type SortOrder = 'az' | 'za' | 'new-old' | 'old-new';
@@ -64,7 +67,10 @@ export default function TeacherSubmissions() {
       a2Score: '',
       a3Score: '',
       teacherInitials: '',
-      identifier: '1'
+      identifier: '1',
+      percentage20: '',
+      percentage80: '',
+      percentage100: ''
     }
   ]);
   const [isLoading, setIsLoading] = useState(false);
@@ -229,7 +235,10 @@ export default function TeacherSubmissions() {
       a2Score: '',
       a3Score: '',
       teacherInitials: '',
-      identifier: '1'
+      identifier: '1',
+      percentage20: '',
+      percentage80: '',
+      percentage100: ''
     };
     setSubjectEntries([...subjectEntries, newEntry]);
     
@@ -330,7 +339,10 @@ export default function TeacherSubmissions() {
         a2Score: '',
         a3Score: '',
         teacherInitials: '',
-        identifier: '1'
+        identifier: '1',
+        percentage20: '',
+        percentage80: '',
+        percentage100: ''
       }]);
       setSelectedClass('');
       setSelectedStudent('');
@@ -549,33 +561,39 @@ export default function TeacherSubmissions() {
                   <div className="space-y-2">
                     <Label>20% Score</Label>
                     <Input
-                      value={entry.a1Score || '0.0'}
-                      readOnly
-                      className="bg-muted"
+                      type="number"
+                      step="1"
+                      min="0"
+                      max="100"
+                      value={entry.percentage20}
+                      onChange={(e) => updateSubjectEntry(entry.id, 'percentage20', e.target.value)}
+                      placeholder="0-100"
                     />
                   </div>
 
                   <div className="space-y-2">
                     <Label>80% Score</Label>
                     <Input
-                      value={
-                        ((parseFloat(entry.a2Score) || 0) + (parseFloat(entry.a3Score) || 0)).toFixed(1)
-                      }
-                      readOnly
-                      className="bg-muted"
+                      type="number"
+                      step="1"
+                      min="0"
+                      max="100"
+                      value={entry.percentage80}
+                      onChange={(e) => updateSubjectEntry(entry.id, 'percentage80', e.target.value)}
+                      placeholder="0-100"
                     />
                   </div>
 
                   <div className="space-y-2">
                     <Label>100% Score</Label>
                     <Input
-                      value={
-                        ((parseFloat(entry.a1Score) || 0) +
-                          (parseFloat(entry.a2Score) || 0) +
-                          (parseFloat(entry.a3Score) || 0)).toFixed(1)
-                      }
-                      readOnly
-                      className="bg-muted"
+                      type="number"
+                      step="1"
+                      min="0"
+                      max="100"
+                      value={entry.percentage100}
+                      onChange={(e) => updateSubjectEntry(entry.id, 'percentage100', e.target.value)}
+                      placeholder="0-100"
                     />
                   </div>
 
