@@ -1,11 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Plus, ArrowUp, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -29,34 +28,57 @@ interface Student {
   id: string;
   full_name: string;
   student_number: string;
+  created_at?: string;
 }
+
+interface SubjectEntry {
+  id: string;
+  subjectId: string;
+  subjectCode: string;
+  a1Score: string;
+  a2Score: string;
+  a3Score: string;
+  teacherInitials: string;
+  identifier: string;
+}
+
+type SortOrder = 'az' | 'za' | 'new-old' | 'old-new';
 
 export default function TeacherSubmissions() {
   const { profile } = useAuth();
   const [classes, setClasses] = useState<Class[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
+  const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
   const [selectedClass, setSelectedClass] = useState('');
-  const [selectedSubject, setSelectedSubject] = useState('');
   const [selectedStudent, setSelectedStudent] = useState('');
+  const [selectedTerm, setSelectedTerm] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('az');
+  const [subjectEntries, setSubjectEntries] = useState<SubjectEntry[]>([
+    {
+      id: '1',
+      subjectId: '',
+      subjectCode: '',
+      a1Score: '',
+      a2Score: '',
+      a3Score: '',
+      teacherInitials: '',
+      identifier: '1'
+    }
+  ]);
   const [isLoading, setIsLoading] = useState(false);
-  
-  // Form data
-  const [a1Score, setA1Score] = useState('');
-  const [a2Score, setA2Score] = useState('');
-  const [a3Score, setA3Score] = useState('');
-  const [teacherComment, setTeacherComment] = useState('');
+  const newSubjectRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchClasses();
     fetchSubjects();
+    fetchStudents();
   }, []);
 
   useEffect(() => {
-    if (selectedClass) {
-      fetchStudents();
-    }
-  }, [selectedClass]);
+    filterAndSortStudents();
+  }, [students, searchQuery, sortOrder]);
 
   const fetchClasses = async () => {
     try {
@@ -97,20 +119,12 @@ export default function TeacherSubmissions() {
   const fetchStudents = async () => {
     try {
       const { data, error } = await supabase
-        .from('class_students')
-        .select(`
-          students (
-            id,
-            full_name,
-            student_number
-          )
-        `)
-        .eq('class_id', selectedClass);
+        .from('students')
+        .select('id, full_name, student_number, created_at')
+        .order('full_name');
       
       if (error) throw error;
-      
-      const studentList = data?.map(item => (item as any).students).filter(Boolean) || [];
-      setStudents(studentList);
+      setStudents(data || []);
     } catch (error: any) {
       toast({
         title: "Error fetching students",
@@ -120,79 +134,208 @@ export default function TeacherSubmissions() {
     }
   };
 
-  const calculateGrades = () => {
-    const a1 = parseFloat(a1Score) || 0;
-    const a2 = parseFloat(a2Score) || 0;
-    const a3 = parseFloat(a3Score) || 0;
+  const filterAndSortStudents = () => {
+    let filtered = [...students];
+
+    // Apply search filter
+    if (searchQuery) {
+      filtered = filtered.filter(student =>
+        student.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        student.student_number.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      switch (sortOrder) {
+        case 'az':
+          return a.full_name.localeCompare(b.full_name);
+        case 'za':
+          return b.full_name.localeCompare(a.full_name);
+        case 'new-old':
+          return new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime();
+        case 'old-new':
+          return new Date(a.created_at || '').getTime() - new Date(b.created_at || '').getTime();
+        default:
+          return 0;
+      }
+    });
+
+    setFilteredStudents(filtered);
+  };
+
+  const toggleSort = () => {
+    const orders: SortOrder[] = ['az', 'za', 'new-old', 'old-new'];
+    const currentIndex = orders.indexOf(sortOrder);
+    const nextIndex = (currentIndex + 1) % orders.length;
+    setSortOrder(orders[nextIndex]);
+  };
+
+  const getSortIcon = () => {
+    switch (sortOrder) {
+      case 'az':
+        return '↑ → Z';
+      case 'za':
+        return '↓ → A';
+      case 'new-old':
+        return 'New → Old';
+      case 'old-new':
+        return 'Old → New';
+    }
+  };
+
+  const calculateAVG = (a1: string, a2: string, a3: string) => {
+    const a1Num = parseFloat(a1) || 0;
+    const a2Num = parseFloat(a2) || 0;
+    const a3Num = parseFloat(a3) || 0;
+    return ((a1Num + a2Num + a3Num) / 3).toFixed(2);
+  };
+
+  const calculateGrade = (avg: number) => {
+    if (avg >= 90) return 'A';
+    if (avg >= 80) return 'B';
+    if (avg >= 70) return 'C';
+    if (avg >= 60) return 'D';
+    if (avg >= 50) return 'E';
+    return 'F';
+  };
+
+  const calculateAchievementLevel = (avg: number) => {
+    if (avg >= 90) return 'Outstanding';
+    if (avg >= 75) return 'Exceptional';
+    if (avg >= 60) return 'Satisfactory';
+    return 'Basic';
+  };
+
+  const getIdentifierText = (identifier: string) => {
+    switch (identifier) {
+      case '1':
+        return '1 - Basic';
+      case '2':
+        return '2 - Moderate';
+      case '3':
+        return '3 - Outstanding';
+      default:
+        return '1 - Basic';
+    }
+  };
+
+  const addNewSubject = () => {
+    const newEntry: SubjectEntry = {
+      id: Date.now().toString(),
+      subjectId: '',
+      subjectCode: '',
+      a1Score: '',
+      a2Score: '',
+      a3Score: '',
+      teacherInitials: '',
+      identifier: '1'
+    };
+    setSubjectEntries([...subjectEntries, newEntry]);
     
-    const percentage20 = a1;
-    const percentage80 = a2 + a3;
-    const percentage100 = percentage20 + percentage80;
-    const averageScore = (a1 + a2 + a3) / 3;
+    // Scroll to new subject after a brief delay
+    setTimeout(() => {
+      newSubjectRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  };
 
-    let grade = 'F';
-    if (percentage100 >= 80) grade = 'D1';
-    else if (percentage100 >= 75) grade = 'D2';
-    else if (percentage100 >= 70) grade = 'C3';
-    else if (percentage100 >= 65) grade = 'C4';
-    else if (percentage100 >= 60) grade = 'C5';
-    else if (percentage100 >= 55) grade = 'C6';
-    else if (percentage100 >= 50) grade = 'P7';
-    else if (percentage100 >= 45) grade = 'P8';
-    else if (percentage100 >= 40) grade = 'F9';
+  const updateSubjectEntry = (id: string, field: keyof SubjectEntry, value: string) => {
+    setSubjectEntries(entries =>
+      entries.map(entry =>
+        entry.id === id ? { ...entry, [field]: value } : entry
+      )
+    );
+  };
 
-    return { percentage20, percentage80, percentage100, averageScore, grade };
+  const handleSubjectChange = (id: string, subjectId: string) => {
+    const subject = subjects.find(s => s.id === subjectId);
+    setSubjectEntries(entries =>
+      entries.map(entry =>
+        entry.id === id
+          ? { ...entry, subjectId, subjectCode: subject?.code || '' }
+          : entry
+      )
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!profile || !selectedClass || !selectedSubject || !selectedStudent) {
+    if (!profile || !selectedClass || !selectedStudent || !selectedTerm) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all required fields",
+        description: "Please select a class, student, and term",
         variant: "destructive"
       });
       return;
     }
 
+    // Validate all subject entries
+    for (const entry of subjectEntries) {
+      if (!entry.subjectId || !entry.a1Score || !entry.a2Score || !entry.a3Score || !entry.teacherInitials) {
+        toast({
+          title: "Incomplete Subject Entry",
+          description: "Please fill in all fields for each subject",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
     setIsLoading(true);
     
     try {
-      const { percentage20, percentage80, percentage100, averageScore, grade } = calculateGrades();
-      
-      const { error } = await supabase
-        .from('subject_submissions')
-        .insert({
+      const submissions = subjectEntries.map(entry => {
+        const a1 = parseFloat(entry.a1Score) || 0;
+        const a2 = parseFloat(entry.a2Score) || 0;
+        const a3 = parseFloat(entry.a3Score) || 0;
+        const avg = parseFloat(calculateAVG(entry.a1Score, entry.a2Score, entry.a3Score));
+        
+        return {
           teacher_id: profile.id,
           class_id: selectedClass,
-          subject_id: selectedSubject,
+          subject_id: entry.subjectId,
           student_id: selectedStudent,
-          a1_score: parseFloat(a1Score) || 0,
-          a2_score: parseFloat(a2Score) || 0,
-          a3_score: parseFloat(a3Score) || 0,
-          percentage_20: percentage20,
-          percentage_80: percentage80,
-          percentage_100: percentage100,
-          average_score: averageScore,
-          grade,
-          teacher_comment: teacherComment,
+          a1_score: a1,
+          a2_score: a2,
+          a3_score: a3,
+          average_score: avg,
+          percentage_20: a1,
+          percentage_80: a2 + a3,
+          percentage_100: a1 + a2 + a3,
+          grade: calculateGrade(avg),
+          remarks: calculateAchievementLevel(avg),
+          teacher_comment: `Teacher Initials: ${entry.teacherInitials}, Identifier: ${getIdentifierText(entry.identifier)}`,
           status: 'pending'
-        });
+        };
+      });
+
+      const { error } = await supabase
+        .from('subject_submissions')
+        .insert(submissions);
 
       if (error) throw error;
 
       toast({
         title: "Submission Successful",
-        description: "Marks have been submitted for review"
+        description: `Marks for ${subjectEntries.length} subject(s) have been submitted for review`
       });
 
       // Reset form
-      setA1Score('');
-      setA2Score('');
-      setA3Score('');
-      setTeacherComment('');
+      setSubjectEntries([{
+        id: '1',
+        subjectId: '',
+        subjectCode: '',
+        a1Score: '',
+        a2Score: '',
+        a3Score: '',
+        teacherInitials: '',
+        identifier: '1'
+      }]);
+      setSelectedClass('');
       setSelectedStudent('');
+      setSelectedTerm('');
+      setSearchQuery('');
       
     } catch (error: any) {
       toast({
@@ -206,167 +349,301 @@ export default function TeacherSubmissions() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <Link to="/dashboard">
-                <Button variant="outline" size="sm">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Dashboard
-                </Button>
-              </Link>
-              <h1 className="text-xl font-semibold text-gray-900">Submit Marks</h1>
+    <div className="min-h-screen bg-background">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-6">
+          <Link to="/dashboard">
+            <Button variant="outline" size="sm">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Dashboard
+            </Button>
+          </Link>
+        </div>
+
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-foreground">Mark Submission Form</h1>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Class and Term Selection */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Class</Label>
+              <Select value={selectedClass} onValueChange={setSelectedClass}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select class" />
+                </SelectTrigger>
+                <SelectContent>
+                  {classes.map((cls) => (
+                    <SelectItem key={cls.id} value={cls.id}>
+                      {cls.name} {cls.stream} - {cls.term} {cls.academic_year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Term</Label>
+              <Select value={selectedTerm} onValueChange={setSelectedTerm}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select term" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Term 1">Term 1</SelectItem>
+                  <SelectItem value="Term 2">Term 2</SelectItem>
+                  <SelectItem value="Term 3">Term 3</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-        </div>
-      </header>
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Mark Submission Form</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="class">Class</Label>
-                  <Select value={selectedClass} onValueChange={setSelectedClass}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select class" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {classes.map((cls) => (
-                        <SelectItem key={cls.id} value={cls.id}>
-                          {cls.name} {cls.stream} - {cls.term} {cls.academic_year}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+          {/* Student Selection Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-end">
+            <div className="lg:col-span-6 space-y-2">
+              <Label>Student</Label>
+              <Input
+                placeholder="Search students..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full"
+              />
+            </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="subject">Subject</Label>
-                  <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select subject" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {subjects.map((subject) => (
-                        <SelectItem key={subject.id} value={subject.id}>
-                          {subject.code} - {subject.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+            <div className="lg:col-span-2 flex justify-center">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={toggleSort}
+                className="h-10 px-3 mt-auto"
+              >
+                {getSortIcon()}
+              </Button>
+            </div>
 
-              {selectedClass && (
-                <div className="space-y-2">
-                  <Label htmlFor="student">Student</Label>
-                  <Select value={selectedStudent} onValueChange={setSelectedStudent}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select student" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {students.map((student) => (
-                        <SelectItem key={student.id} value={student.id}>
-                          {student.student_number} - {student.full_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+            <div className="lg:col-span-4 flex justify-end">
+              <Button
+                type="button"
+                onClick={addNewSubject}
+                className="w-full lg:w-auto mt-auto"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Subject
+              </Button>
+            </div>
+          </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="a1">A1 Score (20%)</Label>
-                  <Input
-                    id="a1"
-                    type="number"
-                    min="0"
-                    max="20"
-                    value={a1Score}
-                    onChange={(e) => setA1Score(e.target.value)}
-                    placeholder="0-20"
-                    required
-                  />
-                </div>
+          {/* Student Dropdown */}
+          <div className="space-y-2">
+            <Select value={selectedStudent} onValueChange={setSelectedStudent}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a student" />
+              </SelectTrigger>
+              <SelectContent className="max-h-[300px]">
+                {filteredStudents.map((student) => (
+                  <SelectItem key={student.id} value={student.id}>
+                    {student.student_number} - {student.full_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="a2">A2 Score (40%)</Label>
-                  <Input
-                    id="a2"
-                    type="number"
-                    min="0"
-                    max="40"
-                    value={a2Score}
-                    onChange={(e) => setA2Score(e.target.value)}
-                    placeholder="0-40"
-                    required
-                  />
-                </div>
+          {/* Subject Marks Section */}
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold text-foreground">Subject Marks</h2>
 
-                <div className="space-y-2">
-                  <Label htmlFor="a3">A3 Score (40%)</Label>
-                  <Input
-                    id="a3"
-                    type="number"
-                    min="0"
-                    max="40"
-                    value={a3Score}
-                    onChange={(e) => setA3Score(e.target.value)}
-                    placeholder="0-40"
-                    required
-                  />
-                </div>
-              </div>
+            {subjectEntries.map((entry, index) => (
+              <div
+                key={entry.id}
+                ref={index === subjectEntries.length - 1 ? newSubjectRef : null}
+                className="space-y-4 p-6 border rounded-lg bg-card"
+              >
+                <h3 className="text-lg font-medium text-foreground">
+                  Subject {index + 1}
+                </h3>
 
-              {(a1Score || a2Score || a3Score) && (
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h3 className="font-medium text-blue-900 mb-2">Calculated Results:</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <span className="text-blue-700">Total (100%):</span>
-                      <div className="font-medium">{calculateGrades().percentage100.toFixed(1)}</div>
-                    </div>
-                    <div>
-                      <span className="text-blue-700">Average:</span>
-                      <div className="font-medium">{calculateGrades().averageScore.toFixed(1)}</div>
-                    </div>
-                    <div>
-                      <span className="text-blue-700">Grade:</span>
-                      <div className="font-medium">{calculateGrades().grade}</div>
-                    </div>
+                {/* Subject and Subject Code */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Subject</Label>
+                    <Select
+                      value={entry.subjectId}
+                      onValueChange={(value) => handleSubjectChange(entry.id, value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select subject" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {subjects.map((subject) => (
+                          <SelectItem key={subject.id} value={subject.id}>
+                            {subject.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Subject Code</Label>
+                    <Input
+                      value={entry.subjectCode}
+                      readOnly
+                      placeholder="Auto-filled"
+                      className="bg-muted"
+                    />
                   </div>
                 </div>
-              )}
 
-              <div className="space-y-2">
-                <Label htmlFor="comment">Teacher Comment</Label>
-                <Textarea
-                  id="comment"
-                  value={teacherComment}
-                  onChange={(e) => setTeacherComment(e.target.value)}
-                  placeholder="Enter your comment about the student's performance..."
-                  rows={3}
-                />
+                {/* A1, A2, A3, AVG */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <Label>A1 Score</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      value={entry.a1Score}
+                      onChange={(e) => updateSubjectEntry(entry.id, 'a1Score', e.target.value)}
+                      placeholder="0.0"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>A2 Score</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      value={entry.a2Score}
+                      onChange={(e) => updateSubjectEntry(entry.id, 'a2Score', e.target.value)}
+                      placeholder="0.0"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>A3 Score</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      value={entry.a3Score}
+                      onChange={(e) => updateSubjectEntry(entry.id, 'a3Score', e.target.value)}
+                      placeholder="0.0"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>AVG</Label>
+                    <Input
+                      value={calculateAVG(entry.a1Score, entry.a2Score, entry.a3Score)}
+                      readOnly
+                      className="bg-muted"
+                    />
+                  </div>
+                </div>
+
+                {/* 20%, 80%, 100%, Teacher Initials */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <Label>20% Score</Label>
+                    <Input
+                      value={entry.a1Score || '0.0'}
+                      readOnly
+                      className="bg-muted"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>80% Score</Label>
+                    <Input
+                      value={
+                        ((parseFloat(entry.a2Score) || 0) + (parseFloat(entry.a3Score) || 0)).toFixed(1)
+                      }
+                      readOnly
+                      className="bg-muted"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>100% Score</Label>
+                    <Input
+                      value={
+                        ((parseFloat(entry.a1Score) || 0) +
+                          (parseFloat(entry.a2Score) || 0) +
+                          (parseFloat(entry.a3Score) || 0)).toFixed(1)
+                      }
+                      readOnly
+                      className="bg-muted"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Teacher Initials</Label>
+                    <Input
+                      value={entry.teacherInitials}
+                      onChange={(e) => updateSubjectEntry(entry.id, 'teacherInitials', e.target.value)}
+                      placeholder="e.g, B.S."
+                    />
+                  </div>
+                </div>
+
+                {/* Identifier, Grade, Achievement Level */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>Identifier</Label>
+                    <Select
+                      value={entry.identifier}
+                      onValueChange={(value) => updateSubjectEntry(entry.id, 'identifier', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1 - Basic</SelectItem>
+                        <SelectItem value="2">2 - Moderate</SelectItem>
+                        <SelectItem value="3">3 - Outstanding</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Grade (Auto-calculated)</Label>
+                    <Input
+                      value={calculateGrade(parseFloat(calculateAVG(entry.a1Score, entry.a2Score, entry.a3Score)))}
+                      readOnly
+                      className="bg-muted"
+                      placeholder="Auto"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Achievement Level (Auto-calculated)</Label>
+                    <Input
+                      value={calculateAchievementLevel(parseFloat(calculateAVG(entry.a1Score, entry.a2Score, entry.a3Score)))}
+                      readOnly
+                      className="bg-muted"
+                      placeholder="Auto"
+                    />
+                  </div>
+                </div>
               </div>
+            ))}
+          </div>
 
-              <Button 
-                type="submit" 
-                className="w-full" 
-                disabled={isLoading || !selectedClass || !selectedSubject || !selectedStudent}
-              >
-                {isLoading ? 'Submitting...' : 'Submit Marks'}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+          {/* Submit Button */}
+          <div className="flex justify-end">
+            <Button
+              type="submit"
+              size="lg"
+              disabled={isLoading || !selectedClass || !selectedStudent || !selectedTerm}
+              className="w-full md:w-auto"
+            >
+              {isLoading ? 'Submitting...' : 'Submit All Marks'}
+            </Button>
+          </div>
+        </form>
       </main>
     </div>
   );
