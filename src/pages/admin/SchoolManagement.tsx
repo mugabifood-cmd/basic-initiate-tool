@@ -250,7 +250,15 @@ export default function SchoolManagement() {
       if (error) throw error;
 
       toast({ title: "Class created successfully" });
-      setClassForm({ school_id: '', name: '', stream: '', academic_year: '2025', term: 'ONE' });
+      
+      // Preserve school_id, academic_year, and term when continuing
+      setClassForm({ 
+        school_id: continueAdding ? classForm.school_id : '', 
+        name: '', 
+        stream: '', 
+        academic_year: continueAdding ? classForm.academic_year : '2025', 
+        term: continueAdding ? classForm.term : 'ONE' 
+      });
       
       if (!continueAdding) {
         setIsClassDialogOpen(false);
@@ -311,7 +319,17 @@ export default function SchoolManagement() {
       }
 
       toast({ title: "Student created successfully" });
-      setStudentForm({ school_id: '', student_number: '', full_name: '', gender: 'MALE', house: '', age: 16, class_id: '' });
+      
+      // Preserve school_id, class_id, gender, and age when continuing
+      setStudentForm({ 
+        school_id: continueAdding ? studentForm.school_id : '', 
+        student_number: '', 
+        full_name: '', 
+        gender: continueAdding ? studentForm.gender : 'MALE', 
+        house: '', 
+        age: continueAdding ? studentForm.age : 16, 
+        class_id: continueAdding ? studentForm.class_id : '' 
+      });
       setStudentPhotoFile(null);
       
       if (!continueAdding) {
@@ -340,7 +358,13 @@ export default function SchoolManagement() {
       if (error) throw error;
 
       toast({ title: "Subject created successfully" });
-      setSubjectForm({ school_id: '', code: '', name: '' });
+      
+      // Preserve school_id when continuing
+      setSubjectForm({ 
+        school_id: continueAdding ? subjectForm.school_id : '', 
+        code: '', 
+        name: '' 
+      });
       
       if (!continueAdding) {
         setIsSubjectDialogOpen(false);
