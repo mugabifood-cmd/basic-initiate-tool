@@ -97,6 +97,9 @@ export default function SchoolManagement() {
   const [deleteItem, setDeleteItem] = useState<{ type: string; id: string; name: string } | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isClassDialogOpen, setIsClassDialogOpen] = useState(false);
+  const [isStudentDialogOpen, setIsStudentDialogOpen] = useState(false);
+  const [isSubjectDialogOpen, setIsSubjectDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -237,7 +240,7 @@ export default function SchoolManagement() {
     }
   };
 
-  const handleCreateClass = async (e: React.FormEvent) => {
+  const handleCreateClass = async (e: React.FormEvent, continueAdding = false) => {
     e.preventDefault();
     try {
       const { error } = await supabase
@@ -248,7 +251,11 @@ export default function SchoolManagement() {
 
       toast({ title: "Class created successfully" });
       setClassForm({ school_id: '', name: '', stream: '', academic_year: '2025', term: 'ONE' });
-      setIsCreateDialogOpen(false);
+      
+      if (!continueAdding) {
+        setIsClassDialogOpen(false);
+      }
+      
       fetchData();
     } catch (error: any) {
       toast({
@@ -259,7 +266,7 @@ export default function SchoolManagement() {
     }
   };
 
-  const handleCreateStudent = async (e: React.FormEvent) => {
+  const handleCreateStudent = async (e: React.FormEvent, continueAdding = false) => {
     e.preventDefault();
     try {
       setUploading(true);
@@ -306,7 +313,11 @@ export default function SchoolManagement() {
       toast({ title: "Student created successfully" });
       setStudentForm({ school_id: '', student_number: '', full_name: '', gender: 'MALE', house: '', age: 16, class_id: '' });
       setStudentPhotoFile(null);
-      setIsCreateDialogOpen(false);
+      
+      if (!continueAdding) {
+        setIsStudentDialogOpen(false);
+      }
+      
       fetchData();
     } catch (error: any) {
       toast({
@@ -319,7 +330,7 @@ export default function SchoolManagement() {
     }
   };
 
-  const handleCreateSubject = async (e: React.FormEvent) => {
+  const handleCreateSubject = async (e: React.FormEvent, continueAdding = false) => {
     e.preventDefault();
     try {
       const { error } = await supabase
@@ -330,7 +341,11 @@ export default function SchoolManagement() {
 
       toast({ title: "Subject created successfully" });
       setSubjectForm({ school_id: '', code: '', name: '' });
-      setIsCreateDialogOpen(false);
+      
+      if (!continueAdding) {
+        setIsSubjectDialogOpen(false);
+      }
+      
       fetchData();
     } catch (error: any) {
       toast({
@@ -878,7 +893,7 @@ export default function SchoolManagement() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Classes</CardTitle>
-                <Dialog>
+                <Dialog open={isClassDialogOpen} onOpenChange={setIsClassDialogOpen}>
                   <DialogTrigger asChild>
                     <Button>
                       <Plus className="w-4 h-4 mr-2" />
@@ -889,7 +904,7 @@ export default function SchoolManagement() {
                     <DialogHeader>
                       <DialogTitle>Create New Class</DialogTitle>
                     </DialogHeader>
-                    <form onSubmit={handleCreateClass} className="space-y-4">
+                    <form onSubmit={(e) => handleCreateClass(e, false)} className="space-y-4">
                       <div>
                         <Label htmlFor="class-school">School</Label>
                         <Select value={classForm.school_id} onValueChange={(value) => setClassForm({ ...classForm, school_id: value })}>
@@ -949,7 +964,17 @@ export default function SchoolManagement() {
                           </Select>
                         </div>
                       </div>
-                      <Button type="submit" className="w-full">Create Class</Button>
+                      <div className="flex gap-2">
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          className="flex-1"
+                          onClick={(e: any) => handleCreateClass(e, true)}
+                        >
+                          Create & Continue
+                        </Button>
+                        <Button type="submit" className="flex-1">Create</Button>
+                      </div>
                     </form>
                   </DialogContent>
                 </Dialog>
@@ -1079,7 +1104,7 @@ export default function SchoolManagement() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Students</CardTitle>
-                <Dialog>
+                <Dialog open={isStudentDialogOpen} onOpenChange={setIsStudentDialogOpen}>
                   <DialogTrigger asChild>
                     <Button>
                       <Plus className="w-4 h-4 mr-2" />
@@ -1090,7 +1115,7 @@ export default function SchoolManagement() {
                     <DialogHeader>
                       <DialogTitle>Create New Student</DialogTitle>
                     </DialogHeader>
-                    <form onSubmit={handleCreateStudent} className="space-y-4">
+                    <form onSubmit={(e) => handleCreateStudent(e, false)} className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="student-school">School</Label>
@@ -1193,9 +1218,20 @@ export default function SchoolManagement() {
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">Max size: 5MB. Formats: JPG, PNG, WEBP</p>
                       </div>
-                      <Button type="submit" className="w-full" disabled={uploading}>
-                        {uploading ? 'Creating...' : 'Create Student'}
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          className="flex-1"
+                          onClick={(e: any) => handleCreateStudent(e, true)}
+                          disabled={uploading}
+                        >
+                          Create & Continue
+                        </Button>
+                        <Button type="submit" className="flex-1" disabled={uploading}>
+                          {uploading ? 'Creating...' : 'Create'}
+                        </Button>
+                      </div>
                     </form>
                   </DialogContent>
                 </Dialog>
@@ -1381,7 +1417,7 @@ export default function SchoolManagement() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Subjects</CardTitle>
-                <Dialog>
+                <Dialog open={isSubjectDialogOpen} onOpenChange={setIsSubjectDialogOpen}>
                   <DialogTrigger asChild>
                     <Button>
                       <Plus className="w-4 h-4 mr-2" />
@@ -1392,7 +1428,7 @@ export default function SchoolManagement() {
                     <DialogHeader>
                       <DialogTitle>Create New Subject</DialogTitle>
                     </DialogHeader>
-                    <form onSubmit={handleCreateSubject} className="space-y-4">
+                    <form onSubmit={(e) => handleCreateSubject(e, false)} className="space-y-4">
                       <div>
                         <Label htmlFor="subject-school">School</Label>
                         <Select value={subjectForm.school_id} onValueChange={(value) => setSubjectForm({ ...subjectForm, school_id: value })}>
@@ -1430,7 +1466,17 @@ export default function SchoolManagement() {
                           />
                         </div>
                       </div>
-                      <Button type="submit" className="w-full">Create Subject</Button>
+                      <div className="flex gap-2">
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          className="flex-1"
+                          onClick={(e: any) => handleCreateSubject(e, true)}
+                        >
+                          Create & Continue
+                        </Button>
+                        <Button type="submit" className="flex-1">Create</Button>
+                      </div>
                     </form>
                   </DialogContent>
                 </Dialog>
