@@ -187,21 +187,31 @@ export default function MySubmissions() {
 
   const handleDelete = async (submissionId: string) => {
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('subject_submissions')
         .delete()
         .eq('id', submissionId)
         .eq('teacher_id', profile?.id)
-        .eq('status', 'pending'); // Only allow deletion of pending submissions
+        .eq('status', 'pending')
+        .select();
 
       if (error) throw error;
+
+      if (!data || data.length === 0) {
+        toast({
+          title: "Delete Failed",
+          description: "Could not delete this submission. It may have already been reviewed or you don't have permission.",
+          variant: "destructive"
+        });
+        return;
+      }
 
       toast({
         title: "Submission Deleted",
         description: "The submission has been deleted successfully"
       });
 
-      fetchSubmissions(); // Refresh the list
+      fetchSubmissions();
     } catch (error: any) {
       toast({
         title: "Delete Failed",
