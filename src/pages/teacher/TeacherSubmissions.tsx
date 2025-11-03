@@ -45,6 +45,13 @@ interface SubjectEntry {
   percentage100: string;
 }
 
+interface GradeBoundary {
+  id: string;
+  grade: string;
+  min_score: number;
+  max_score: number;
+}
+
 type SortOrder = 'az' | 'za' | 'new-old' | 'old-new';
 
 export default function TeacherSubmissions() {
@@ -53,6 +60,7 @@ export default function TeacherSubmissions() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
+  const [gradeBoundaries, setGradeBoundaries] = useState<GradeBoundary[]>([]);
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedStudent, setSelectedStudent] = useState('');
   const [selectedTerm, setSelectedTerm] = useState('');
@@ -80,6 +88,7 @@ export default function TeacherSubmissions() {
     fetchClasses();
     fetchSubjects();
     fetchStudents();
+    fetchGradeBoundaries();
   }, []);
 
   useEffect(() => {
@@ -134,6 +143,24 @@ export default function TeacherSubmissions() {
     } catch (error: any) {
       toast({
         title: "Error fetching students",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const fetchGradeBoundaries = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('grade_boundaries')
+        .select('*')
+        .order('min_score', { ascending: false });
+      
+      if (error) throw error;
+      setGradeBoundaries(data || []);
+    } catch (error: any) {
+      toast({
+        title: "Error fetching grade boundaries",
         description: error.message,
         variant: "destructive"
       });
@@ -198,11 +225,13 @@ export default function TeacherSubmissions() {
   };
 
   const calculateGrade = (avg: number) => {
-    if (avg >= 90) return 'A';
-    if (avg >= 80) return 'B';
-    if (avg >= 70) return 'C';
-    if (avg >= 60) return 'D';
-    if (avg >= 50) return 'E';
+    // Use grade boundaries from database
+    for (const boundary of gradeBoundaries) {
+      if (avg >= boundary.min_score && avg <= boundary.max_score) {
+        return boundary.grade;
+      }
+    }
+    // Fallback to 'F' if no boundary matches
     return 'F';
   };
 
