@@ -9,6 +9,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 interface Submission {
   id: string;
@@ -40,10 +44,25 @@ export default function MySubmissions() {
   const { profile } = useAuth();
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
+  const [editForm, setEditForm] = useState({
+    a1_score: '',
+    a2_score: '',
+    a3_score: '',
+    teacher_comment: ''
+  });
+  const [gradeBoundaries, setGradeBoundaries] = useState<Array<{
+    grade: string;
+    min_score: number;
+    max_score: number;
+  }>>([]);
 
   useEffect(() => {
     if (profile) {
       fetchSubmissions();
+      fetchGradeBoundaries();
     }
   }, [profile]);
 
@@ -80,6 +99,89 @@ export default function MySubmissions() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchGradeBoundaries = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('grade_boundaries')
+        .select('*')
+        .order('min_score', { ascending: false });
+      
+      if (error) throw error;
+      setGradeBoundaries(data || []);
+    } catch (error: any) {
+      console.error("Error fetching grade boundaries:", error.message);
+    }
+  };
+
+  const calculateGrade = (avg: number) => {
+    for (const boundary of gradeBoundaries) {
+      if (avg >= boundary.min_score && avg <= boundary.max_score) {
+        return boundary.grade;
+      }
+    }
+    return 'F';
+  };
+
+  const handleEdit = (submission: Submission) => {
+    setSelectedSubmission(submission);
+    setEditForm({
+      a1_score: submission.a1_score.toString(),
+      a2_score: submission.a2_score.toString(),
+      a3_score: submission.a3_score.toString(),
+      teacher_comment: submission.teacher_comment
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handlePreview = (submission: Submission) => {
+    setSelectedSubmission(submission);
+    setPreviewDialogOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedSubmission) return;
+
+    try {
+      const a1 = parseFloat(editForm.a1_score) || 0;
+      const a2 = parseFloat(editForm.a2_score) || 0;
+      const a3 = parseFloat(editForm.a3_score) || 0;
+      const avg = parseFloat(((a1 + a2 + a3) / 3).toFixed(2));
+
+      const { error } = await supabase
+        .from('subject_submissions')
+        .update({
+          a1_score: a1,
+          a2_score: a2,
+          a3_score: a3,
+          average_score: avg,
+          percentage_20: a1,
+          percentage_80: a2 + a3,
+          percentage_100: a1 + a2 + a3,
+          grade: calculateGrade(avg),
+          teacher_comment: editForm.teacher_comment
+        })
+        .eq('id', selectedSubmission.id)
+        .eq('teacher_id', profile?.id)
+        .eq('status', 'pending');
+
+      if (error) throw error;
+
+      toast({
+        title: "Submission Updated",
+        description: "The submission has been updated successfully"
+      });
+
+      setEditDialogOpen(false);
+      fetchSubmissions();
+    } catch (error: any) {
+      toast({
+        title: "Update Failed",
+        description: error.message,
+        variant: "destructive"
+      });
     }
   };
 
@@ -223,7 +325,11 @@ export default function MySubmissions() {
                           <div className="flex items-center space-x-2">
                             {submission.status === 'pending' && (
                               <>
-                                <Button variant="outline" size="sm">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => handleEdit(submission)}
+                                >
                                   <Edit className="w-4 h-4" />
                                 </Button>
                                 <AlertDialog>
@@ -249,7 +355,11 @@ export default function MySubmissions() {
                                 </AlertDialog>
                               </>
                             )}
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handlePreview(submission)}
+                            >
                               <Eye className="w-4 h-4" />
                             </Button>
                           </div>
@@ -262,6 +372,158 @@ export default function MySubmissions() {
             )}
           </CardContent>
         </Card>
+
+        {/* Edit Dialog */}
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit Submission</DialogTitle>
+              <DialogDescription>
+                Update the scores for {selectedSubmission?.students?.full_name}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-a1">A1 Score</Label>
+                <Input
+                  id="edit-a1"
+                  type="number"
+                  step="0.01"
+                  value={editForm.a1_score}
+                  onChange={(e) => setEditForm({ ...editForm, a1_score: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-a2">A2 Score</Label>
+                <Input
+                  id="edit-a2"
+                  type="number"
+                  step="0.01"
+                  value={editForm.a2_score}
+                  onChange={(e) => setEditForm({ ...editForm, a2_score: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-a3">A3 Score</Label>
+                <Input
+                  id="edit-a3"
+                  type="number"
+                  step="0.01"
+                  value={editForm.a3_score}
+                  onChange={(e) => setEditForm({ ...editForm, a3_score: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-comment">Teacher Comment</Label>
+                <Textarea
+                  id="edit-comment"
+                  value={editForm.teacher_comment}
+                  onChange={(e) => setEditForm({ ...editForm, teacher_comment: e.target.value })}
+                  rows={3}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveEdit}>
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Preview Dialog */}
+        <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Submission Details</DialogTitle>
+            </DialogHeader>
+            {selectedSubmission && (
+              <div className="space-y-6 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-muted-foreground">Student</Label>
+                    <p className="font-medium">{selectedSubmission.students?.full_name}</p>
+                    <p className="text-sm text-muted-foreground">{selectedSubmission.students?.student_number}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">Subject</Label>
+                    <p className="font-medium">{selectedSubmission.subjects?.name}</p>
+                    <p className="text-sm text-muted-foreground">{selectedSubmission.subjects?.code}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">Class</Label>
+                    <p className="font-medium">
+                      {selectedSubmission.classes?.name} {selectedSubmission.classes?.stream}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">Status</Label>
+                    <div className="mt-1">
+                      <Badge className={getStatusColor(selectedSubmission.status)}>
+                        {selectedSubmission.status.charAt(0).toUpperCase() + selectedSubmission.status.slice(1)}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t pt-4">
+                  <Label className="text-muted-foreground mb-2 block">Scores</Label>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-muted/50 p-3 rounded-lg">
+                      <p className="text-sm text-muted-foreground">A1 Score</p>
+                      <p className="text-2xl font-bold">{selectedSubmission.a1_score}</p>
+                    </div>
+                    <div className="bg-muted/50 p-3 rounded-lg">
+                      <p className="text-sm text-muted-foreground">A2 Score</p>
+                      <p className="text-2xl font-bold">{selectedSubmission.a2_score}</p>
+                    </div>
+                    <div className="bg-muted/50 p-3 rounded-lg">
+                      <p className="text-sm text-muted-foreground">A3 Score</p>
+                      <p className="text-2xl font-bold">{selectedSubmission.a3_score}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-primary/10 p-3 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Average Score</p>
+                    <p className="text-2xl font-bold">{selectedSubmission.average_score}</p>
+                  </div>
+                  <div className="bg-primary/10 p-3 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Grade</p>
+                    <p className="text-2xl font-bold">{selectedSubmission.grade}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-muted-foreground">Teacher Comment</Label>
+                  <p className="mt-1 p-3 bg-muted/50 rounded-lg">{selectedSubmission.teacher_comment}</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <Label className="text-muted-foreground">Submitted At</Label>
+                    <p>{new Date(selectedSubmission.submitted_at).toLocaleString()}</p>
+                  </div>
+                  {selectedSubmission.reviewed_at && (
+                    <div>
+                      <Label className="text-muted-foreground">Reviewed At</Label>
+                      <p>{new Date(selectedSubmission.reviewed_at).toLocaleString()}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button onClick={() => setPreviewDialogOpen(false)}>
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
