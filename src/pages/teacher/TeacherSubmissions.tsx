@@ -321,7 +321,9 @@ export default function TeacherSubmissions() {
 
       const { error } = await supabase
         .from('subject_submissions')
-        .insert(submissions);
+        .upsert(submissions, {
+          onConflict: 'class_id,student_id,subject_id'
+        });
 
       if (error) throw error;
 
