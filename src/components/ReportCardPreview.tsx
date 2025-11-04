@@ -270,8 +270,16 @@ export default function ReportCardPreview({ reportId }: ReportCardPreviewProps) 
               <td className="border-r border-black p-1 text-center"></td>
               <td className="border-r border-black p-1 text-center"></td>
               <td className="border-r border-black p-1 text-center">{reportData.identifier || '2'}</td>
-              <td className="border-r border-black p-1 text-center">{(reportData.overall_average * 0.2).toFixed(1)}</td>
-              <td className="border-r border-black p-1 text-center">{(reportData.overall_average * 0.8).toFixed(1)}</td>
+              <td className="border-r border-black p-1 text-center">
+                {subjectGrades.length > 0 
+                  ? (subjectGrades.reduce((sum, s) => sum + (s.percentage_20 || 0), 0) / subjectGrades.length).toFixed(1)
+                  : ''}
+              </td>
+              <td className="border-r border-black p-1 text-center">
+                {subjectGrades.length > 0 
+                  ? (subjectGrades.reduce((sum, s) => sum + (s.percentage_80 || 0), 0) / subjectGrades.length).toFixed(1)
+                  : ''}
+              </td>
               <td className="border-r border-black p-1 text-center">{reportData.overall_average?.toFixed(1)}</td>
               <td colSpan={4} className="p-1"></td>
             </tr>
