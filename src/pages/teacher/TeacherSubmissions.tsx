@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Plus, ArrowUp, ArrowRight } from 'lucide-react';
+import { ArrowLeft, Plus, ArrowUp, ArrowRight, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -275,6 +275,24 @@ export default function TeacherSubmissions() {
     setTimeout(() => {
       newSubjectRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
+  };
+
+  const deleteSubjectEntry = (id: string) => {
+    // Don't allow deleting if there's only one entry
+    if (subjectEntries.length === 1) {
+      toast({
+        title: "Cannot Delete",
+        description: "At least one subject entry is required",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setSubjectEntries(entries => entries.filter(entry => entry.id !== id));
+    toast({
+      title: "Subject Removed",
+      description: "Subject entry has been deleted"
+    });
   };
 
   const updateSubjectEntry = (id: string, field: keyof SubjectEntry, value: string) => {
@@ -556,9 +574,22 @@ export default function TeacherSubmissions() {
                 ref={index === subjectEntries.length - 1 ? newSubjectRef : null}
                 className="space-y-4 p-6 border rounded-lg bg-card"
               >
-                <h3 className="text-lg font-medium text-foreground">
-                  Subject {index + 1}
-                </h3>
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-medium text-foreground">
+                    Subject {index + 1}
+                  </h3>
+                  {subjectEntries.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => deleteSubjectEntry(entry.id)}
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete
+                    </Button>
+                  )}
+                </div>
 
                 {/* Subject and Subject Code */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
