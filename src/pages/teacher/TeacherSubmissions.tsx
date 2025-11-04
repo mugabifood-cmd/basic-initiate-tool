@@ -349,6 +349,28 @@ export default function TeacherSubmissions() {
     setIsLoading(true);
     
     try {
+      // Check if any submissions already exist for this student
+      const { data: existingSubmissions, error: checkError } = await supabase
+        .from('subject_submissions')
+        .select('subject_id, status')
+        .eq('class_id', selectedClass)
+        .eq('student_id', selectedStudent)
+        .in('subject_id', subjectEntries.map(e => e.subjectId));
+
+      if (checkError) throw checkError;
+
+      // Check if any existing submissions are not pending
+      const approvedOrRejected = existingSubmissions?.filter(s => s.status !== 'pending') || [];
+      if (approvedOrRejected.length > 0) {
+        toast({
+          title: "Cannot Submit",
+          description: "Some subjects have already been approved or rejected. You can only update pending submissions.",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return;
+      }
+
       const submissions = subjectEntries.map(entry => {
         const a1 = parseFloat(entry.a1Score) || 0;
         const a2 = parseFloat(entry.a2Score) || 0;
