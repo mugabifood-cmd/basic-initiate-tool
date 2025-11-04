@@ -254,9 +254,9 @@ export default function ReportCardPreview({ reportId }: ReportCardPreviewProps) 
                 <td className="border-r border-black p-1 text-center">{subject.a2_score?.toFixed(1) || ''}</td>
                 <td className="border-r border-black p-1 text-center">{subject.a3_score?.toFixed(1) || ''}</td>
                 <td className="border-r border-black p-1 text-center">{subject.average_score?.toFixed(1) || ''}</td>
-                <td className="border-r border-black p-1 text-center">{subject.percentage_20?.toFixed(1) || ''}</td>
-                <td className="border-r border-black p-1 text-center">{subject.percentage_80?.toFixed(1) || ''}</td>
-                <td className="border-r border-black p-1 text-center">{subject.percentage_100?.toFixed(1) || ''}</td>
+                <td className="border-r border-black p-1 text-center">{subject.percentage_20 !== null ? Math.round(subject.percentage_20) : ''}</td>
+                <td className="border-r border-black p-1 text-center">{subject.percentage_80 !== null ? Math.round(subject.percentage_80) : ''}</td>
+                <td className="border-r border-black p-1 text-center">{Math.round(subject.percentage_100)}</td>
                 <td className="border-r border-black p-1 text-center">{subject.identifier || ''}</td>
                 <td className="border-r border-black p-1 text-center font-bold">{subject.grade || ''}</td>
                 <td className="border-r border-black p-1">{subject.remarks || ''}</td>
@@ -272,15 +272,15 @@ export default function ReportCardPreview({ reportId }: ReportCardPreviewProps) 
               <td className="border-r border-black p-1 text-center">{reportData.identifier || '2'}</td>
               <td className="border-r border-black p-1 text-center">
                 {subjectGrades.length > 0 
-                  ? (subjectGrades.reduce((sum, s) => sum + (s.percentage_20 || 0), 0) / subjectGrades.length).toFixed(1)
+                  ? Math.round(subjectGrades.reduce((sum, s) => sum + (s.percentage_20 || 0), 0) / subjectGrades.length)
                   : ''}
               </td>
               <td className="border-r border-black p-1 text-center">
                 {subjectGrades.length > 0 
-                  ? (subjectGrades.reduce((sum, s) => sum + (s.percentage_80 || 0), 0) / subjectGrades.length).toFixed(1)
+                  ? Math.round(subjectGrades.reduce((sum, s) => sum + (s.percentage_80 || 0), 0) / subjectGrades.length)
                   : ''}
               </td>
-              <td className="border-r border-black p-1 text-center">{reportData.overall_average?.toFixed(1)}</td>
+              <td className="border-r border-black p-1 text-center">{reportData.overall_average ? Math.round(reportData.overall_average) : ''}</td>
               <td colSpan={4} className="p-1"></td>
             </tr>
           </tbody>
