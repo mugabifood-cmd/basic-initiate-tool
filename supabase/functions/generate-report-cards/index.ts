@@ -150,7 +150,11 @@ serve(async (req) => {
           .select('*')
           .lte('min_percentage', overallAverage)
           .gte('max_percentage', overallAverage)
+          .order('min_percentage', { ascending: false })
+          .limit(1)
           .maybeSingle();
+
+        console.log('Comment template for average', overallAverage, ':', commentTemplate);
 
         // Check if report card already exists
         const { data: existingReport, error: existingError } = await supabase
