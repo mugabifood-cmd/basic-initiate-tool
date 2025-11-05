@@ -91,6 +91,36 @@ export type Database = {
           },
         ]
       }
+      comment_templates: {
+        Row: {
+          class_teacher_comment: string
+          created_at: string | null
+          headteacher_comment: string
+          id: string
+          max_percentage: number
+          min_percentage: number
+          updated_at: string | null
+        }
+        Insert: {
+          class_teacher_comment: string
+          created_at?: string | null
+          headteacher_comment: string
+          id?: string
+          max_percentage: number
+          min_percentage: number
+          updated_at?: string | null
+        }
+        Update: {
+          class_teacher_comment?: string
+          created_at?: string | null
+          headteacher_comment?: string
+          id?: string
+          max_percentage?: number
+          min_percentage?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       grade_boundaries: {
         Row: {
           created_at: string | null

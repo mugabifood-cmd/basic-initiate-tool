@@ -144,6 +144,14 @@ serve(async (req) => {
         const overallAverage = subjectCount > 0 ? totalScore / subjectCount : 0;
         const overallGrade = calculateGrade(overallAverage);
 
+        // Fetch appropriate comment template based on average
+        const { data: commentTemplate } = await supabase
+          .from('comment_templates')
+          .select('*')
+          .lte('min_percentage', overallAverage)
+          .gte('max_percentage', overallAverage)
+          .maybeSingle();
+
         // Check if report card already exists
         const { data: existingReport, error: existingError } = await supabase
           .from('report_cards')
@@ -161,6 +169,8 @@ serve(async (req) => {
             .update({
               overall_average: overallAverage,
               overall_grade: overallGrade,
+              class_teacher_comment: commentTemplate?.class_teacher_comment || null,
+              headteacher_comment: commentTemplate?.headteacher_comment || null,
               template_id: template_id || 1,
               generated_at: new Date().toISOString(),
               generated_by: profile.id,
@@ -184,6 +194,8 @@ serve(async (req) => {
               class_id,
               overall_average: overallAverage,
               overall_grade: overallGrade,
+              class_teacher_comment: commentTemplate?.class_teacher_comment || null,
+              headteacher_comment: commentTemplate?.headteacher_comment || null,
               template_id: template_id || 1,
               generated_at: new Date().toISOString(),
               generated_by: profile.id,

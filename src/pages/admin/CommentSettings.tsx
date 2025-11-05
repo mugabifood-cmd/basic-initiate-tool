@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft } from 'lucide-react';
 import GradeSettingsTab from '@/components/admin/GradeSettingsTab';
-import ReportCommentsTab from '@/components/admin/ReportCommentsTab';
+import CommentTemplatesTab from '@/components/admin/CommentTemplatesTab';
 export default function CommentSettings() {
   const navigate = useNavigate();
   return <div className="min-h-screen bg-background">
@@ -20,12 +20,12 @@ export default function CommentSettings() {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="comments" orientation="vertical" className="flex gap-6">
-              <TabsList className="flex flex-col h-fit w-48 bg-blue-700">
-                <TabsTrigger value="grades" className="w-full justify-start text-lime-300">
+              <TabsList className="flex flex-col h-fit w-48">
+                <TabsTrigger value="grades" className="w-full justify-start">
                   Grade Settings
                 </TabsTrigger>
-                <TabsTrigger value="comments" className="w-full justify-start text-yellow-400">
-                  Report Comments
+                <TabsTrigger value="comments" className="w-full justify-start">
+                  Comment Templates
                 </TabsTrigger>
               </TabsList>
               
@@ -35,7 +35,7 @@ export default function CommentSettings() {
                 </TabsContent>
                 
                 <TabsContent value="comments" className="mt-0">
-                  <ReportCommentsTab />
+                  <CommentTemplatesTab />
                 </TabsContent>
               </div>
             </Tabs>
