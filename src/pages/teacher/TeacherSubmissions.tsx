@@ -54,6 +54,13 @@ interface GradeBoundary {
 
 type SortOrder = 'az' | 'za' | 'new-old' | 'old-new';
 
+interface TeacherAssignment {
+  assignment_type: string;
+  subject_id: string | null;
+  class_name: string | null;
+  stream: string | null;
+}
+
 export default function TeacherSubmissions() {
   const { profile } = useAuth();
   const [classes, setClasses] = useState<Class[]>([]);
@@ -61,6 +68,9 @@ export default function TeacherSubmissions() {
   const [students, setStudents] = useState<Student[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
   const [gradeBoundaries, setGradeBoundaries] = useState<GradeBoundary[]>([]);
+  const [teacherAssignments, setTeacherAssignments] = useState<TeacherAssignment[]>([]);
+  const [assignedClasses, setAssignedClasses] = useState<Class[]>([]);
+  const [assignedSubjects, setAssignedSubjects] = useState<Subject[]>([]);
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedStudent, setSelectedStudent] = useState('');
   const [selectedTerm, setSelectedTerm] = useState('');
@@ -85,25 +95,82 @@ export default function TeacherSubmissions() {
   const newSubjectRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetchClasses();
-    fetchSubjects();
-    fetchStudents();
-    fetchGradeBoundaries();
-  }, []);
+    if (profile) {
+      fetchTeacherAssignments();
+    }
+  }, [profile]);
+
+  useEffect(() => {
+    if (teacherAssignments.length > 0) {
+      fetchClasses();
+      fetchSubjects();
+      fetchGradeBoundaries();
+    }
+  }, [teacherAssignments]);
+
+  useEffect(() => {
+    if (selectedClass) {
+      fetchStudentsInClass();
+    }
+  }, [selectedClass]);
 
   useEffect(() => {
     filterAndSortStudents();
   }, [students, searchQuery, sortOrder]);
 
+  useEffect(() => {
+    filterAndSortStudents();
+  }, [students, searchQuery, sortOrder]);
+
+  const fetchTeacherAssignments = async () => {
+    if (!profile) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('teacher_assignments')
+        .select('*')
+        .eq('teacher_id', profile.id);
+      
+      if (error) throw error;
+      setTeacherAssignments(data || []);
+    } catch (error: any) {
+      toast({
+        title: "Error fetching assignments",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
   const fetchClasses = async () => {
     try {
+      // Get unique class names and streams from teacher assignments
+      const assignedClassStreams = teacherAssignments.map(a => ({
+        class_name: a.class_name,
+        stream: a.stream
+      })).filter(a => a.class_name && a.stream);
+
+      if (assignedClassStreams.length === 0) {
+        setAssignedClasses([]);
+        return;
+      }
+
+      // Fetch all classes
       const { data, error } = await supabase
         .from('classes')
         .select('*')
         .order('name');
       
       if (error) throw error;
-      setClasses(data || []);
+
+      // Filter to only assigned classes
+      const filtered = (data || []).filter(cls => 
+        assignedClassStreams.some(assigned => 
+          assigned.class_name === cls.name && assigned.stream === cls.stream
+        )
+      );
+
+      setAssignedClasses(filtered);
     } catch (error: any) {
       toast({
         title: "Error fetching classes",
@@ -115,13 +182,44 @@ export default function TeacherSubmissions() {
 
   const fetchSubjects = async () => {
     try {
+      if (!selectedClass) {
+        setAssignedSubjects([]);
+        return;
+      }
+
+      // Get the selected class details
+      const selectedClassObj = assignedClasses.find(c => c.id === selectedClass);
+      if (!selectedClassObj) return;
+
+      // Get subject IDs assigned to this teacher for this class
+      const assignedSubjectIds = teacherAssignments
+        .filter(a => 
+          a.assignment_type === 'subject_teacher' &&
+          a.class_name === selectedClassObj.name &&
+          a.stream === selectedClassObj.stream &&
+          a.subject_id
+        )
+        .map(a => a.subject_id);
+
+      if (assignedSubjectIds.length === 0) {
+        setAssignedSubjects([]);
+        toast({
+          title: "No Subjects Assigned",
+          description: "You have no subjects assigned to this class.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Fetch subjects
       const { data, error } = await supabase
         .from('subjects')
         .select('*')
+        .in('id', assignedSubjectIds)
         .order('name');
       
       if (error) throw error;
-      setSubjects(data || []);
+      setAssignedSubjects(data || []);
     } catch (error: any) {
       toast({
         title: "Error fetching subjects",
@@ -131,15 +229,22 @@ export default function TeacherSubmissions() {
     }
   };
 
-  const fetchStudents = async () => {
+  const fetchStudentsInClass = async () => {
+    if (!selectedClass) return;
+    
     try {
       const { data, error } = await supabase
-        .from('students')
-        .select('id, full_name, student_number, created_at')
-        .order('full_name');
+        .from('class_students')
+        .select('student_id, students(id, full_name, student_number, created_at)')
+        .eq('class_id', selectedClass);
       
       if (error) throw error;
-      setStudents(data || []);
+      
+      const studentData = (data || [])
+        .map(cs => cs.students)
+        .filter(s => s !== null) as Student[];
+      
+      setStudents(studentData);
     } catch (error: any) {
       toast({
         title: "Error fetching students",
@@ -329,7 +434,7 @@ export default function TeacherSubmissions() {
   };
 
   const handleSubjectChange = (id: string, subjectId: string) => {
-    const subject = subjects.find(s => s.id === subjectId);
+    const subject = assignedSubjects.find(s => s.id === subjectId);
     setSubjectEntries(entries =>
       entries.map(entry =>
         entry.id === id
@@ -337,6 +442,26 @@ export default function TeacherSubmissions() {
           : entry
       )
     );
+  };
+
+  const handleClassChange = (classId: string) => {
+    setSelectedClass(classId);
+    setSelectedStudent('');
+    setStudents([]);
+    // Reset subject entries when class changes
+    setSubjectEntries([{
+      id: '1',
+      subjectId: '',
+      subjectCode: '',
+      a1Score: '',
+      a2Score: '',
+      a3Score: '',
+      teacherInitials: '',
+      identifier: '1',
+      percentage20: '',
+      percentage80: '',
+      percentage100: ''
+    }]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -482,17 +607,23 @@ export default function TeacherSubmissions() {
           {/* Class and Term Selection */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Class</Label>
-              <Select value={selectedClass} onValueChange={setSelectedClass}>
+              <Label>Class (Only Your Assigned Classes)</Label>
+              <Select value={selectedClass} onValueChange={handleClassChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select class" />
                 </SelectTrigger>
                 <SelectContent>
-                  {classes.map((cls) => (
-                    <SelectItem key={cls.id} value={cls.id}>
-                      {cls.name} {cls.stream} - {cls.term} {cls.academic_year}
+                  {assignedClasses.length === 0 ? (
+                    <SelectItem value="none" disabled>
+                      No classes assigned to you
                     </SelectItem>
-                  ))}
+                  ) : (
+                    assignedClasses.map((cls) => (
+                      <SelectItem key={cls.id} value={cls.id}>
+                        {cls.name} {cls.stream} - {cls.term} {cls.academic_year}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -594,20 +725,31 @@ export default function TeacherSubmissions() {
                 {/* Subject and Subject Code */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Subject</Label>
+                    <Label>Subject (Only Your Assigned Subjects for This Class)</Label>
                     <Select
                       value={entry.subjectId}
                       onValueChange={(value) => handleSubjectChange(entry.id, value)}
+                      disabled={!selectedClass}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select subject" />
+                        <SelectValue placeholder={!selectedClass ? "Select class first" : "Select subject"} />
                       </SelectTrigger>
                       <SelectContent>
-                        {subjects.map((subject) => (
-                          <SelectItem key={subject.id} value={subject.id}>
-                            {subject.name}
+                        {!selectedClass ? (
+                          <SelectItem value="none" disabled>
+                            Please select a class first
                           </SelectItem>
-                        ))}
+                        ) : assignedSubjects.length === 0 ? (
+                          <SelectItem value="none" disabled>
+                            No subjects assigned for this class
+                          </SelectItem>
+                        ) : (
+                          assignedSubjects.map((subject) => (
+                            <SelectItem key={subject.id} value={subject.id}>
+                              {subject.name}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
