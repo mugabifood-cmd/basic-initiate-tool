@@ -594,6 +594,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      teacher_assigned_to_subject_class: {
+        Args: { _class_id: string; _subject_id: string; _teacher_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       user_role: "admin" | "teacher" | "headteacher"
