@@ -103,7 +103,6 @@ export default function TeacherSubmissions() {
   useEffect(() => {
     if (teacherAssignments.length > 0) {
       fetchClasses();
-      fetchSubjects();
       fetchGradeBoundaries();
     }
   }, [teacherAssignments]);
@@ -111,8 +110,11 @@ export default function TeacherSubmissions() {
   useEffect(() => {
     if (selectedClass) {
       fetchStudentsInClass();
+      fetchSubjects();
+    } else {
+      setAssignedSubjects([]);
     }
-  }, [selectedClass]);
+  }, [selectedClass, teacherAssignments]);
 
   useEffect(() => {
     filterAndSortStudents();
@@ -448,6 +450,7 @@ export default function TeacherSubmissions() {
     setSelectedClass(classId);
     setSelectedStudent('');
     setStudents([]);
+    setAssignedSubjects([]);
     // Reset subject entries when class changes
     setSubjectEntries([{
       id: '1',
