@@ -117,11 +117,43 @@ export default function Auth() {
     setIsLoading(true);
     
     const assignments = selectedRole === 'teacher' ? {
-      subjectAssignments: subjectAssignments.map(sa => ({
-        subjectId: sa.subjectId,
-        classes: sa.classSlots.filter(slot => slot.className && slot.stream)
-      })),
-      classAssignment: classAssignment.className && classAssignment.stream ? classAssignment : null
+      subjectAssignments: subjectAssignments
+        .filter(sa => sa.subjectId) // Only include assignments with a subject
+        .map(sa => {
+          // Expand "All" streams to all available streams
+          const expandedSlots = sa.classSlots
+            .filter(slot => slot.className) // Only include slots with a class
+            .flatMap(slot => {
+              if (slot.stream === 'all') {
+                // Expand to all streams for this class
+                return streams.map(stream => ({
+                  className: slot.className,
+                  stream: stream
+                }));
+              } else if (slot.stream) {
+                // Regular stream selection
+                return [{ className: slot.className, stream: slot.stream }];
+              }
+              return [];
+            });
+          
+          return {
+            subjectId: sa.subjectId,
+            classes: expandedSlots
+          };
+        })
+        .filter(sa => sa.classes.length > 0), // Only include assignments with at least one class
+      classAssignment: (() => {
+        if (classAssignment.className && classAssignment.stream) {
+          if (classAssignment.stream === 'all') {
+            // Return null for "All" in class teacher - will be handled differently
+            // Class teacher can only be for one stream at a time
+            return null;
+          }
+          return classAssignment;
+        }
+        return null;
+      })()
     } : undefined;
     
     await signUp(signUpEmail, signUpPassword, signUpName, selectedRole, assignments);
@@ -372,16 +404,17 @@ export default function Auth() {
                                            <SelectTrigger className="h-8">
                                              <SelectValue placeholder="Select stream" />
                                            </SelectTrigger>
-                                            <SelectContent>
-                                              <SelectItem value="none">None</SelectItem>
-                                              {streams
-                                                .filter((s) => s && s.trim() !== '')
-                                                .map((stream) => (
-                                                  <SelectItem key={stream} value={stream}>
-                                                    {stream}
-                                                  </SelectItem>
-                                                ))}
-                                           </SelectContent>
+                                           <SelectContent>
+                                             <SelectItem value="none">None</SelectItem>
+                                             <SelectItem value="all">All</SelectItem>
+                                             {streams
+                                               .filter((s) => s && s.trim() !== '')
+                                               .map((stream) => (
+                                                 <SelectItem key={stream} value={stream}>
+                                                   {stream}
+                                                 </SelectItem>
+                                               ))}
+                                          </SelectContent>
                                          </Select>
                                        </div>
                                      </div>
@@ -433,16 +466,17 @@ export default function Auth() {
                                  <SelectTrigger>
                                    <SelectValue placeholder="Select stream" />
                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="none">None</SelectItem>
-                                    {streams
-                                      .filter((s) => s && s.trim() !== '')
-                                      .map((stream) => (
-                                       <SelectItem key={stream} value={stream}>
-                                         {stream}
-                                       </SelectItem>
-                                     ))}
-                                 </SelectContent>
+                                 <SelectContent>
+                                   <SelectItem value="none">None</SelectItem>
+                                   <SelectItem value="all">All</SelectItem>
+                                   {streams
+                                     .filter((s) => s && s.trim() !== '')
+                                     .map((stream) => (
+                                      <SelectItem key={stream} value={stream}>
+                                        {stream}
+                                      </SelectItem>
+                                    ))}
+                                </SelectContent>
                                </Select>
                              </div>
                           </div>
