@@ -28,7 +28,7 @@ interface AuthContextType {
         subjectId: string;
         classes: Array<{ className: string; stream: string }>;
       }>;
-      classAssignment: { className: string; stream: string } | null;
+      classAssignment: Array<{ className: string; stream: string }>;
     }
   ) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -130,7 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         subjectId: string;
         classes: Array<{ className: string; stream: string }>;
       }>;
-      classAssignment: { className: string; stream: string } | null;
+      classAssignment: Array<{ className: string; stream: string }>;
     }
   ) => {
     try {
