@@ -28,7 +28,7 @@ interface AuthContextType {
         subjectId: string;
         classes: Array<{ className: string; stream: string }>;
       }>;
-      classAssignment: Array<{ className: string; stream: string }>;
+      classAssignment: Array<{ className: string; stream: string }>; // Array of class assignments
     }
   ) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
