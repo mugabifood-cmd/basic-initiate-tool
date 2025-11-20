@@ -44,7 +44,8 @@ export default function ReportCardPreview({ reportId }: ReportCardPreviewProps) 
             gender,
             house,
             photo_url,
-            school_id
+            school_id,
+            age
           ),
           classes (
             name,
