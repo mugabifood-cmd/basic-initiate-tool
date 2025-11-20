@@ -889,7 +889,7 @@ export default function TeacherSubmissions() {
                   <div className="space-y-2">
                     <Label>Grade (Auto-calculated)</Label>
                     <Input
-                      value={calculateGrade(parseFloat(calculateAVG(entry.a1Score, entry.a2Score, entry.a3Score)))}
+                      value={entry.percentage100 ? calculateGrade(parseFloat(entry.percentage100)) : ''}
                       readOnly
                       className="bg-muted"
                       placeholder="Auto"
@@ -899,7 +899,7 @@ export default function TeacherSubmissions() {
                   <div className="space-y-2">
                     <Label>Achievement Level (Auto-calculated)</Label>
                     <Input
-                      value={calculateAchievementLevel(parseFloat(calculateAVG(entry.a1Score, entry.a2Score, entry.a3Score)))}
+                      value={entry.percentage100 ? calculateAchievementLevel(parseFloat(entry.percentage100)) : ''}
                       readOnly
                       className="bg-muted"
                       placeholder="Auto"
