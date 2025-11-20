@@ -146,13 +146,15 @@ export default function Auth() {
       classAssignment: (() => {
         if (classAssignment.className && classAssignment.stream) {
           if (classAssignment.stream === 'all') {
-            // Return null for "All" in class teacher - will be handled differently
-            // Class teacher can only be for one stream at a time
-            return null;
+            // Expand "All" to all available streams for class teacher
+            return streams.map(stream => ({
+              className: classAssignment.className,
+              stream: stream
+            }));
           }
-          return classAssignment;
+          return [classAssignment];
         }
-        return null;
+        return []; // Return empty array if not selected
       })()
     } : undefined;
     
