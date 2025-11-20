@@ -97,6 +97,15 @@ export default function TeacherSubmissions() {
   useEffect(() => {
     if (profile) {
       fetchTeacherAssignments();
+      // Pre-populate teacher initials if available
+      if (profile.initials) {
+        setSubjectEntries(entries => 
+          entries.map(entry => ({
+            ...entry,
+            teacherInitials: entry.teacherInitials || profile.initials || ''
+          }))
+        );
+      }
     }
   }, [profile]);
 
@@ -370,7 +379,7 @@ export default function TeacherSubmissions() {
       a1Score: '',
       a2Score: '',
       a3Score: '',
-      teacherInitials: '',
+      teacherInitials: profile?.initials || '',
       identifier: '1',
       percentage20: '',
       percentage80: '',
@@ -495,6 +504,23 @@ export default function TeacherSubmissions() {
     setIsLoading(true);
     
     try {
+      // Update teacher's profile initials if not already set
+      const firstEntryWithInitials = subjectEntries.find(e => e.teacherInitials);
+      if (firstEntryWithInitials && profile) {
+        const { data: currentProfile } = await supabase
+          .from('profiles')
+          .select('initials')
+          .eq('id', profile.id)
+          .single();
+        
+        if (currentProfile && !currentProfile.initials) {
+          await supabase
+            .from('profiles')
+            .update({ initials: firstEntryWithInitials.teacherInitials })
+            .eq('id', profile.id);
+        }
+      }
+
       // Check if any submissions already exist for this student
       const { data: existingSubmissions, error: checkError } = await supabase
         .from('subject_submissions')
