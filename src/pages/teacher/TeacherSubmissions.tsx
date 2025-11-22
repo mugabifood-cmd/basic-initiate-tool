@@ -499,6 +499,16 @@ export default function TeacherSubmissions() {
         });
         return;
       }
+      
+      // Validate A-scores must contain a decimal point
+      if (!entry.a1Score.includes('.') || !entry.a2Score.includes('.') || !entry.a3Score.includes('.')) {
+        toast({
+          title: "Invalid A-Score Format",
+          description: "A-scores (A1, A2, A3) must contain a decimal point (e.g., 12.5, 3.0, 0.4)",
+          variant: "destructive"
+        });
+        return;
+      }
     }
 
     setIsLoading(true);
@@ -797,38 +807,53 @@ export default function TeacherSubmissions() {
                 {/* A1, A2, A3, AVG */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="space-y-2">
-                    <Label>A1 Score</Label>
+                    <Label>A1 Score (must include decimal)</Label>
                     <Input
-                      type="number"
-                      step="0.1"
-                      min="0"
+                      type="text"
                       value={entry.a1Score}
-                      onChange={(e) => updateSubjectEntry(entry.id, 'a1Score', e.target.value)}
-                      placeholder="0.0"
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // Allow only numbers and one decimal point
+                        if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                          updateSubjectEntry(entry.id, 'a1Score', value);
+                        }
+                      }}
+                      placeholder="e.g., 12.5"
+                      className={!entry.a1Score.includes('.') && entry.a1Score !== '' ? 'border-destructive' : ''}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label>A2 Score</Label>
+                    <Label>A2 Score (must include decimal)</Label>
                     <Input
-                      type="number"
-                      step="0.1"
-                      min="0"
+                      type="text"
                       value={entry.a2Score}
-                      onChange={(e) => updateSubjectEntry(entry.id, 'a2Score', e.target.value)}
-                      placeholder="0.0"
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // Allow only numbers and one decimal point
+                        if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                          updateSubjectEntry(entry.id, 'a2Score', value);
+                        }
+                      }}
+                      placeholder="e.g., 8.0"
+                      className={!entry.a2Score.includes('.') && entry.a2Score !== '' ? 'border-destructive' : ''}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label>A3 Score</Label>
+                    <Label>A3 Score (must include decimal)</Label>
                     <Input
-                      type="number"
-                      step="0.1"
-                      min="0"
+                      type="text"
                       value={entry.a3Score}
-                      onChange={(e) => updateSubjectEntry(entry.id, 'a3Score', e.target.value)}
-                      placeholder="0.0"
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // Allow only numbers and one decimal point
+                        if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                          updateSubjectEntry(entry.id, 'a3Score', value);
+                        }
+                      }}
+                      placeholder="e.g., 0.5"
+                      className={!entry.a3Score.includes('.') && entry.a3Score !== '' ? 'border-destructive' : ''}
                     />
                   </div>
 
