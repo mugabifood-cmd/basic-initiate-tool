@@ -500,11 +500,12 @@ export default function TeacherSubmissions() {
         return;
       }
       
-      // Validate A-scores must contain a decimal point
-      if (!entry.a1Score.includes('.') || !entry.a2Score.includes('.') || !entry.a3Score.includes('.')) {
+      // Validate A-scores must be decimal values with format: digits.digits
+      const decimalPattern = /^[0-9]+\.[0-9]+$/;
+      if (!decimalPattern.test(entry.a1Score) || !decimalPattern.test(entry.a2Score) || !decimalPattern.test(entry.a3Score)) {
         toast({
           title: "Invalid A-Score Format",
-          description: "A-scores (A1, A2, A3) must contain a decimal point (e.g., 12.5, 3.0, 0.4)",
+          description: "A-scores must be decimal values (e.g., 1.4, 2.2, 0.3). Please include a decimal point.",
           variant: "destructive"
         });
         return;
@@ -812,14 +813,19 @@ export default function TeacherSubmissions() {
                       type="text"
                       value={entry.a1Score}
                       onChange={(e) => {
-                        const value = e.target.value;
-                        // Allow only numbers and one decimal point
+                        let value = e.target.value;
+                        
+                        // If user types "." first, convert to "0."
+                        if (value === '.') {
+                          value = '0.';
+                        }
+                        
+                        // Allow only numbers and one decimal point during typing
                         if (value === '' || /^\d*\.?\d*$/.test(value)) {
                           updateSubjectEntry(entry.id, 'a1Score', value);
                         }
                       }}
                       placeholder="e.g., 12.5"
-                      className={!entry.a1Score.includes('.') && entry.a1Score !== '' ? 'border-destructive' : ''}
                     />
                   </div>
 
@@ -829,14 +835,19 @@ export default function TeacherSubmissions() {
                       type="text"
                       value={entry.a2Score}
                       onChange={(e) => {
-                        const value = e.target.value;
-                        // Allow only numbers and one decimal point
+                        let value = e.target.value;
+                        
+                        // If user types "." first, convert to "0."
+                        if (value === '.') {
+                          value = '0.';
+                        }
+                        
+                        // Allow only numbers and one decimal point during typing
                         if (value === '' || /^\d*\.?\d*$/.test(value)) {
                           updateSubjectEntry(entry.id, 'a2Score', value);
                         }
                       }}
                       placeholder="e.g., 8.0"
-                      className={!entry.a2Score.includes('.') && entry.a2Score !== '' ? 'border-destructive' : ''}
                     />
                   </div>
 
@@ -846,14 +857,19 @@ export default function TeacherSubmissions() {
                       type="text"
                       value={entry.a3Score}
                       onChange={(e) => {
-                        const value = e.target.value;
-                        // Allow only numbers and one decimal point
+                        let value = e.target.value;
+                        
+                        // If user types "." first, convert to "0."
+                        if (value === '.') {
+                          value = '0.';
+                        }
+                        
+                        // Allow only numbers and one decimal point during typing
                         if (value === '' || /^\d*\.?\d*$/.test(value)) {
                           updateSubjectEntry(entry.id, 'a3Score', value);
                         }
                       }}
                       placeholder="e.g., 0.5"
-                      className={!entry.a3Score.includes('.') && entry.a3Score !== '' ? 'border-destructive' : ''}
                     />
                   </div>
 
