@@ -251,27 +251,45 @@ export default function ReportManagement() {
     }
 
     setBulkProcessing(true);
+    const totalReports = selectedReports.size;
+    let successCount = 0;
+    let failCount = 0;
+
     toast({
-      title: "Preparing downloads",
-      description: `Downloading ${selectedReports.size} report card(s)...`
+      title: "Starting bulk download",
+      description: `Processing ${totalReports} report card(s)...`
     });
 
     for (const reportId of Array.from(selectedReports)) {
       const report = reportCards.find(r => r.id === reportId);
       if (report) {
-        await handleDownload(report);
-        // Wait between downloads
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        try {
+          await handleDownload(report);
+          successCount++;
+          // Wait between downloads to avoid overwhelming the browser
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        } catch (error) {
+          failCount++;
+          console.error(`Failed to download report for ${report.students.full_name}:`, error);
+        }
       }
     }
 
     setBulkProcessing(false);
     setSelectedReports(new Set());
     
-    toast({
-      title: "Downloads complete",
-      description: `${selectedReports.size} report card(s) downloaded successfully`
-    });
+    if (failCount === 0) {
+      toast({
+        title: "Downloads complete",
+        description: `Successfully downloaded ${successCount} report card(s)`
+      });
+    } else {
+      toast({
+        title: "Downloads complete with errors",
+        description: `Downloaded ${successCount} report(s), ${failCount} failed`,
+        variant: failCount === totalReports ? "destructive" : "default"
+      });
+    }
   };
 
   const handleDownload = async (reportCard: ReportCard) => {
@@ -284,12 +302,17 @@ export default function ReportManagement() {
       setSelectedReportId(reportCard.id);
       setPreviewOpen(true);
       
-      // Wait for dialog to render
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Wait longer for dialog and content to fully render
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       const element = document.getElementById('report-card-preview');
       if (!element) {
-        throw new Error("Could not find report card preview");
+        throw new Error("Report card content not ready. Please try again.");
+      }
+
+      // Check if element has content
+      if (!element.offsetHeight || !element.offsetWidth) {
+        throw new Error("Report card not fully loaded. Please try again.");
       }
 
       const html2canvas = (await import('html2canvas')).default;
@@ -299,8 +322,14 @@ export default function ReportManagement() {
         scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        allowTaint: true,
+        imageTimeout: 0
       });
+
+      if (!canvas || canvas.width === 0 || canvas.height === 0) {
+        throw new Error("Failed to capture report card. Please try again.");
+      }
 
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({
@@ -332,14 +361,14 @@ export default function ReportManagement() {
       
       toast({
         title: "Download complete",
-        description: "Report card has been downloaded successfully"
+        description: "Report card downloaded successfully"
       });
     } catch (error: any) {
       console.error('Download error:', error);
       setPreviewOpen(false);
       toast({
         title: "Error downloading report",
-        description: error.message || "Failed to generate PDF",
+        description: error.message || "Failed to generate PDF. Please try again.",
         variant: "destructive"
       });
     }
