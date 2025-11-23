@@ -374,17 +374,34 @@ export default function Auth() {
                         {/* Subject Teacher Assignments */}
                         <div className="space-y-4">
                           <div className="flex items-center justify-between">
-                            <Label className="text-base font-medium">Subject Teacher</Label>
+                            <div>
+                              <Label className="text-base font-medium">Subject Teacher</Label>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Assign unlimited subjects (currently: {subjectAssignments.length})
+                              </p>
+                            </div>
                             <Button
                               type="button"
-                              variant="outline"
+                              variant="default"
                               size="sm"
                               onClick={addSubjectAssignment}
+                              className="bg-blue-600 hover:bg-blue-700"
                             >
                               <Plus className="h-4 w-4 mr-2" />
                               Add Subject
                             </Button>
                           </div>
+                          
+                          {subjectAssignments.length === 0 && (
+                            <div className="text-center p-6 border-2 border-dashed rounded-lg">
+                              <p className="text-sm text-muted-foreground mb-2">
+                                No subjects assigned yet
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Click "Add Subject" to assign subjects to this teacher
+                              </p>
+                            </div>
+                          )}
                           
                           {subjectAssignments.map((assignment, index) => (
                             <div key={index} className="border rounded-lg p-4 space-y-3">
