@@ -7,9 +7,9 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Plus, Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
 
 interface Subject {
   id: string;
@@ -17,12 +17,14 @@ interface Subject {
   code: string;
 }
 
-interface TeacherAssignments {
-  subjectAssignments: Array<{
-    subjectId: string;
-    classes: Array<{ className: string; stream: string }>;
-  }>;
-  classAssignment: Array<{ className: string; stream: string }>;
+interface ClassSlot {
+  className: string;
+  stream: string;
+}
+
+interface SubjectAssignment {
+  subjectId: string;
+  classSlots: ClassSlot[];
 }
 
 interface ClassAssignment {
@@ -48,10 +50,8 @@ export default function Auth() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [selectedRole, setSelectedRole] = useState<'admin' | 'teacher' | 'headteacher'>('teacher');
 
-  // Teacher Assignment State - Simplified for Subject Teacher
-  const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
-  const [subjectTeacherClass, setSubjectTeacherClass] = useState('');
-  const [subjectTeacherStream, setSubjectTeacherStream] = useState('');
+  // Teacher Assignment State
+  const [subjectAssignments, setSubjectAssignments] = useState<SubjectAssignment[]>([]);
   const [classAssignment, setClassAssignment] = useState<ClassAssignment>({ className: '', stream: '' });
 
   // Fetch subjects, classes, and streams for teacher assignments
@@ -111,104 +111,99 @@ export default function Auth() {
     e.preventDefault();
     
     if (signUpPassword !== confirmPassword) {
-      toast({
-        title: "Password Mismatch",
-        description: "Passwords do not match. Please try again.",
-        variant: "destructive"
-      });
       return;
     }
     
     setIsLoading(true);
     
-    let assignments: TeacherAssignments | undefined = undefined;
-    
-    if (selectedRole === 'teacher') {
-      try {
-        // Validate minimum 5 subjects for Subject Teacher
-        if (selectedSubjects.length > 0 && selectedSubjects.length < 5) {
-          toast({
-            title: "Insufficient Subjects",
-            description: "Subject Teachers must be assigned at least 5 subjects. Please select more subjects.",
-            variant: "destructive"
-          });
-          setIsLoading(false);
-          return;
-        }
-
-        // Process subject teacher assignments (same class/stream, multiple subjects)
-        const processedSubjectAssignments = selectedSubjects
-          .filter(subjectId => subjectId && subjectId.trim() !== '')
-          .map(subjectId => {
-            let classes: Array<{ className: string; stream: string }> = [];
-            
-            if (subjectTeacherClass && subjectTeacherStream) {
-              if (subjectTeacherStream === 'all') {
-                // Expand to all streams
-                classes = streams.map(stream => ({
-                  className: subjectTeacherClass,
+    const assignments = selectedRole === 'teacher' ? {
+      subjectAssignments: subjectAssignments
+        .filter(sa => sa.subjectId) // Only include assignments with a subject
+        .map(sa => {
+          // Expand "All" streams to all available streams
+          const expandedSlots = sa.classSlots
+            .filter(slot => slot.className) // Only include slots with a class
+            .flatMap(slot => {
+              if (slot.stream === 'all') {
+                // Expand to all streams for this class
+                return streams.map(stream => ({
+                  className: slot.className,
                   stream: stream
                 }));
-              } else {
-                classes = [{ className: subjectTeacherClass, stream: subjectTeacherStream }];
+              } else if (slot.stream) {
+                // Regular stream selection
+                return [{ className: slot.className, stream: slot.stream }];
               }
-            }
-            
-            return {
-              subjectId: subjectId,
-              classes: classes
-            };
-          })
-          .filter(sa => sa.classes.length > 0);
-        
-        // Process class teacher assignment
-        let processedClassAssignment: Array<{ className: string; stream: string }> = [];
+              return [];
+            });
+          
+          return {
+            subjectId: sa.subjectId,
+            classes: expandedSlots
+          };
+        })
+        .filter(sa => sa.classes.length > 0), // Only include assignments with at least one class
+      classAssignment: (() => {
         if (classAssignment.className && classAssignment.stream) {
           if (classAssignment.stream === 'all') {
             // Expand "All" to all available streams for class teacher
-            processedClassAssignment = streams.map(stream => ({
+            return streams.map(stream => ({
               className: classAssignment.className,
               stream: stream
             }));
-          } else {
-            processedClassAssignment = [classAssignment];
           }
+          return [classAssignment];
         }
-        
-        // Only include assignments if there's at least one subject assignment or class assignment
-        if (processedSubjectAssignments.length > 0 || processedClassAssignment.length > 0) {
-          assignments = {
-            subjectAssignments: processedSubjectAssignments,
-            classAssignment: processedClassAssignment
-          };
-        }
-      } catch (error) {
-        console.error('Error processing assignments:', error);
-        toast({
-          title: "Assignment Processing Error",
-          description: "There was an error processing your assignments. Please try again.",
-          variant: "destructive"
-        });
-        setIsLoading(false);
-        return;
-      }
-    }
+        return []; // Return empty array if not selected
+      })()
+    } : undefined;
     
-    const result = await signUp(signUpEmail, signUpPassword, signUpName, selectedRole, assignments);
-    
-    if (result.error) {
-      console.error('Signup error:', result.error);
-    }
+    await signUp(signUpEmail, signUpPassword, signUpName, selectedRole, assignments);
     
     setIsLoading(false);
   };
 
-  const toggleSubject = (subjectId: string) => {
-    setSelectedSubjects(prev => 
-      prev.includes(subjectId) 
-        ? prev.filter(id => id !== subjectId)
-        : [...prev, subjectId]
-    );
+  const addSubjectAssignment = () => {
+    const newAssignment: SubjectAssignment = {
+      subjectId: '',
+      classSlots: [
+        { className: '', stream: '' },
+        { className: '', stream: '' },
+        { className: '', stream: '' },
+        { className: '', stream: '' }
+      ]
+    };
+    setSubjectAssignments([...subjectAssignments, newAssignment]);
+  };
+
+  const removeSubjectAssignment = (index: number) => {
+    setSubjectAssignments(subjectAssignments.filter((_, i) => i !== index));
+  };
+
+  const updateSubjectAssignment = (index: number, subjectId: string) => {
+    const updated = [...subjectAssignments];
+    updated[index].subjectId = subjectId;
+    setSubjectAssignments(updated);
+  };
+
+  const updateClassSlot = (assignmentIndex: number, slotIndex: number, field: 'className' | 'stream', value: string) => {
+    const updated = [...subjectAssignments];
+    updated[assignmentIndex].classSlots[slotIndex][field] = value === 'none' ? '' : value;
+    setSubjectAssignments(updated);
+  };
+
+  const getSelectedClassesForAssignment = (assignmentIndex: number): string[] => {
+    return subjectAssignments[assignmentIndex]?.classSlots
+      .map(slot => slot.className)
+      .filter(className => className !== '') || [];
+  };
+
+  const isClassDisabledForSlot = (assignmentIndex: number, slotIndex: number, className: string): boolean => {
+    const selectedClasses = getSelectedClassesForAssignment(assignmentIndex);
+    const currentSlotClass = subjectAssignments[assignmentIndex]?.classSlots[slotIndex]?.className;
+    
+    // Allow the current slot's class, but disable if it's selected in other slots
+    return selectedClasses.includes(className) && currentSlotClass !== className;
   };
 
   return (
@@ -326,92 +321,114 @@ export default function Auth() {
                       <div>
                         <h3 className="text-lg font-semibold mb-4">Teacher Assignments</h3>
                         
-                        {/* Subject Teacher Assignments - Simplified */}
+                        {/* Subject Teacher Assignments */}
                         <div className="space-y-4">
-                          <div>
+                          <div className="flex items-center justify-between">
                             <Label className="text-base font-medium">Subject Teacher</Label>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Select class, stream, and subjects (minimum 5 subjects required)
-                            </p>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={addSubjectAssignment}
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add Subject
+                            </Button>
                           </div>
                           
-                          {/* Class Selection */}
-                          <div className="space-y-2">
-                            <Label>Class</Label>
-                            <Select value={subjectTeacherClass} onValueChange={setSubjectTeacherClass}>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select class" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {classes.map((className) => (
-                                  <SelectItem key={className} value={className}>
-                                    {className}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          {/* Stream Selection */}
-                          <div className="space-y-2">
-                            <Label>Stream</Label>
-                            <Select 
-                              value={subjectTeacherStream} 
-                              onValueChange={setSubjectTeacherStream}
-                              disabled={!subjectTeacherClass}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select stream" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="all">All Streams</SelectItem>
-                                {streams.map((stream) => (
-                                  <SelectItem key={stream} value={stream}>
-                                    {stream}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          {/* Subject Multi-Selection */}
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <Label>Subjects (Select at least 5)</Label>
-                              <span className={`text-xs font-medium ${selectedSubjects.length >= 5 ? 'text-green-600' : 'text-destructive'}`}>
-                                {selectedSubjects.length} selected
-                              </span>
+                          {subjectAssignments.map((assignment, index) => (
+                            <div key={index} className="border rounded-lg p-4 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <Select
+                                  value={assignment.subjectId}
+                                  onValueChange={(value) => updateSubjectAssignment(index, value)}
+                                >
+                                  <SelectTrigger className="w-full max-w-xs">
+                                    <SelectValue placeholder="Select subject" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {subjects
+                                      .filter((subject) => subject && subject.id && subject.name)
+                                      .map((subject) => (
+                                        <SelectItem key={subject.id} value={subject.id}>
+                                          {subject.name}{subject.code ? ` (${subject.code})` : ''}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => removeSubjectAssignment(index)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                              
+                               <div>
+                                 <Label className="text-sm font-medium mb-3 block">Classes & Streams</Label>
+                                 <div className="space-y-3">
+                                   {assignment.classSlots.map((slot, slotIndex) => (
+                                     <div key={slotIndex} className="grid grid-cols-2 gap-3">
+                                       <div>
+                                         <Label className="text-xs text-muted-foreground">Class {slotIndex + 1}</Label>
+                                          <Select
+                                            value={slot.className || 'none'}
+                                            onValueChange={(value) => updateClassSlot(index, slotIndex, 'className', value)}
+                                          >
+                                           <SelectTrigger className="h-8">
+                                             <SelectValue placeholder="Select class" />
+                                           </SelectTrigger>
+                                            <SelectContent>
+                                              <SelectItem value="none">None</SelectItem>
+                                              {classes
+                                                .filter(Boolean)
+                                                .map((className) => (
+                                                  <SelectItem 
+                                                    key={className} 
+                                                    value={className}
+                                                    disabled={isClassDisabledForSlot(index, slotIndex, className)}
+                                                  >
+                                                    {className}
+                                                  </SelectItem>
+                                                ))}
+                                           </SelectContent>
+                                         </Select>
+                                       </div>
+                                       <div>
+                                         <Label className="text-xs text-muted-foreground">Stream</Label>
+                                          <Select
+                                            value={slot.stream || 'none'}
+                                            onValueChange={(value) => updateClassSlot(index, slotIndex, 'stream', value)}
+                                            disabled={!slot.className}
+                                          >
+                                           <SelectTrigger className="h-8">
+                                             <SelectValue placeholder="Select stream" />
+                                           </SelectTrigger>
+                                           <SelectContent>
+                                             <SelectItem value="none">None</SelectItem>
+                                             <SelectItem value="all">All</SelectItem>
+                                             {streams
+                                               .filter((s) => s && s.trim() !== '')
+                                               .map((stream) => (
+                                                 <SelectItem key={stream} value={stream}>
+                                                   {stream}
+                                                 </SelectItem>
+                                               ))}
+                                          </SelectContent>
+                                         </Select>
+                                       </div>
+                                     </div>
+                                   ))}
+                                 </div>
+                               </div>
                             </div>
-                            <div className="border rounded-lg p-3 max-h-64 overflow-y-auto space-y-2">
-                              {subjects.length === 0 ? (
-                                <p className="text-sm text-muted-foreground text-center py-4">
-                                  No subjects available
-                                </p>
-                              ) : (
-                                subjects.map((subject) => (
-                                  <label
-                                    key={subject.id}
-                                    className="flex items-center space-x-2 p-2 hover:bg-accent rounded cursor-pointer"
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      checked={selectedSubjects.includes(subject.id)}
-                                      onChange={() => toggleSubject(subject.id)}
-                                      className="w-4 h-4 text-primary rounded focus:ring-2 focus:ring-primary"
-                                    />
-                                    <span className="text-sm">
-                                      {subject.name}{subject.code ? ` (${subject.code})` : ''}
-                                    </span>
-                                  </label>
-                                ))
-                              )}
-                            </div>
-                            {selectedSubjects.length > 0 && selectedSubjects.length < 5 && (
-                              <p className="text-xs text-destructive mt-1">
-                                Please select at least {5 - selectedSubjects.length} more subject(s)
-                              </p>
-                            )}
-                          </div>
+                          ))}
+                          
+                          {subjectAssignments.length === 0 && (
+                            <p className="text-sm text-muted-foreground">No subject assignments added yet.</p>
+                          )}
                         </div>
                         
                         <Separator className="my-4" />
