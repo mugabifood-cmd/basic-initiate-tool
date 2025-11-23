@@ -408,28 +408,32 @@ export default function ReportManagement() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Generated Report Cards</span>
-              <Badge variant="outline">
-                <FileText className="w-3 h-3 mr-1" />
-                {reportCards.length} total
-              </Badge>
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-3">
+                <span>Generated Report Cards</span>
+                <Badge variant="outline">
+                  <FileText className="w-3 h-3 mr-1" />
+                  {reportCards.length} total
+                </Badge>
+              </CardTitle>
+              {selectedReports.size > 0 && (
+                <div className="flex items-center gap-2">
+                  <Button onClick={handleBulkPrint} disabled={bulkProcessing}>
+                    <Printer className="w-4 h-4 mr-2" />
+                    Bulk Print ({selectedReports.size})
+                  </Button>
+                  <Button onClick={handleBulkDownload} disabled={bulkProcessing}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Bulk Download ({selectedReports.size})
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setSelectedReports(new Set())}>
+                    Clear Selection
+                  </Button>
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
-            {reportCards.length > 0 && <div className="flex items-center gap-2 mb-4">
-                <Button variant="outline" size="sm" onClick={handleBulkPrint} disabled={selectedReports.size === 0 || bulkProcessing} className="text-right">
-                  <Printer className="w-4 h-4 mr-2" />
-                  Bulk Print ({selectedReports.size})
-                </Button>
-                <Button variant="outline" size="sm" onClick={handleBulkDownload} disabled={selectedReports.size === 0 || bulkProcessing} className="text-right">
-                  <Download className="w-4 h-4 mr-2" />
-                  Bulk Download ({selectedReports.size})
-                </Button>
-                {selectedReports.size > 0 && <Button variant="ghost" size="sm" onClick={() => setSelectedReports(new Set())}>
-                    Clear Selection
-                  </Button>}
-              </div>}
             {reportCards.length === 0 ? <div className="text-center py-8 text-gray-500">
                 <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
                 <p>No report cards generated yet.</p>
