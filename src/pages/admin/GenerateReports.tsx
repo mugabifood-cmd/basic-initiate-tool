@@ -305,10 +305,10 @@ export default function GenerateReports() {
                   <Label htmlFor="class">Class</Label>
                   {selectedClass && (
                     <Button
-                      variant="ghost"
+                      variant="default"
                       size="sm"
                       onClick={() => setShowTermSettings(true)}
-                      className="h-7 text-xs"
+                      className="h-8 text-xs bg-blue-600 hover:bg-blue-700 text-white animate-pulse"
                     >
                       <Settings className="w-3 h-3 mr-1" />
                       Term Settings
