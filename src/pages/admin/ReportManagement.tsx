@@ -54,6 +54,7 @@ export default function ReportManagement() {
   const [editOpen, setEditOpen] = useState(false);
   const [editingReport, setEditingReport] = useState<ReportCard | null>(null);
   const [saving, setSaving] = useState(false);
+  const [autoPrint, setAutoPrint] = useState(false);
 
   useEffect(() => {
     fetchReportCards();
@@ -172,12 +173,8 @@ export default function ReportManagement() {
   const handlePrint = async (reportCard: ReportCard) => {
     try {
       setSelectedReportId(reportCard.id);
+      setAutoPrint(true);
       setPreviewOpen(true);
-      
-      // Wait for dialog to render
-      setTimeout(() => {
-        window.print();
-      }, 500);
     } catch (error: any) {
       toast({
         title: "Error printing",
@@ -185,6 +182,11 @@ export default function ReportManagement() {
         variant: "destructive"
       });
     }
+  };
+
+  const handlePrintComplete = () => {
+    setAutoPrint(false);
+    setPreviewOpen(false);
   };
 
   const handleDownload = async (reportCard: ReportCard) => {
@@ -488,7 +490,10 @@ export default function ReportManagement() {
       </main>
 
       {/* Preview Dialog */}
-      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+      <Dialog open={previewOpen} onOpenChange={(open) => {
+        setPreviewOpen(open);
+        if (!open) setAutoPrint(false);
+      }}>
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto print:max-w-full">
           <DialogHeader>
             <DialogTitle>Report Card Preview</DialogTitle>
@@ -496,7 +501,13 @@ export default function ReportManagement() {
               Preview of the student report card
             </DialogDescription>
           </DialogHeader>
-          {selectedReportId && <ReportCardPreview reportId={selectedReportId} />}
+          {selectedReportId && (
+            <ReportCardPreview 
+              reportId={selectedReportId} 
+              autoPrint={autoPrint}
+              onPrintComplete={handlePrintComplete}
+            />
+          )}
         </DialogContent>
       </Dialog>
 
