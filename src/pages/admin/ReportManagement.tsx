@@ -55,6 +55,8 @@ export default function ReportManagement() {
   const [editingReport, setEditingReport] = useState<ReportCard | null>(null);
   const [saving, setSaving] = useState(false);
   const [autoPrint, setAutoPrint] = useState(false);
+  const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set());
+  const [bulkProcessing, setBulkProcessing] = useState(false);
 
   useEffect(() => {
     fetchReportCards();
@@ -187,6 +189,89 @@ export default function ReportManagement() {
   const handlePrintComplete = () => {
     setAutoPrint(false);
     setPreviewOpen(false);
+  };
+
+  const toggleReportSelection = (reportId: string) => {
+    setSelectedReports(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(reportId)) {
+        newSet.delete(reportId);
+      } else {
+        newSet.add(reportId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedReports.size === reportCards.length) {
+      setSelectedReports(new Set());
+    } else {
+      setSelectedReports(new Set(reportCards.map(r => r.id)));
+    }
+  };
+
+  const handleBulkPrint = async () => {
+    if (selectedReports.size === 0) {
+      toast({
+        title: "No reports selected",
+        description: "Please select at least one report to print",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setBulkProcessing(true);
+    toast({
+      title: "Preparing to print",
+      description: `Printing ${selectedReports.size} report card(s)...`
+    });
+
+    for (const reportId of Array.from(selectedReports)) {
+      const report = reportCards.find(r => r.id === reportId);
+      if (report) {
+        await handlePrint(report);
+        // Wait between prints to avoid issues
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+    }
+
+    setBulkProcessing(false);
+    setSelectedReports(new Set());
+  };
+
+  const handleBulkDownload = async () => {
+    if (selectedReports.size === 0) {
+      toast({
+        title: "No reports selected",
+        description: "Please select at least one report to download",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setBulkProcessing(true);
+    toast({
+      title: "Preparing downloads",
+      description: `Downloading ${selectedReports.size} report card(s)...`
+    });
+
+    for (const reportId of Array.from(selectedReports)) {
+      const report = reportCards.find(r => r.id === reportId);
+      if (report) {
+        await handleDownload(report);
+        // Wait between downloads
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
+    }
+
+    setBulkProcessing(false);
+    setSelectedReports(new Set());
+    
+    toast({
+      title: "Downloads complete",
+      description: `${selectedReports.size} report card(s) downloaded successfully`
+    });
   };
 
   const handleDownload = async (reportCard: ReportCard) => {
@@ -354,6 +439,37 @@ export default function ReportManagement() {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            {reportCards.length > 0 && (
+              <div className="flex items-center gap-2 mb-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBulkPrint}
+                  disabled={selectedReports.size === 0 || bulkProcessing}
+                >
+                  <Printer className="w-4 h-4 mr-2" />
+                  Bulk Print ({selectedReports.size})
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBulkDownload}
+                  disabled={selectedReports.size === 0 || bulkProcessing}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Bulk Download ({selectedReports.size})
+                </Button>
+                {selectedReports.size > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedReports(new Set())}
+                  >
+                    Clear Selection
+                  </Button>
+                )}
+              </div>
+            )}
             {reportCards.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
@@ -365,6 +481,14 @@ export default function ReportManagement() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-12">
+                        <input
+                          type="checkbox"
+                          checked={selectedReports.size === reportCards.length && reportCards.length > 0}
+                          onChange={toggleSelectAll}
+                          className="rounded border-gray-300"
+                        />
+                      </TableHead>
                       <TableHead>Student</TableHead>
                       <TableHead>Student Number</TableHead>
                       <TableHead>Class</TableHead>
@@ -379,6 +503,14 @@ export default function ReportManagement() {
                   <TableBody>
                     {reportCards.map((report) => (
                       <TableRow key={report.id}>
+                        <TableCell>
+                          <input
+                            type="checkbox"
+                            checked={selectedReports.has(report.id)}
+                            onChange={() => toggleReportSelection(report.id)}
+                            className="rounded border-gray-300"
+                          />
+                        </TableCell>
                         <TableCell className="font-medium">
                           {report.students.full_name}
                         </TableCell>
