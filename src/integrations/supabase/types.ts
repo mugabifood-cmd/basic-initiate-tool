@@ -54,31 +54,40 @@ export type Database = {
         Row: {
           academic_year: string
           created_at: string | null
+          general_requirements: string | null
           id: string
           name: string
+          next_term_begins: string | null
           school_id: string
           stream: string
           term: string
+          term_ended_on: string | null
           updated_at: string | null
         }
         Insert: {
           academic_year: string
           created_at?: string | null
+          general_requirements?: string | null
           id?: string
           name: string
+          next_term_begins?: string | null
           school_id: string
           stream: string
           term: string
+          term_ended_on?: string | null
           updated_at?: string | null
         }
         Update: {
           academic_year?: string
           created_at?: string | null
+          general_requirements?: string | null
           id?: string
           name?: string
+          next_term_begins?: string | null
           school_id?: string
           stream?: string
           term?: string
+          term_ended_on?: string | null
           updated_at?: string | null
         }
         Relationships: [
