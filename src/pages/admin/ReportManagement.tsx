@@ -418,7 +418,7 @@ export default function ReportManagement() {
           </CardHeader>
           <CardContent>
             {reportCards.length > 0 && <div className="flex items-center gap-2 mb-4">
-                <Button variant="outline" size="sm" onClick={handleBulkPrint} disabled={selectedReports.size === 0 || bulkProcessing}>
+                <Button variant="outline" size="sm" onClick={handleBulkPrint} disabled={selectedReports.size === 0 || bulkProcessing} className="text-right">
                   <Printer className="w-4 h-4 mr-2" />
                   Bulk Print ({selectedReports.size})
                 </Button>
