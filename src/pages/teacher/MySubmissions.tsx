@@ -652,7 +652,7 @@ export default function MySubmissions() {
                 </div>
 
                 <div className="border-t pt-4">
-                  <Label className="text-muted-foreground mb-2 block">Scores</Label>
+                  <Label className="text-muted-foreground mb-2 block">A Scores</Label>
                   <div className="grid grid-cols-3 gap-4">
                     <div className="bg-muted/50 p-3 rounded-lg">
                       <p className="text-sm text-muted-foreground">A1 Score</p>
@@ -669,7 +669,25 @@ export default function MySubmissions() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="border-t pt-4">
+                  <Label className="text-muted-foreground mb-2 block">Percentage Scores</Label>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-muted/50 p-3 rounded-lg">
+                      <p className="text-sm text-muted-foreground">20% Score</p>
+                      <p className="text-2xl font-bold">{selectedSubmission.percentage_20}</p>
+                    </div>
+                    <div className="bg-muted/50 p-3 rounded-lg">
+                      <p className="text-sm text-muted-foreground">80% Score</p>
+                      <p className="text-2xl font-bold">{selectedSubmission.percentage_80}</p>
+                    </div>
+                    <div className="bg-muted/50 p-3 rounded-lg">
+                      <p className="text-sm text-muted-foreground">100% Score</p>
+                      <p className="text-2xl font-bold">{selectedSubmission.percentage_100}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-4 gap-4">
                   <div className="bg-primary/10 p-3 rounded-lg">
                     <p className="text-sm text-muted-foreground">Average Score</p>
                     <p className="text-2xl font-bold">{selectedSubmission.average_score}</p>
@@ -677,6 +695,16 @@ export default function MySubmissions() {
                   <div className="bg-primary/10 p-3 rounded-lg">
                     <p className="text-sm text-muted-foreground">Grade</p>
                     <p className="text-2xl font-bold">{selectedSubmission.grade}</p>
+                  </div>
+                  <div className="bg-primary/10 p-3 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Teacher Initials</p>
+                    <p className="text-2xl font-bold">{selectedSubmission.profiles?.initials || 'N/A'}</p>
+                  </div>
+                  <div className="bg-primary/10 p-3 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Achievement</p>
+                    <p className="text-lg font-bold">
+                      {calculateAchievementLevel(selectedSubmission.percentage_100)}
+                    </p>
                   </div>
                 </div>
 
