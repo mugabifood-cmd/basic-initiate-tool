@@ -318,25 +318,16 @@ export default function TeacherManagement() {
   const getUsedClasses = (currentAssignmentIndex: number, currentSlotIndex: number) => {
     const used = new Set<string>();
     
-    // Add classes from other assignments
-    subjectAssignments.forEach((assignment, assignmentIndex) => {
-      if (assignmentIndex !== currentAssignmentIndex) {
-        assignment.classSlots.forEach(slot => {
-          if (slot.className) used.add(slot.className);
-        });
-      } else {
-        // Add classes from other slots in the same assignment
-        assignment.classSlots.forEach((slot, slotIndex) => {
-          if (slotIndex !== currentSlotIndex && slot.className) {
-            used.add(slot.className);
-          }
-        });
-      }
-    });
-    
-    // Add class teacher assignment
-    if (classAssignment?.className) {
-      used.add(classAssignment.className);
+    // Only prevent duplicate class assignments within the SAME subject
+    // This allows teachers to teach multiple subjects in the same class
+    const currentAssignment = subjectAssignments[currentAssignmentIndex];
+    if (currentAssignment) {
+      currentAssignment.classSlots.forEach((slot, slotIndex) => {
+        if (slotIndex !== currentSlotIndex && slot.className && slot.stream) {
+          // Add the combination of className and stream to prevent duplicates within the same subject
+          used.add(`${slot.className}-${slot.stream}`);
+        }
+      });
     }
     
     return used;
@@ -488,11 +479,15 @@ export default function TeacherManagement() {
                       {assignment.classSlots.map((slot, slotIndex) => {
                         const usedClasses = getUsedClasses(index, slotIndex);
                         const uniqueClassNames = [...new Set(classes.map(cls => cls.name))];
-                        const availableClassNames = uniqueClassNames.filter(name => !usedClasses.has(name) || name === slot.className);
                         const selectedClass = classes.find(cls => cls.name === slot.className);
                         const availableStreamsForClass = selectedClass ? 
                           [...new Set(classes.filter(cls => cls.name === selectedClass.name).map(cls => cls.stream))] : 
                           [];
+                        
+                        // Filter out streams that are already used for this subject
+                        const availableStreams = availableStreamsForClass.filter(stream => 
+                          !usedClasses.has(`${slot.className}-${stream}`) || stream === slot.stream
+                        );
                         
                         return (
                           <div key={slotIndex} className="grid grid-cols-2 gap-3">
@@ -509,7 +504,7 @@ export default function TeacherManagement() {
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="none">None</SelectItem>
-                                  {availableClassNames.map((className) => (
+                                  {uniqueClassNames.map((className) => (
                                     <SelectItem key={className} value={className}>
                                       {className}
                                     </SelectItem>
@@ -532,7 +527,7 @@ export default function TeacherManagement() {
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="none">None</SelectItem>
-                                  {availableStreamsForClass.map((stream) => (
+                                  {availableStreams.map((stream) => (
                                     <SelectItem key={stream} value={stream}>
                                       {stream}
                                     </SelectItem>
