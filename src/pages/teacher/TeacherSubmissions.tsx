@@ -412,31 +412,7 @@ export default function TeacherSubmissions() {
   };
 
   const updateSubjectEntry = (id: string, field: keyof SubjectEntry, value: string) => {
-    // Validate A scores (must allow decimals)
-    if ((field === 'a1Score' || field === 'a2Score' || field === 'a3Score') && value !== '') {
-      const hasDecimal = value.includes('.');
-      if (!hasDecimal && parseFloat(value) === parseInt(value) && value !== '0') {
-        toast({
-          title: "Invalid Input",
-          description: "A scores must be decimal values (e.g., 85.5). Please include a decimal point.",
-          variant: "destructive"
-        });
-        return;
-      }
-    }
-    
-    // Validate percentage scores (must be integers only)
-    if ((field === 'percentage20' || field === 'percentage80' || field === 'percentage100') && value !== '') {
-      if (value.includes('.')) {
-        toast({
-          title: "Invalid Input",
-          description: "% scores must be whole numbers only (no decimals allowed).",
-          variant: "destructive"
-        });
-        return;
-      }
-    }
-    
+    // Directly update subject entries; numeric validation is handled on submit
     setSubjectEntries(entries =>
       entries.map(entry =>
         entry.id === id ? { ...entry, [field]: value } : entry
@@ -500,12 +476,21 @@ export default function TeacherSubmissions() {
         return;
       }
       
-      // Validate A-scores are valid numbers (integers or decimals)
-      const numberPattern = /^\d+\.?\d*$/;
-      if (!numberPattern.test(entry.a1Score) || !numberPattern.test(entry.a2Score) || !numberPattern.test(entry.a3Score)) {
+      // Validate all score fields are valid numbers (integers or decimals)
+      const numberPattern = /^\d+(\.\d+)?$/;
+      const scoresToCheck = [
+        entry.a1Score,
+        entry.a2Score,
+        entry.a3Score,
+        entry.percentage20,
+        entry.percentage80,
+        entry.percentage100,
+      ];
+      const hasInvalidScore = scoresToCheck.some((score) => !numberPattern.test(score));
+      if (hasInvalidScore) {
         toast({
-          title: "Invalid A-Score Format",
-          description: "A-scores must be valid numbers (e.g., 12, 1.4, 0.3).",
+          title: "Invalid Score Format",
+          description: "Scores must be valid numbers (e.g., 85 or 85.5).",
           variant: "destructive"
         });
         return;
