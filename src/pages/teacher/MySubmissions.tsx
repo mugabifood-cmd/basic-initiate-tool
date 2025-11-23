@@ -13,12 +13,15 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Submission {
   id: string;
   a1_score: number;
   a2_score: number;
   a3_score: number;
+  percentage_20: number;
+  percentage_80: number;
   percentage_100: number;
   average_score: number;
   grade: string;
@@ -26,6 +29,7 @@ interface Submission {
   status: string;
   submitted_at: string;
   reviewed_at: string | null;
+  remarks: string;
   students: {
     full_name: string;
     student_number: string;
@@ -37,6 +41,9 @@ interface Submission {
   classes: {
     name: string;
     stream: string;
+  } | null;
+  profiles: {
+    initials: string;
   } | null;
 }
 
@@ -51,6 +58,11 @@ export default function MySubmissions() {
     a1_score: '',
     a2_score: '',
     a3_score: '',
+    percentage_20: '',
+    percentage_80: '',
+    percentage_100: '',
+    teacher_initials: '',
+    identifier: '1',
     teacher_comment: ''
   });
   const [gradeBoundaries, setGradeBoundaries] = useState<Array<{
@@ -83,6 +95,9 @@ export default function MySubmissions() {
           classes!inner (
             name,
             stream
+          ),
+          profiles!subject_submissions_teacher_id_fkey (
+            initials
           )
         `)
         .eq('teacher_id', profile?.id)
@@ -125,13 +140,32 @@ export default function MySubmissions() {
     return 'F';
   };
 
+  const calculateAchievementLevel = (avg: number) => {
+    if (avg >= 90) return 'Outstanding';
+    if (avg >= 75) return 'Exceptional';
+    if (avg >= 60) return 'Satisfactory';
+    return 'Basic';
+  };
+
+  const getIdentifierFromAchievement = (achievement: string) => {
+    if (achievement === 'Outstanding') return '3';
+    if (achievement === 'Exceptional') return '2';
+    return '1';
+  };
+
   const handleEdit = (submission: Submission) => {
     setSelectedSubmission(submission);
+    const achievement = calculateAchievementLevel(submission.percentage_100);
     setEditForm({
       a1_score: submission.a1_score.toString(),
       a2_score: submission.a2_score.toString(),
       a3_score: submission.a3_score.toString(),
-      teacher_comment: submission.teacher_comment
+      percentage_20: submission.percentage_20?.toString() || '',
+      percentage_80: submission.percentage_80?.toString() || '',
+      percentage_100: submission.percentage_100?.toString() || '',
+      teacher_initials: submission.profiles?.initials || '',
+      identifier: getIdentifierFromAchievement(achievement),
+      teacher_comment: submission.teacher_comment || ''
     });
     setEditDialogOpen(true);
   };
@@ -144,11 +178,52 @@ export default function MySubmissions() {
   const handleSaveEdit = async () => {
     if (!selectedSubmission) return;
 
+    // Validate all required fields
+    if (!editForm.a1_score || !editForm.a2_score || !editForm.a3_score || 
+        !editForm.percentage_20 || !editForm.percentage_80 || !editForm.percentage_100 || 
+        !editForm.teacher_initials) {
+      toast({
+        title: "Incomplete Fields",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate all score fields are valid numbers (integers or decimals)
+    const numberPattern = /^\d+(\.\d+)?$/;
+    const scoresToCheck = [
+      editForm.a1_score,
+      editForm.a2_score,
+      editForm.a3_score,
+      editForm.percentage_20,
+      editForm.percentage_80,
+      editForm.percentage_100,
+    ];
+    const hasInvalidScore = scoresToCheck.some((score) => !numberPattern.test(score));
+    if (hasInvalidScore) {
+      toast({
+        title: "Invalid Score Format",
+        description: "Scores must be valid numbers (e.g., 85 or 85.5).",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
-      const a1 = parseFloat(editForm.a1_score) || 0;
-      const a2 = parseFloat(editForm.a2_score) || 0;
-      const a3 = parseFloat(editForm.a3_score) || 0;
+      const a1 = parseFloat(editForm.a1_score);
+      const a2 = parseFloat(editForm.a2_score);
+      const a3 = parseFloat(editForm.a3_score);
+      const perc20 = parseFloat(editForm.percentage_20);
+      const perc80 = parseFloat(editForm.percentage_80);
+      const perc100 = parseFloat(editForm.percentage_100);
+      
+      // Calculate average from A scores
       const avg = parseFloat(((a1 + a2 + a3) / 3).toFixed(2));
+      
+      // Calculate grade and achievement based on percentage_100
+      const grade = calculateGrade(perc100);
+      const achievement = calculateAchievementLevel(perc100);
 
       const { error } = await supabase
         .from('subject_submissions')
@@ -156,18 +231,26 @@ export default function MySubmissions() {
           a1_score: a1,
           a2_score: a2,
           a3_score: a3,
+          percentage_20: perc20,
+          percentage_80: perc80,
+          percentage_100: perc100,
           average_score: avg,
-          percentage_20: a1,
-          percentage_80: a2 + a3,
-          percentage_100: a1 + a2 + a3,
-          grade: calculateGrade(avg),
+          grade: grade,
+          remarks: editForm.identifier,
           teacher_comment: editForm.teacher_comment
         })
         .eq('id', selectedSubmission.id)
-        .eq('teacher_id', profile?.id)
-        .eq('status', 'pending');
+        .eq('teacher_id', profile?.id);
 
       if (error) throw error;
+
+      // Update teacher initials if changed
+      if (editForm.teacher_initials !== profile?.initials) {
+        await supabase
+          .from('profiles')
+          .update({ initials: editForm.teacher_initials })
+          .eq('id', profile?.id);
+      }
 
       toast({
         title: "Submission Updated",
@@ -382,51 +465,143 @@ export default function MySubmissions() {
 
         {/* Edit Dialog */}
         <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Edit Submission</DialogTitle>
               <DialogDescription>
-                Update the scores for {selectedSubmission?.students?.full_name}
+                Update the scores for {selectedSubmission?.students?.full_name} - {selectedSubmission?.subjects?.name}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-a1">A1 Score</Label>
-                <Input
-                  id="edit-a1"
-                  type="number"
-                  step="0.01"
-                  value={editForm.a1_score}
-                  onChange={(e) => setEditForm({ ...editForm, a1_score: e.target.value })}
-                />
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-a1">A1 Score</Label>
+                  <Input
+                    id="edit-a1"
+                    type="text"
+                    value={editForm.a1_score}
+                    onChange={(e) => setEditForm({ ...editForm, a1_score: e.target.value })}
+                    placeholder="0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-a2">A2 Score</Label>
+                  <Input
+                    id="edit-a2"
+                    type="text"
+                    value={editForm.a2_score}
+                    onChange={(e) => setEditForm({ ...editForm, a2_score: e.target.value })}
+                    placeholder="0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-a3">A3 Score</Label>
+                  <Input
+                    id="edit-a3"
+                    type="text"
+                    value={editForm.a3_score}
+                    onChange={(e) => setEditForm({ ...editForm, a3_score: e.target.value })}
+                    placeholder="0"
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-a2">A2 Score</Label>
-                <Input
-                  id="edit-a2"
-                  type="number"
-                  step="0.01"
-                  value={editForm.a2_score}
-                  onChange={(e) => setEditForm({ ...editForm, a2_score: e.target.value })}
-                />
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-perc20">20% Score</Label>
+                  <Input
+                    id="edit-perc20"
+                    type="text"
+                    value={editForm.percentage_20}
+                    onChange={(e) => setEditForm({ ...editForm, percentage_20: e.target.value })}
+                    placeholder="0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-perc80">80% Score</Label>
+                  <Input
+                    id="edit-perc80"
+                    type="text"
+                    value={editForm.percentage_80}
+                    onChange={(e) => setEditForm({ ...editForm, percentage_80: e.target.value })}
+                    placeholder="0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-perc100">100% Score</Label>
+                  <Input
+                    id="edit-perc100"
+                    type="text"
+                    value={editForm.percentage_100}
+                    onChange={(e) => setEditForm({ ...editForm, percentage_100: e.target.value })}
+                    placeholder="0"
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-a3">A3 Score</Label>
-                <Input
-                  id="edit-a3"
-                  type="number"
-                  step="0.01"
-                  value={editForm.a3_score}
-                  onChange={(e) => setEditForm({ ...editForm, a3_score: e.target.value })}
-                />
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-initials">Teacher Initials</Label>
+                  <Input
+                    id="edit-initials"
+                    type="text"
+                    value={editForm.teacher_initials}
+                    onChange={(e) => setEditForm({ ...editForm, teacher_initials: e.target.value })}
+                    placeholder="e.g., JD"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-identifier">Achievement Level</Label>
+                  <Select
+                    value={editForm.identifier}
+                    onValueChange={(value) => setEditForm({ ...editForm, identifier: value })}
+                  >
+                    <SelectTrigger id="edit-identifier">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1 - Basic</SelectItem>
+                      <SelectItem value="2">2 - Moderate</SelectItem>
+                      <SelectItem value="3">3 - Outstanding</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="edit-comment">Teacher Comment</Label>
+                <Label>Calculated Values (Auto-calculated)</Label>
+                <div className="grid grid-cols-3 gap-4 p-3 bg-muted rounded-md">
+                  <div>
+                    <p className="text-xs text-muted-foreground">AVG</p>
+                    <p className="font-medium">
+                      {editForm.a1_score && editForm.a2_score && editForm.a3_score
+                        ? ((parseFloat(editForm.a1_score) + parseFloat(editForm.a2_score) + parseFloat(editForm.a3_score)) / 3).toFixed(2)
+                        : '0.00'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Grade</p>
+                    <p className="font-medium">
+                      {editForm.percentage_100 ? calculateGrade(parseFloat(editForm.percentage_100)) : '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Achievement</p>
+                    <p className="font-medium">
+                      {editForm.percentage_100 ? calculateAchievementLevel(parseFloat(editForm.percentage_100)) : '-'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-comment">Teacher Comment (Optional)</Label>
                 <Textarea
                   id="edit-comment"
                   value={editForm.teacher_comment}
                   onChange={(e) => setEditForm({ ...editForm, teacher_comment: e.target.value })}
                   rows={3}
+                  placeholder="Add any comments about the student's performance..."
                 />
               </div>
             </div>
