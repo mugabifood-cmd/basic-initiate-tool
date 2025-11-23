@@ -370,12 +370,15 @@ export default function ReportCardPreview({ reportId }: ReportCardPreviewProps) 
             <p className="font-bold">NEXT TERM BEGINS</p>
           </div>
           <div className="border-r border-black p-2 text-center">
+            <p className="font-bold mb-1">{reportData.fees_balance ? `KES ${reportData.fees_balance.toLocaleString()}` : ''}</p>
             <p className="font-bold">FEES BALANCE</p>
           </div>
           <div className="border-r border-black p-2 text-center">
+            <p className="font-bold mb-1">{reportData.fees_next_term ? `KES ${reportData.fees_next_term.toLocaleString()}` : ''}</p>
             <p className="font-bold">FEES NEXT TERM</p>
           </div>
           <div className="p-2 text-center">
+            <p className="mb-1">{reportData.other_requirements || ''}</p>
             <p className="font-bold italic">Other Requirement</p>
           </div>
         </div>

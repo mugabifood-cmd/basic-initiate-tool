@@ -168,6 +168,8 @@ serve(async (req) => {
 
         if (existingReport) {
           // Update existing report card
+          // NOTE: Financial fields (fees_balance, fees_next_term, other_requirements) are NOT updated
+          // here to preserve admin-only data. These fields can only be modified via the admin interface.
           const { data: updatedReport, error: updateError } = await supabase
             .from('report_cards')
             .update({
@@ -191,6 +193,8 @@ serve(async (req) => {
           reportCardId = updatedReport.id;
         } else {
           // Create new report card
+          // NOTE: Financial fields (fees_balance, fees_next_term, other_requirements) are initialized
+          // as null and can only be set by admin users via the admin interface.
           const { data: newReport, error: insertError } = await supabase
             .from('report_cards')
             .insert({
