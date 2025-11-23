@@ -510,123 +510,149 @@ export default function ReportManagement() {
             </DialogDescription>
           </DialogHeader>
           {editingReport && (
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Student</Label>
-                <Input 
-                  value={`${editingReport.students.full_name} (${editingReport.students.student_number})`} 
-                  disabled 
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Class</Label>
-                <Input 
-                  value={`${editingReport.classes.name} ${editingReport.classes.stream}`} 
-                  disabled 
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select 
-                  value={editingReport.status} 
-                  onValueChange={(value) => setEditingReport({...editingReport, status: value})}
-                >
-                  <SelectTrigger id="status">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="published">Published</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-6 py-4">
+              {/* Student & Class Info */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold border-b pb-2">Student Information</h3>
                 <div className="space-y-2">
-                  <Label htmlFor="term_ended">Term Ended On</Label>
+                  <Label>Student</Label>
                   <Input 
-                    id="term_ended"
-                    type="date" 
-                    value={editingReport.term_ended_on || ''} 
-                    onChange={(e) => setEditingReport({...editingReport, term_ended_on: e.target.value})}
+                    value={`${editingReport.students.full_name} (${editingReport.students.student_number})`} 
+                    disabled 
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="next_term">Next Term Begins</Label>
+                  <Label>Class</Label>
                   <Input 
-                    id="next_term"
-                    type="date" 
-                    value={editingReport.next_term_begins || ''} 
-                    onChange={(e) => setEditingReport({...editingReport, next_term_begins: e.target.value})}
+                    value={`${editingReport.classes.name} ${editingReport.classes.stream}`} 
+                    disabled 
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              {/* Term Dates */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold border-b pb-2">Term Dates</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="term_ended">Term Ended On</Label>
+                    <Input 
+                      id="term_ended"
+                      type="date" 
+                      value={editingReport.term_ended_on || ''} 
+                      onChange={(e) => setEditingReport({...editingReport, term_ended_on: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="next_term">Next Term Begins</Label>
+                    <Input 
+                      id="next_term"
+                      type="date" 
+                      value={editingReport.next_term_begins || ''} 
+                      onChange={(e) => setEditingReport({...editingReport, next_term_begins: e.target.value})}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Financial Information - Admin Only */}
+              <div className="border-2 border-primary rounded-lg p-4 bg-primary/5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-primary">Financial Information (Admin Only)</h3>
+                  <Badge variant="default">Admin Access</Badge>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="fees_balance">Fees Balance (KES)</Label>
+                    <Input 
+                      id="fees_balance"
+                      type="number" 
+                      step="0.01"
+                      value={editingReport.fees_balance || ''} 
+                      onChange={(e) => setEditingReport({...editingReport, fees_balance: parseFloat(e.target.value)})}
+                      placeholder="0.00"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="fees_next_term">Fees Next Term (KES)</Label>
+                    <Input 
+                      id="fees_next_term"
+                      type="number" 
+                      step="0.01"
+                      value={editingReport.fees_next_term || ''} 
+                      onChange={(e) => setEditingReport({...editingReport, fees_next_term: parseFloat(e.target.value)})}
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="fees_balance">Fees Balance</Label>
-                  <Input 
-                    id="fees_balance"
-                    type="number" 
-                    step="0.01"
-                    value={editingReport.fees_balance || ''} 
-                    onChange={(e) => setEditingReport({...editingReport, fees_balance: parseFloat(e.target.value)})}
+                  <Label htmlFor="other_requirements">Other Requirements</Label>
+                  <Textarea 
+                    id="other_requirements"
+                    value={editingReport.other_requirements || ''} 
+                    onChange={(e) => setEditingReport({...editingReport, other_requirements: e.target.value})}
+                    rows={2}
+                    placeholder="Additional requirements or notes"
+                  />
+                </div>
+              </div>
+
+              {/* Comments */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold border-b pb-2">Teacher Comments</h3>
+                <div className="space-y-2">
+                  <Label htmlFor="class_teacher_comment">Class Teacher's Comment</Label>
+                  <Textarea 
+                    id="class_teacher_comment"
+                    value={editingReport.class_teacher_comment || ''} 
+                    onChange={(e) => setEditingReport({...editingReport, class_teacher_comment: e.target.value})}
+                    rows={3}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="fees_next_term">Fees Next Term</Label>
-                  <Input 
-                    id="fees_next_term"
-                    type="number" 
-                    step="0.01"
-                    value={editingReport.fees_next_term || ''} 
-                    onChange={(e) => setEditingReport({...editingReport, fees_next_term: parseFloat(e.target.value)})}
+                  <Label htmlFor="headteacher_comment">Head Teacher's Comment</Label>
+                  <Textarea 
+                    id="headteacher_comment"
+                    value={editingReport.headteacher_comment || ''} 
+                    onChange={(e) => setEditingReport({...editingReport, headteacher_comment: e.target.value})}
+                    rows={3}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="overall_achievement">Overall Achievement</Label>
+                  <Textarea 
+                    id="overall_achievement"
+                    value={editingReport.overall_achievement || ''} 
+                    onChange={(e) => setEditingReport({...editingReport, overall_achievement: e.target.value})}
+                    rows={2}
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="class_teacher_comment">Class Teacher's Comment</Label>
-                <Textarea 
-                  id="class_teacher_comment"
-                  value={editingReport.class_teacher_comment || ''} 
-                  onChange={(e) => setEditingReport({...editingReport, class_teacher_comment: e.target.value})}
-                  rows={3}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="headteacher_comment">Head Teacher's Comment</Label>
-                <Textarea 
-                  id="headteacher_comment"
-                  value={editingReport.headteacher_comment || ''} 
-                  onChange={(e) => setEditingReport({...editingReport, headteacher_comment: e.target.value})}
-                  rows={3}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="overall_achievement">Overall Achievement</Label>
-                <Textarea 
-                  id="overall_achievement"
-                  value={editingReport.overall_achievement || ''} 
-                  onChange={(e) => setEditingReport({...editingReport, overall_achievement: e.target.value})}
-                  rows={2}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="other_requirements">Other Requirements</Label>
-                <Textarea 
-                  id="other_requirements"
-                  value={editingReport.other_requirements || ''} 
-                  onChange={(e) => setEditingReport({...editingReport, other_requirements: e.target.value})}
-                  rows={2}
-                />
+              {/* Status */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold border-b pb-2">Publication Status</h3>
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status</Label>
+                  <Select 
+                    value={editingReport.status} 
+                    onValueChange={(value) => setEditingReport({...editingReport, status: value})}
+                  >
+                    <SelectTrigger id="status">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="published">Published</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
           )}
