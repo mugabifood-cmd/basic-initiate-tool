@@ -135,6 +135,44 @@ export default function Approvals() {
     }
   };
 
+  const handleBulkApproval = async () => {
+    if (submissions.length === 0) {
+      toast({
+        title: "No submissions to approve",
+        description: "There are no pending submissions available.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const submissionIds = submissions.map(s => s.id);
+      
+      const { error } = await supabase
+        .from('subject_submissions')
+        .update({
+          status: 'approved',
+          reviewed_at: new Date().toISOString()
+        })
+        .in('id', submissionIds);
+
+      if (error) throw error;
+
+      toast({
+        title: "Bulk approval successful",
+        description: "All pending submissions have been approved."
+      });
+
+      fetchSubmissions();
+    } catch (error: any) {
+      toast({
+        title: "Error approving submissions",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
   const getGradeColor = (grade: string) => {
     switch (grade) {
       case 'A': return 'bg-green-100 text-green-800';
@@ -178,7 +216,17 @@ export default function Approvals() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Card>
           <CardHeader>
-            <CardTitle>Pending Teacher Submissions</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Pending Teacher Submissions</CardTitle>
+              <Button 
+                onClick={handleBulkApproval}
+                disabled={submissions.length === 0}
+                variant="default"
+              >
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Bulk Approve All
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {submissions.length === 0 ? (
