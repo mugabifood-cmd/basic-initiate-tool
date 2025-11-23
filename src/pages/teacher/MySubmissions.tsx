@@ -192,7 +192,6 @@ export default function MySubmissions() {
         .delete()
         .eq('id', submissionId)
         .eq('teacher_id', profile?.id)
-        .eq('status', 'pending')
         .select();
 
       if (error) throw error;
@@ -200,7 +199,7 @@ export default function MySubmissions() {
       if (!data || data.length === 0) {
         toast({
           title: "Delete Failed",
-          description: "Could not delete this submission. It may have already been reviewed or you don't have permission.",
+          description: "Could not delete this submission. You don't have permission.",
           variant: "destructive"
         });
         return;
@@ -334,37 +333,35 @@ export default function MySubmissions() {
                         <TableCell>
                           <div className="flex items-center space-x-2">
                             {submission.status === 'pending' && (
-                              <>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => handleEdit(submission)}
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </Button>
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button variant="outline" size="sm">
-                                      <Trash2 className="w-4 h-4" />
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Delete Submission</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        Are you sure you want to delete this submission? This action cannot be undone.
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => handleDelete(submission.id)}>
-                                        Delete
-                                      </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
-                              </>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleEdit(submission)}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
                             )}
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Submission</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete this submission? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDelete(submission.id)}>
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                             <Button 
                               variant="outline" 
                               size="sm"
