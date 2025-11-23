@@ -113,17 +113,15 @@ export default function TeacherSubmissions() {
     if (teacherAssignments.length > 0) {
       fetchClasses();
       fetchGradeBoundaries();
+      fetchSubjects();
     }
   }, [teacherAssignments]);
 
   useEffect(() => {
     if (selectedClass) {
       fetchStudentsInClass();
-      fetchSubjects();
-    } else {
-      setAssignedSubjects([]);
     }
-  }, [selectedClass, teacherAssignments]);
+  }, [selectedClass]);
 
   useEffect(() => {
     filterAndSortStudents();
@@ -193,40 +191,27 @@ export default function TeacherSubmissions() {
 
   const fetchSubjects = async () => {
     try {
-      if (!selectedClass) {
-        setAssignedSubjects([]);
-        return;
-      }
-
-      // Get the selected class details
-      const selectedClassObj = assignedClasses.find(c => c.id === selectedClass);
-      if (!selectedClassObj) return;
-
-      // Get subject IDs assigned to this teacher for this class
+      // Get ALL subject IDs assigned to this teacher across all classes
       const assignedSubjectIds = teacherAssignments
         .filter(a => 
           a.assignment_type === 'subject_teacher' &&
-          a.class_name === selectedClassObj.name &&
-          a.stream === selectedClassObj.stream &&
           a.subject_id
         )
         .map(a => a.subject_id);
 
-      if (assignedSubjectIds.length === 0) {
+      // Remove duplicates
+      const uniqueSubjectIds = [...new Set(assignedSubjectIds)];
+
+      if (uniqueSubjectIds.length === 0) {
         setAssignedSubjects([]);
-        toast({
-          title: "No Subjects Assigned",
-          description: "You have no subjects assigned to this class.",
-          variant: "destructive"
-        });
         return;
       }
 
-      // Fetch subjects
+      // Fetch all assigned subjects
       const { data, error } = await supabase
         .from('subjects')
         .select('*')
-        .in('id', assignedSubjectIds)
+        .in('id', uniqueSubjectIds)
         .order('name');
       
       if (error) throw error;
@@ -435,7 +420,6 @@ export default function TeacherSubmissions() {
     setSelectedClass(classId);
     setSelectedStudent('');
     setStudents([]);
-    setAssignedSubjects([]);
     // Reset subject entries when class changes
     setSubjectEntries([{
       id: '1',
@@ -444,7 +428,7 @@ export default function TeacherSubmissions() {
       a1Score: '',
       a2Score: '',
       a3Score: '',
-      teacherInitials: '',
+      teacherInitials: profile?.initials || '',
       identifier: '1',
       percentage20: '',
       percentage80: '',
