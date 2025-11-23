@@ -362,24 +362,24 @@ export default function ReportCardPreview({ reportId }: ReportCardPreviewProps) 
       <div className="border border-black text-xs">
         <div className="grid grid-cols-5 border-b border-black">
           <div className="border-r border-black p-2 text-center">
-            <p className="font-bold mb-1">{reportData.term_ended_on ? format(new Date(reportData.term_ended_on), 'MM/dd/yyyy') : '04/25/2025'}</p>
-            <p className="font-bold">TERM ENDED ON</p>
+            <p className="font-bold mb-1">TERM ENDED ON</p>
+            <p className="font-bold">{reportData.term_ended_on ? format(new Date(reportData.term_ended_on), 'MM/dd/yyyy') : '04/25/2025'}</p>
           </div>
           <div className="border-r border-black p-2 text-center">
-            <p className="font-bold mb-1">{reportData.next_term_begins ? format(new Date(reportData.next_term_begins), 'MM/dd/yyyy') : '05/23/2025'}</p>
-            <p className="font-bold">NEXT TERM BEGINS</p>
+            <p className="font-bold mb-1">NEXT TERM BEGINS</p>
+            <p className="font-bold">{reportData.next_term_begins ? format(new Date(reportData.next_term_begins), 'MM/dd/yyyy') : '05/23/2025'}</p>
           </div>
           <div className="border-r border-black p-2 text-center">
-            <p className="font-bold mb-1">{reportData.fees_balance ? `KES ${reportData.fees_balance.toLocaleString()}` : ''}</p>
-            <p className="font-bold">FEES BALANCE</p>
+            <p className="font-bold mb-1">FEES BALANCE</p>
+            <p className="font-bold">{reportData.fees_balance ? `KES ${reportData.fees_balance.toLocaleString()}` : ''}</p>
           </div>
           <div className="border-r border-black p-2 text-center">
-            <p className="font-bold mb-1">{reportData.fees_next_term ? `KES ${reportData.fees_next_term.toLocaleString()}` : ''}</p>
-            <p className="font-bold">FEES NEXT TERM</p>
+            <p className="font-bold mb-1">FEES NEXT TERM</p>
+            <p className="font-bold">{reportData.fees_next_term ? `KES ${reportData.fees_next_term.toLocaleString()}` : ''}</p>
           </div>
           <div className="p-2 text-center">
-            <p className="mb-1">{reportData.other_requirements || ''}</p>
-            <p className="font-bold italic">Other Requirement</p>
+            <p className="font-bold italic mb-1">Other Requirement</p>
+            <p>{reportData.other_requirements || ''}</p>
           </div>
         </div>
         <div className="p-2 text-center italic font-semibold">
