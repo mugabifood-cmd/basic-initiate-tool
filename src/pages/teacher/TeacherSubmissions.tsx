@@ -500,12 +500,12 @@ export default function TeacherSubmissions() {
         return;
       }
       
-      // Validate A-scores must be decimal values with format: digits.digits
-      const decimalPattern = /^[0-9]+\.[0-9]+$/;
-      if (!decimalPattern.test(entry.a1Score) || !decimalPattern.test(entry.a2Score) || !decimalPattern.test(entry.a3Score)) {
+      // Validate A-scores are valid numbers (integers or decimals)
+      const numberPattern = /^\d+\.?\d*$/;
+      if (!numberPattern.test(entry.a1Score) || !numberPattern.test(entry.a2Score) || !numberPattern.test(entry.a3Score)) {
         toast({
           title: "Invalid A-Score Format",
-          description: "A-scores must be decimal values (e.g., 1.4, 2.2, 0.3). Please include a decimal point.",
+          description: "A-scores must be valid numbers (e.g., 12, 1.4, 0.3).",
           variant: "destructive"
         });
         return;
