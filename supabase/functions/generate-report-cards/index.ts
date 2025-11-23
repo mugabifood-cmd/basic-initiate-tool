@@ -53,7 +53,7 @@ serve(async (req) => {
       throw new Error('User profile not found');
     }
 
-    // Fetch class information
+    // Fetch class information including term dates and requirements
     const { data: classData, error: classError } = await supabase
       .from('classes')
       .select(`
@@ -63,6 +63,9 @@ serve(async (req) => {
         academic_year,
         term,
         school_id,
+        term_ended_on,
+        next_term_begins,
+        general_requirements,
         schools (
           id,
           name,

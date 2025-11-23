@@ -69,7 +69,10 @@ export default function ReportCardPreview({ reportId, autoPrint = false, onPrint
             stream,
             academic_year,
             term,
-            school_id
+            school_id,
+            term_ended_on,
+            next_term_begins,
+            general_requirements
           )
         `)
         .eq('id', reportId)
@@ -380,11 +383,11 @@ export default function ReportCardPreview({ reportId, autoPrint = false, onPrint
         <div className="grid grid-cols-5 border-b border-black">
           <div className="border-r border-black p-2 text-center">
             <p className="font-bold mb-1">TERM ENDED ON</p>
-            <p className="font-bold">{reportData.term_ended_on ? format(new Date(reportData.term_ended_on), 'MM/dd/yyyy') : '04/25/2025'}</p>
+            <p className="font-bold">{reportData.classes.term_ended_on ? format(new Date(reportData.classes.term_ended_on), 'MM/dd/yyyy') : '04/25/2025'}</p>
           </div>
           <div className="border-r border-black p-2 text-center">
             <p className="font-bold mb-1">NEXT TERM BEGINS</p>
-            <p className="font-bold">{reportData.next_term_begins ? format(new Date(reportData.next_term_begins), 'MM/dd/yyyy') : '05/23/2025'}</p>
+            <p className="font-bold">{reportData.classes.next_term_begins ? format(new Date(reportData.classes.next_term_begins), 'MM/dd/yyyy') : '05/23/2025'}</p>
           </div>
           <div className="border-r border-black p-2 text-center">
             <p className="font-bold mb-1">FEES BALANCE</p>
@@ -396,7 +399,7 @@ export default function ReportCardPreview({ reportId, autoPrint = false, onPrint
           </div>
           <div className="p-2 text-center">
             <p className="font-bold italic mb-1">Other Requirement</p>
-            <p>{reportData.other_requirements || ''}</p>
+            <p>{reportData.classes.general_requirements || ''}</p>
           </div>
         </div>
         <div className="p-2 text-center italic font-semibold">

@@ -6,8 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { ArrowLeft, FileText, Download, Users } from 'lucide-react';
+import { ArrowLeft, FileText, Download, Users, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { ClassTermSettingsDialog } from '@/components/admin/ClassTermSettingsDialog';
 
 interface School {
   id: string;
@@ -46,6 +47,7 @@ export default function GenerateReports() {
   const [templateId, setTemplateId] = useState('1');
   const [generationType, setGenerationType] = useState<'individual' | 'class' | 'stream'>('individual');
   const [recentReports, setRecentReports] = useState<any[]>([]);
+  const [showTermSettings, setShowTermSettings] = useState(false);
 
   useEffect(() => {
     fetchSchools();
@@ -299,7 +301,20 @@ export default function GenerateReports() {
 
               {/* Class Selection */}
               <div>
-                <Label htmlFor="class">Class</Label>
+                <div className="flex items-center justify-between mb-2">
+                  <Label htmlFor="class">Class</Label>
+                  {selectedClass && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowTermSettings(true)}
+                      className="h-7 text-xs"
+                    >
+                      <Settings className="w-3 h-3 mr-1" />
+                      Term Settings
+                    </Button>
+                  )}
+                </div>
                 <Select value={selectedClass} onValueChange={setSelectedClass} disabled={!selectedSchool}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select class" />
@@ -519,6 +534,13 @@ export default function GenerateReports() {
           </CardContent>
         </Card>
       </main>
+
+      <ClassTermSettingsDialog
+        open={showTermSettings}
+        onOpenChange={setShowTermSettings}
+        classId={selectedClass}
+        className={getSelectedClass() ? `${getSelectedClass()?.name} ${getSelectedClass()?.stream}` : ''}
+      />
     </div>
   );
 }
