@@ -398,6 +398,13 @@ export default function TeacherManagement() {
                       <TableCell>
                         <div className="flex space-x-2">
                           <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => openEditDialog(teacher)}
+                          >
+                            Assign Subjects
+                          </Button>
+                          <Button
                             variant="outline"
                             size="sm"
                             onClick={() => openEditDialog(teacher)}
