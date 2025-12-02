@@ -24,6 +24,9 @@ interface ReportCardPreviewProps {
   onPrintComplete?: () => void;
 }
 
+// Thin border style constant for consistency
+const thinBorder = '0.5px solid #333';
+
 export default function ReportCardPreview({ reportId, autoPrint = false, onPrintComplete }: ReportCardPreviewProps) {
   const [reportData, setReportData] = useState<any>(null);
   const [subjectGrades, setSubjectGrades] = useState<SubjectGrade[]>([]);
@@ -164,14 +167,14 @@ export default function ReportCardPreview({ reportId, autoPrint = false, onPrint
   return (
     <div id="report-card-preview" className="bg-white text-black p-6 mx-auto" style={{ fontFamily: 'Arial, sans-serif', fontSize: '10px', maxWidth: '210mm', width: '100%' }}>
       {/* Header with Logo and Student Photo */}
-      <div className="border border-black mb-2">
+      <div style={{ border: thinBorder }} className="mb-2">
         <div className="flex items-start justify-between p-3">
           {/* School Logo - Left */}
           <div className="w-20 h-20 flex-shrink-0">
             {reportData.school?.logo_url ? (
-              <img src={reportData.school.logo_url} alt="School Logo" className="w-full h-full object-contain border border-gray-300" />
+              <img src={reportData.school.logo_url} alt="School Logo" className="w-full h-full object-contain" style={{ border: thinBorder }} />
             ) : (
-              <div className="w-full h-full bg-gray-100 border border-gray-300 flex items-center justify-center text-xs">
+              <div className="w-full h-full bg-gray-100 flex items-center justify-center text-xs" style={{ border: thinBorder }}>
                 Logo
               </div>
             )}
@@ -195,9 +198,9 @@ export default function ReportCardPreview({ reportId, autoPrint = false, onPrint
           {/* Student Photo - Right */}
           <div className="w-24 h-28 flex-shrink-0">
             {reportData.students.photo_url ? (
-              <img src={reportData.students.photo_url} alt="Student" className="w-full h-full object-cover border border-gray-300" />
+              <img src={reportData.students.photo_url} alt="Student" className="w-full h-full object-cover" style={{ border: thinBorder }} />
             ) : (
-              <div className="w-full h-full bg-gray-100 border border-gray-300 flex items-center justify-center text-xs">
+              <div className="w-full h-full bg-gray-100 flex items-center justify-center text-xs" style={{ border: thinBorder }}>
                 Photo
               </div>
             )}
@@ -205,7 +208,7 @@ export default function ReportCardPreview({ reportId, autoPrint = false, onPrint
         </div>
 
         {/* Student Information */}
-        <div className="border-t border-black p-2 grid grid-cols-3 gap-x-8 text-xs">
+        <div style={{ borderTop: thinBorder }} className="p-2 grid grid-cols-3 gap-x-8 text-xs">
           <div className="flex gap-2">
             <span className="font-bold">NAME:</span>
             <span className="text-blue-700 font-semibold">{reportData.students.full_name.toUpperCase()}</span>
@@ -247,69 +250,69 @@ export default function ReportCardPreview({ reportId, autoPrint = false, onPrint
       </div>
 
       {/* Subjects Table */}
-      <div className="border border-black">
-        <table className="w-full text-xs">
+      <div style={{ border: thinBorder }}>
+        <table className="w-full text-xs report-table" style={{ borderCollapse: 'collapse', borderSpacing: 0 }}>
           <thead>
-            <tr className="border-b border-black bg-gray-50">
-              <th className="border-r border-black p-1 text-left font-bold">Code</th>
-              <th className="border-r border-black p-1 text-left font-bold">Subject</th>
-              <th className="border-r border-black p-1 text-center font-bold">A1</th>
-              <th className="border-r border-black p-1 text-center font-bold">A2</th>
-              <th className="border-r border-black p-1 text-center font-bold">A3</th>
-              <th className="border-r border-black p-1 text-center font-bold">AVG</th>
-              <th className="border-r border-black p-1 text-center font-bold">20%</th>
-              <th className="border-r border-black p-1 text-center font-bold">80%</th>
-              <th className="border-r border-black p-1 text-center font-bold">100%</th>
-              <th className="border-r border-black p-1 text-center font-bold">Ident</th>
-              <th className="border-r border-black p-1 text-center font-bold">GRADE</th>
-              <th className="border-r border-black p-1 text-left font-bold italic">Remarks/Descriptors</th>
-              <th className="p-1 text-center font-bold">TR</th>
+            <tr className="bg-gray-50">
+              <th style={{ border: thinBorder, padding: '4px', textAlign: 'left', fontWeight: 'bold', verticalAlign: 'middle' }}>Code</th>
+              <th style={{ border: thinBorder, padding: '4px', textAlign: 'left', fontWeight: 'bold', verticalAlign: 'middle' }}>Subject</th>
+              <th style={{ border: thinBorder, padding: '4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>A1</th>
+              <th style={{ border: thinBorder, padding: '4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>A2</th>
+              <th style={{ border: thinBorder, padding: '4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>A3</th>
+              <th style={{ border: thinBorder, padding: '4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>AVG</th>
+              <th style={{ border: thinBorder, padding: '4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>20%</th>
+              <th style={{ border: thinBorder, padding: '4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>80%</th>
+              <th style={{ border: thinBorder, padding: '4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>100%</th>
+              <th style={{ border: thinBorder, padding: '4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>Ident</th>
+              <th style={{ border: thinBorder, padding: '4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>GRADE</th>
+              <th style={{ border: thinBorder, padding: '4px', textAlign: 'left', fontWeight: 'bold', fontStyle: 'italic', verticalAlign: 'middle' }}>Remarks/Descriptors</th>
+              <th style={{ border: thinBorder, padding: '4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>TR</th>
             </tr>
           </thead>
           <tbody>
             {subjectGrades.map((subject, index) => (
-              <tr key={index} className="border-b border-black">
-                <td className="border-r border-black p-1 font-bold">{subject.subject_code}</td>
-                <td className="border-r border-black p-1 font-bold">{subject.subject_name}</td>
-                <td className="border-r border-black p-1 text-center">{subject.a1_score?.toFixed(1) || ''}</td>
-                <td className="border-r border-black p-1 text-center">{subject.a2_score?.toFixed(1) || ''}</td>
-                <td className="border-r border-black p-1 text-center">{subject.a3_score?.toFixed(1) || ''}</td>
-                <td className="border-r border-black p-1 text-center">{subject.average_score?.toFixed(1) || ''}</td>
-                <td className="border-r border-black p-1 text-center">{subject.percentage_20 !== null ? Math.round(subject.percentage_20) : ''}</td>
-                <td className="border-r border-black p-1 text-center">{subject.percentage_80 !== null ? Math.round(subject.percentage_80) : ''}</td>
-                <td className="border-r border-black p-1 text-center">{Math.round(subject.percentage_100)}</td>
-                <td className="border-r border-black p-1 text-center">{subject.identifier || ''}</td>
-                <td className="border-r border-black p-1 text-center font-bold">{subject.grade || ''}</td>
-                <td className="border-r border-black p-1">{subject.remarks || ''}</td>
-                <td className="p-1 text-center font-bold">{subject.teacher_initials}</td>
+              <tr key={index}>
+                <td style={{ border: thinBorder, padding: '4px', fontWeight: 'bold', verticalAlign: 'middle' }}>{subject.subject_code}</td>
+                <td style={{ border: thinBorder, padding: '4px', fontWeight: 'bold', verticalAlign: 'middle' }}>{subject.subject_name}</td>
+                <td style={{ border: thinBorder, padding: '4px', textAlign: 'center', verticalAlign: 'middle' }}>{subject.a1_score?.toFixed(1) || ''}</td>
+                <td style={{ border: thinBorder, padding: '4px', textAlign: 'center', verticalAlign: 'middle' }}>{subject.a2_score?.toFixed(1) || ''}</td>
+                <td style={{ border: thinBorder, padding: '4px', textAlign: 'center', verticalAlign: 'middle' }}>{subject.a3_score?.toFixed(1) || ''}</td>
+                <td style={{ border: thinBorder, padding: '4px', textAlign: 'center', verticalAlign: 'middle' }}>{subject.average_score?.toFixed(1) || ''}</td>
+                <td style={{ border: thinBorder, padding: '4px', textAlign: 'center', verticalAlign: 'middle' }}>{subject.percentage_20 !== null ? Math.round(subject.percentage_20) : ''}</td>
+                <td style={{ border: thinBorder, padding: '4px', textAlign: 'center', verticalAlign: 'middle' }}>{subject.percentage_80 !== null ? Math.round(subject.percentage_80) : ''}</td>
+                <td style={{ border: thinBorder, padding: '4px', textAlign: 'center', verticalAlign: 'middle' }}>{Math.round(subject.percentage_100)}</td>
+                <td style={{ border: thinBorder, padding: '4px', textAlign: 'center', verticalAlign: 'middle' }}>{subject.identifier || ''}</td>
+                <td style={{ border: thinBorder, padding: '4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>{subject.grade || ''}</td>
+                <td style={{ border: thinBorder, padding: '4px', verticalAlign: 'middle' }}>{subject.remarks || ''}</td>
+                <td style={{ border: thinBorder, padding: '4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>{subject.teacher_initials}</td>
               </tr>
             ))}
             {/* Average Row */}
             <tr className="font-bold bg-gray-50">
-              <td colSpan={2} className="border-r border-black p-1">AVERAGE:</td>
-              <td className="border-r border-black p-1 text-center"></td>
-              <td className="border-r border-black p-1 text-center"></td>
-              <td className="border-r border-black p-1 text-center"></td>
-              <td className="border-r border-black p-1 text-center">{reportData.identifier || '2'}</td>
-              <td className="border-r border-black p-1 text-center">
+              <td colSpan={2} style={{ border: thinBorder, padding: '4px', verticalAlign: 'middle' }}>AVERAGE:</td>
+              <td style={{ border: thinBorder, padding: '4px', textAlign: 'center', verticalAlign: 'middle' }}></td>
+              <td style={{ border: thinBorder, padding: '4px', textAlign: 'center', verticalAlign: 'middle' }}></td>
+              <td style={{ border: thinBorder, padding: '4px', textAlign: 'center', verticalAlign: 'middle' }}></td>
+              <td style={{ border: thinBorder, padding: '4px', textAlign: 'center', verticalAlign: 'middle' }}>{reportData.identifier || '2'}</td>
+              <td style={{ border: thinBorder, padding: '4px', textAlign: 'center', verticalAlign: 'middle' }}>
                 {subjectGrades.length > 0 
                   ? Math.round(subjectGrades.reduce((sum, s) => sum + (s.percentage_20 || 0), 0) / subjectGrades.length)
                   : ''}
               </td>
-              <td className="border-r border-black p-1 text-center">
+              <td style={{ border: thinBorder, padding: '4px', textAlign: 'center', verticalAlign: 'middle' }}>
                 {subjectGrades.length > 0 
                   ? Math.round(subjectGrades.reduce((sum, s) => sum + (s.percentage_80 || 0), 0) / subjectGrades.length)
                   : ''}
               </td>
-              <td className="border-r border-black p-1 text-center">{reportData.overall_average ? Math.round(reportData.overall_average) : ''}</td>
-              <td colSpan={4} className="p-1"></td>
+              <td style={{ border: thinBorder, padding: '4px', textAlign: 'center', verticalAlign: 'middle' }}>{reportData.overall_average ? Math.round(reportData.overall_average) : ''}</td>
+              <td colSpan={4} style={{ border: thinBorder, padding: '4px', verticalAlign: 'middle' }}></td>
             </tr>
           </tbody>
         </table>
       </div>
 
       {/* Overall Performance Summary */}
-      <div className="border border-black border-t-0 p-2 flex items-center justify-between text-xs">
+      <div style={{ border: thinBorder, borderTop: 'none' }} className="p-2 flex items-center justify-between text-xs">
         <div className="flex items-center gap-4">
           <span className="font-bold">Overall Identifier</span>
           <span className="px-3 py-1 bg-gray-100 font-bold">{reportData.identifier || '2'}</span>
@@ -321,31 +324,31 @@ export default function ReportCardPreview({ reportId, autoPrint = false, onPrint
       </div>
 
       {/* Grade Scale */}
-      <div className="border border-black border-t-0 mb-2">
-        <table className="w-full text-xs">
+      <div style={{ border: thinBorder, borderTop: 'none' }} className="mb-2">
+        <table className="w-full text-xs report-table" style={{ borderCollapse: 'collapse', borderSpacing: 0 }}>
           <tbody>
             <tr className="text-center font-bold">
-              <td className="border-r border-black p-1 bg-gray-50">GRADE</td>
-              <td className="border-r border-black p-1 bg-green-50">A</td>
-              <td className="border-r border-black p-1 bg-blue-50">B</td>
-              <td className="border-r border-black p-1 bg-yellow-50">C</td>
-              <td className="border-r border-black p-1 bg-orange-50">D</td>
-              <td className="p-1 bg-red-50">E</td>
+              <td style={{ border: thinBorder, padding: '4px', verticalAlign: 'middle' }} className="bg-gray-50">GRADE</td>
+              <td style={{ border: thinBorder, padding: '4px', verticalAlign: 'middle' }} className="bg-green-50">A</td>
+              <td style={{ border: thinBorder, padding: '4px', verticalAlign: 'middle' }} className="bg-blue-50">B</td>
+              <td style={{ border: thinBorder, padding: '4px', verticalAlign: 'middle' }} className="bg-yellow-50">C</td>
+              <td style={{ border: thinBorder, padding: '4px', verticalAlign: 'middle' }} className="bg-orange-50">D</td>
+              <td style={{ border: thinBorder, padding: '4px', verticalAlign: 'middle' }} className="bg-red-50">E</td>
             </tr>
             <tr className="text-center">
-              <td className="border-r border-black p-1 font-bold">SCORES</td>
-              <td className="border-r border-black p-1">100 - 80</td>
-              <td className="border-r border-black p-1">80 - 70</td>
-              <td className="border-r border-black p-1">69 - 60</td>
-              <td className="border-r border-black p-1">60 - 40</td>
-              <td className="p-1">40 - 0</td>
+              <td style={{ border: thinBorder, padding: '4px', fontWeight: 'bold', verticalAlign: 'middle' }}>SCORES</td>
+              <td style={{ border: thinBorder, padding: '4px', verticalAlign: 'middle' }}>100 - 80</td>
+              <td style={{ border: thinBorder, padding: '4px', verticalAlign: 'middle' }}>80 - 70</td>
+              <td style={{ border: thinBorder, padding: '4px', verticalAlign: 'middle' }}>69 - 60</td>
+              <td style={{ border: thinBorder, padding: '4px', verticalAlign: 'middle' }}>60 - 40</td>
+              <td style={{ border: thinBorder, padding: '4px', verticalAlign: 'middle' }}>40 - 0</td>
             </tr>
           </tbody>
         </table>
       </div>
 
       {/* Comments */}
-      <div className="border border-black p-2 mb-2 text-xs">
+      <div style={{ border: thinBorder }} className="p-2 mb-2 text-xs">
         <div className="mb-2">
           <p className="font-bold italic mb-1">Class teacher's Comment:</p>
           <p className="italic">{reportData.class_teacher_comment || 'No comment provided'}</p>
@@ -357,7 +360,7 @@ export default function ReportCardPreview({ reportId, autoPrint = false, onPrint
       </div>
 
       {/* Key to Terms */}
-      <div className="border border-black p-2 mb-2 text-xs">
+      <div style={{ border: thinBorder }} className="p-2 mb-2 text-xs">
         <p className="font-bold mb-1">Key to Terms Used: <span className="font-normal"><span className="font-bold">A1</span> Average Chapter Assessment <span className="font-bold">80%</span> End of term assessment</span></p>
         <div className="grid grid-cols-3 gap-2">
           <div className="flex gap-2">
@@ -379,21 +382,21 @@ export default function ReportCardPreview({ reportId, autoPrint = false, onPrint
       </div>
 
       {/* Footer Information */}
-      <div className="border border-black text-xs">
-        <div className="grid grid-cols-5 border-b border-black">
-          <div className="border-r border-black p-2 text-center">
+      <div style={{ border: thinBorder }} className="text-xs">
+        <div className="grid grid-cols-5" style={{ borderBottom: thinBorder }}>
+          <div style={{ borderRight: thinBorder }} className="p-2 text-center">
             <p className="font-bold mb-1">TERM ENDED ON</p>
             <p className="font-bold">{reportData.classes.term_ended_on ? format(new Date(reportData.classes.term_ended_on), 'MM/dd/yyyy') : '04/25/2025'}</p>
           </div>
-          <div className="border-r border-black p-2 text-center">
+          <div style={{ borderRight: thinBorder }} className="p-2 text-center">
             <p className="font-bold mb-1">NEXT TERM BEGINS</p>
             <p className="font-bold">{reportData.classes.next_term_begins ? format(new Date(reportData.classes.next_term_begins), 'MM/dd/yyyy') : '05/23/2025'}</p>
           </div>
-          <div className="border-r border-black p-2 text-center">
+          <div style={{ borderRight: thinBorder }} className="p-2 text-center">
             <p className="font-bold mb-1">FEES BALANCE</p>
             <p className="font-bold">{reportData.fees_balance ? reportData.fees_balance.toLocaleString() : ''}</p>
           </div>
-          <div className="border-r border-black p-2 text-center">
+          <div style={{ borderRight: thinBorder }} className="p-2 text-center">
             <p className="font-bold mb-1">FEES NEXT TERM</p>
             <p className="font-bold">{reportData.fees_next_term ? reportData.fees_next_term.toLocaleString() : ''}</p>
           </div>
