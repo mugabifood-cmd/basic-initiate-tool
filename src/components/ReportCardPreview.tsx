@@ -24,8 +24,8 @@ interface ReportCardPreviewProps {
   onPrintComplete?: () => void;
 }
 
-// Thin border style constant for consistency
-const thinBorder = '0.5px solid #333';
+// Ultra-thin border style constant for nearly invisible borders
+const thinBorder = '0.1px solid #ddd';
 
 export default function ReportCardPreview({ reportId, autoPrint = false, onPrintComplete }: ReportCardPreviewProps) {
   const [reportData, setReportData] = useState<any>(null);
