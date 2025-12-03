@@ -352,14 +352,20 @@ export default function ReportCardPreview({ reportId, autoPrint = false, onPrint
         <div className="mb-2">
           <div className="flex justify-between items-start mb-1">
             <p className="font-bold italic">Class teacher's Comment:</p>
-            <p className="font-bold italic">Class Teacher's Signature: ___________________</p>
+            <div className="text-right">
+              <p className="font-bold italic">Class Teacher's Signature</p>
+              <p className="text-xs">Date: {format(new Date(), 'dd/MM/yyyy')}</p>
+            </div>
           </div>
           <p className="italic">{reportData.class_teacher_comment || 'No comment provided'}</p>
         </div>
         <div>
           <div className="flex justify-between items-start mb-1">
             <p className="font-bold italic">Headteacher's Comment:</p>
-            <p className="font-bold italic">Headteacher's Signature: ___________________</p>
+            <div className="text-right">
+              <p className="font-bold italic">Headteacher's Signature</p>
+              <p className="text-xs">Date: {format(new Date(), 'dd/MM/yyyy')}</p>
+            </div>
           </div>
           <p className="italic">{reportData.headteacher_comment || 'No comment provided'}</p>
         </div>
