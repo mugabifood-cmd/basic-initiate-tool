@@ -354,7 +354,10 @@ export default function ReportCardPreview({ reportId, autoPrint = false, onPrint
           <p className="italic">{reportData.class_teacher_comment || 'No comment provided'}</p>
         </div>
         <div>
-          <p className="font-bold italic mb-1">Headteacher's Comment:</p>
+          <div className="flex justify-between items-start mb-1">
+            <p className="font-bold italic">Headteacher's Comment:</p>
+            <p className="font-bold italic">Headteacher's Signature: ___________________</p>
+          </div>
           <p className="italic">{reportData.headteacher_comment || 'No comment provided'}</p>
         </div>
       </div>
