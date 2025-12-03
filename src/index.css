@@ -161,65 +161,43 @@ All colors MUST be HSL.
     margin: 0 !important;
     padding: 0 !important;
     height: auto !important;
-    min-height: auto !important;
-    max-height: none !important;
     overflow: visible !important;
     background: white !important;
   }
   
-  /* Hide everything initially */
-  body > * {
-    display: none !important;
+  /* Hide everything except report card */
+  body * {
+    visibility: hidden;
   }
   
-  /* Hide dialogs, overlays, and UI elements */
-  [role="dialog"],
-  [data-radix-dialog-overlay],
-  [data-radix-dialog-content],
-  .fixed,
-  header,
-  nav,
-  aside,
-  footer,
-  button,
-  .dialog-overlay {
-    display: none !important;
-    visibility: hidden !important;
-  }
-  
-  /* Make report card visible and properly sized for A4 */
-  #report-card-preview {
-    display: block !important;
+  /* Make report card and all its children visible */
+  #report-card-preview,
+  #report-card-preview * {
     visibility: visible !important;
-    position: static !important;
-    left: auto !important;
-    top: auto !important;
+  }
+  
+  /* Position report card for printing */
+  #report-card-preview {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
     width: 100% !important;
-    max-width: 210mm !important;
+    max-width: 100% !important;
     height: auto !important;
-    min-height: auto !important;
-    max-height: none !important;
     overflow: visible !important;
     background: white !important;
     margin: 0 !important;
-    padding: 5mm !important;
+    padding: 10mm !important;
     box-sizing: border-box !important;
+    z-index: 99999 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     color-adjust: exact !important;
   }
   
-  #report-card-preview,
-  #report-card-preview * {
-    visibility: visible !important;
-    overflow: visible !important;
-    height: auto !important;
-    max-height: none !important;
-  }
-  
   @page {
     size: A4 portrait;
-    margin: 5mm;
+    margin: 0;
   }
 
   /* Ensure ultra-thin borders in print */
@@ -258,10 +236,6 @@ All colors MUST be HSL.
   
   /* Prevent page breaks inside sections */
   #report-card-preview table {
-    page-break-inside: avoid !important;
-  }
-  
-  #report-card-preview > div {
     page-break-inside: avoid !important;
   }
 }
