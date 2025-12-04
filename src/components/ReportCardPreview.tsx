@@ -349,19 +349,25 @@ export default function ReportCardPreview({ reportId, autoPrint = false, onPrint
 
       {/* Comments */}
       <div style={{ border: thinBorder }} className="p-2 mb-2 text-xs">
-        <div className="mb-2">
-          <div className="flex justify-between items-start mb-1">
+        <div className="mb-3 flex justify-between">
+          <div className="flex-1">
             <p className="font-bold italic">Class teacher's Comment:</p>
-            <p className="font-bold italic">Class Teacher's Signature: ___________________</p>
+            <p className="italic">{reportData.class_teacher_comment || 'No comment provided'}</p>
           </div>
-          <p className="italic">{reportData.class_teacher_comment || 'No comment provided'}</p>
+          <div className="text-right">
+            <p className="font-bold italic">Class Teacher's Signature:</p>
+            <p className="mt-2">_______________________</p>
+          </div>
         </div>
-        <div>
-          <div className="flex justify-between items-start mb-1">
+        <div className="flex justify-between">
+          <div className="flex-1">
             <p className="font-bold italic">Headteacher's Comment:</p>
-            <p className="font-bold italic">Headteacher's Signature: ___________________</p>
+            <p className="italic">{reportData.headteacher_comment || 'No comment provided'}</p>
           </div>
-          <p className="italic">{reportData.headteacher_comment || 'No comment provided'}</p>
+          <div className="text-right">
+            <p className="font-bold italic">Headteacher's Signature:</p>
+            <p className="mt-2">_______________________</p>
+          </div>
         </div>
       </div>
 
