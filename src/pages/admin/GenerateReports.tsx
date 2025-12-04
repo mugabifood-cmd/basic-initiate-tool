@@ -4,11 +4,26 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { ArrowLeft, FileText, Download, Users, Settings } from 'lucide-react';
+import { ArrowLeft, FileText, Users, Settings, Eye, Palette } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ClassTermSettingsDialog } from '@/components/admin/ClassTermSettingsDialog';
+import ReportCardPreview from '@/components/ReportCardPreview';
+
+const REPORT_COLORS = [
+  { id: 'white', name: 'White (Default)', value: '#ffffff' },
+  { id: 'light-blue', name: 'Light Blue', value: '#e3f2fd' },
+  { id: 'light-green', name: 'Light Green', value: '#e8f5e9' },
+  { id: 'light-yellow', name: 'Light Yellow', value: '#fffde7' },
+  { id: 'light-pink', name: 'Light Pink', value: '#fce4ec' },
+  { id: 'light-purple', name: 'Light Purple', value: '#f3e5f5' },
+  { id: 'light-orange', name: 'Light Orange', value: '#fff3e0' },
+  { id: 'light-cyan', name: 'Light Cyan', value: '#e0f7fa' },
+  { id: 'light-gray', name: 'Light Gray', value: '#f5f5f5' },
+  { id: 'cream', name: 'Cream', value: '#fffef0' },
+];
 
 interface School {
   id: string;
@@ -45,9 +60,12 @@ export default function GenerateReports() {
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedStudent, setSelectedStudent] = useState('');
   const [templateId, setTemplateId] = useState('1');
+  const [selectedColor, setSelectedColor] = useState('white');
   const [generationType, setGenerationType] = useState<'individual' | 'class' | 'stream'>('individual');
   const [recentReports, setRecentReports] = useState<any[]>([]);
   const [showTermSettings, setShowTermSettings] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewReportId, setPreviewReportId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSchools();
@@ -363,21 +381,46 @@ export default function GenerateReports() {
                 </div>
               )}
 
-              {/* Template Selection */}
+              {/* Color Selection */}
               <div>
-                <Label htmlFor="template">Report Card Template</Label>
-                <Select value={templateId} onValueChange={setTemplateId}>
+                <Label htmlFor="color" className="flex items-center gap-2">
+                  <Palette className="w-4 h-4" />
+                  Report Card Color
+                </Label>
+                <Select value={selectedColor} onValueChange={setSelectedColor}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">Template 1 - Classic Blue</SelectItem>
-                    <SelectItem value="2">Template 2 - Modern Green</SelectItem>
-                    <SelectItem value="3">Template 3 - Professional Gray</SelectItem>
-                    <SelectItem value="4">Template 4 - Academic Purple</SelectItem>
+                    {REPORT_COLORS.map((color) => (
+                      <SelectItem key={color.id} value={color.id}>
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-4 h-4 rounded border border-gray-300" 
+                            style={{ backgroundColor: color.value }}
+                          />
+                          {color.name}
+                        </div>
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Preview Button */}
+              {recentReports.length > 0 && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setPreviewReportId(recentReports[0].id);
+                    setShowPreview(true);
+                  }}
+                  className="w-full"
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  Preview Report Card Template
+                </Button>
+              )}
 
               {/* Generate Button */}
               <Button 
@@ -526,6 +569,16 @@ export default function GenerateReports() {
                       <Badge className={report.status === 'published' ? 'bg-green-500' : 'bg-yellow-500'}>
                         {report.status}
                       </Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setPreviewReportId(report.id);
+                          setShowPreview(true);
+                        }}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -541,6 +594,21 @@ export default function GenerateReports() {
         classId={selectedClass}
         className={getSelectedClass() ? `${getSelectedClass()?.name} ${getSelectedClass()?.stream}` : ''}
       />
+
+      {/* Report Card Preview Dialog */}
+      <Dialog open={showPreview} onOpenChange={setShowPreview}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>Report Card Preview</DialogTitle>
+          </DialogHeader>
+          {previewReportId && (
+            <ReportCardPreview 
+              reportId={previewReportId} 
+              backgroundColor={REPORT_COLORS.find(c => c.id === selectedColor)?.value || '#ffffff'}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
