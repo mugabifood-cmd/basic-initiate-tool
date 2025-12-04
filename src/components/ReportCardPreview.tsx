@@ -22,12 +22,13 @@ interface ReportCardPreviewProps {
   reportId: string;
   autoPrint?: boolean;
   onPrintComplete?: () => void;
+  backgroundColor?: string;
 }
 
 // Ultra-thin border style constant for nearly invisible borders
 const thinBorder = '0.1px solid #ddd';
 
-export default function ReportCardPreview({ reportId, autoPrint = false, onPrintComplete }: ReportCardPreviewProps) {
+export default function ReportCardPreview({ reportId, autoPrint = false, onPrintComplete, backgroundColor = '#ffffff' }: ReportCardPreviewProps) {
   const [reportData, setReportData] = useState<any>(null);
   const [subjectGrades, setSubjectGrades] = useState<SubjectGrade[]>([]);
   const [loading, setLoading] = useState(true);
@@ -165,7 +166,7 @@ export default function ReportCardPreview({ reportId, autoPrint = false, onPrint
   }
 
   return (
-    <div id="report-card-preview" className="bg-white text-black p-6 mx-auto" style={{ fontFamily: 'Arial, sans-serif', fontSize: '10px', maxWidth: '210mm', width: '100%' }}>
+    <div id="report-card-preview" className="text-black p-6 mx-auto" style={{ fontFamily: 'Arial, sans-serif', fontSize: '10px', maxWidth: '210mm', width: '100%', backgroundColor: backgroundColor }}>
       {/* Header with Logo and Student Photo */}
       <div style={{ border: thinBorder }} className="mb-2">
         <div className="flex items-start justify-between p-3">
