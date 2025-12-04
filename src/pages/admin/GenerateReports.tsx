@@ -381,6 +381,21 @@ export default function GenerateReports() {
                 </div>
               )}
 
+              {/* Template Selection */}
+              <div>
+                <Label htmlFor="template">Report Card Template</Label>
+                <Select value={templateId} onValueChange={setTemplateId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select template" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Template 1 - Standard</SelectItem>
+                    <SelectItem value="2">Template 2 - Modern</SelectItem>
+                    <SelectItem value="3">Template 3 - Classic</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               {/* Color Selection */}
               <div>
                 <Label htmlFor="color" className="flex items-center gap-2">
