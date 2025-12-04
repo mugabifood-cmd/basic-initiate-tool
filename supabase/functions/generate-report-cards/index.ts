@@ -147,17 +147,22 @@ serve(async (req) => {
         const overallAverage = subjectCount > 0 ? totalScore / subjectCount : 0;
         const overallGrade = calculateGrade(overallAverage);
 
-        // Fetch appropriate comment template based on average
-        const { data: commentTemplate } = await supabase
+        // Fetch all comment templates and find matching one based on average
+        const { data: commentTemplates, error: templateError } = await supabase
           .from('comment_templates')
-          .select('*')
-          .lte('min_percentage', overallAverage)
-          .gte('max_percentage', overallAverage)
-          .order('min_percentage', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+          .select('*');
 
-        console.log('Comment template for average', overallAverage, ':', commentTemplate);
+        if (templateError) {
+          console.error('Error fetching comment templates:', templateError);
+        }
+
+        // Find the matching template where average falls within min/max range
+        const commentTemplate = commentTemplates?.find(t => 
+          overallAverage >= t.min_percentage && overallAverage <= t.max_percentage
+        );
+
+        console.log('Overall average:', overallAverage, 'Found comment template:', commentTemplate?.id, 
+          'Class comment:', commentTemplate?.class_teacher_comment?.substring(0, 30) || 'none');
 
         // Check if report card already exists
         const { data: existingReport, error: existingError } = await supabase
