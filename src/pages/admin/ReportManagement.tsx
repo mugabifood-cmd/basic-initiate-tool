@@ -52,7 +52,6 @@ export default function ReportManagement() {
   const [editOpen, setEditOpen] = useState(false);
   const [editingReport, setEditingReport] = useState<ReportCard | null>(null);
   const [saving, setSaving] = useState(false);
-  const [autoPrint, setAutoPrint] = useState(false);
   const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set());
   const [bulkProcessing, setBulkProcessing] = useState(false);
   useEffect(() => {
@@ -157,21 +156,8 @@ export default function ReportManagement() {
     }
   };
   const handlePrint = async (reportCard: ReportCard) => {
-    try {
-      setSelectedReportId(reportCard.id);
-      setAutoPrint(true);
-      setPreviewOpen(true);
-    } catch (error: any) {
-      toast({
-        title: "Error printing",
-        description: error.message || "Could not print report card",
-        variant: "destructive"
-      });
-    }
-  };
-  const handlePrintComplete = () => {
-    setAutoPrint(false);
-    setPreviewOpen(false);
+    setSelectedReportId(reportCard.id);
+    setPreviewOpen(true);
   };
   const toggleReportSelection = (reportId: string) => {
     setSelectedReports(prev => {
@@ -535,10 +521,7 @@ export default function ReportManagement() {
       </main>
 
       {/* Preview Dialog */}
-      <Dialog open={previewOpen} onOpenChange={open => {
-      setPreviewOpen(open);
-      if (!open) setAutoPrint(false);
-    }}>
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto print:max-w-full">
           <DialogHeader>
             <DialogTitle>Report Card Preview</DialogTitle>
@@ -546,7 +529,7 @@ export default function ReportManagement() {
               Preview of the student report card
             </DialogDescription>
           </DialogHeader>
-          {selectedReportId && <ReportCardPreview reportId={selectedReportId} autoPrint={autoPrint} onPrintComplete={handlePrintComplete} />}
+          {selectedReportId && <ReportCardPreview reportId={selectedReportId} />}
         </DialogContent>
       </Dialog>
 
