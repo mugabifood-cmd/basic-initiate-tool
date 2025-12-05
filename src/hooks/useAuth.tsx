@@ -175,16 +175,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     try {
-      await supabase.auth.signOut();
+      // Clear local state first to ensure UI updates immediately
+      setUser(null);
+      setProfile(null);
+      setSession(null);
+      
+      // Then attempt server-side signout (may fail if session already expired)
+      const { error } = await supabase.auth.signOut();
+      
+      // Show success regardless - user is logged out locally
+      if (error && error.message !== 'Session not found') {
+        console.warn('Sign out warning:', error.message);
+      }
+      
       toast({
         title: "Signed Out",
         description: "You have been signed out successfully.",
       });
     } catch (error: any) {
+      // Even if server signout fails, local state is cleared
+      console.warn('Sign out error:', error.message);
       toast({
-        title: "Sign Out Failed",
-        description: error.message,
-        variant: "destructive"
+        title: "Signed Out",
+        description: "You have been signed out successfully.",
       });
     }
   };
