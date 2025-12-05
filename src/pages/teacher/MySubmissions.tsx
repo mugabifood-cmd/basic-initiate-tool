@@ -430,16 +430,16 @@ export default function MySubmissions() {
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
                               </AlertDialogTrigger>
-                              <AlertDialogContent>
+                              <AlertDialogContent className="w-[95vw] max-w-md mx-auto">
                                 <AlertDialogHeader>
                                   <AlertDialogTitle>Delete Submission</AlertDialogTitle>
                                   <AlertDialogDescription>
                                     Are you sure you want to delete this submission? This action cannot be undone.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDelete(submission.id)}>
+                                <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                                  <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
+                                  <AlertDialogAction className="w-full sm:w-auto" onClick={() => handleDelete(submission.id)}>
                                     Delete
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
@@ -465,7 +465,7 @@ export default function MySubmissions() {
 
         {/* Edit Dialog */}
         <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto mx-auto">
             <DialogHeader>
               <DialogTitle>Edit Submission</DialogTitle>
               <DialogDescription>
@@ -473,7 +473,7 @@ export default function MySubmissions() {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="edit-a1">A1 Score</Label>
                   <Input
@@ -506,7 +506,7 @@ export default function MySubmissions() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="edit-perc20">20% Score</Label>
                   <Input
@@ -539,7 +539,7 @@ export default function MySubmissions() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="edit-initials">Teacher Initials</Label>
                   <Input
@@ -570,7 +570,7 @@ export default function MySubmissions() {
 
               <div className="space-y-2">
                 <Label>Calculated Values (Auto-calculated)</Label>
-                <div className="grid grid-cols-3 gap-4 p-3 bg-muted rounded-md">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-3 bg-muted rounded-md">
                   <div>
                     <p className="text-xs text-muted-foreground">AVG</p>
                     <p className="font-medium">
@@ -605,11 +605,11 @@ export default function MySubmissions() {
                 />
               </div>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+            <DialogFooter className="flex-col sm:flex-row gap-2">
+              <Button variant="outline" className="w-full sm:w-auto" onClick={() => setEditDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleSaveEdit}>
+              <Button className="w-full sm:w-auto" onClick={handleSaveEdit}>
                 Save Changes
               </Button>
             </DialogFooter>
@@ -618,13 +618,13 @@ export default function MySubmissions() {
 
         {/* Preview Dialog */}
         <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+          <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-auto mx-auto">
             <DialogHeader>
               <DialogTitle>Submission Details</DialogTitle>
             </DialogHeader>
             {selectedSubmission && (
               <div className="space-y-6 py-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label className="text-muted-foreground">Student</Label>
                     <p className="font-medium">{selectedSubmission.students?.full_name}</p>
@@ -653,7 +653,7 @@ export default function MySubmissions() {
 
                 <div className="border-t pt-4">
                   <Label className="text-muted-foreground mb-2 block">A Scores</Label>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="bg-muted/50 p-3 rounded-lg">
                       <p className="text-sm text-muted-foreground">A1 Score</p>
                       <p className="text-2xl font-bold">{selectedSubmission.a1_score}</p>
@@ -671,7 +671,7 @@ export default function MySubmissions() {
 
                 <div className="border-t pt-4">
                   <Label className="text-muted-foreground mb-2 block">Percentage Scores</Label>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="bg-muted/50 p-3 rounded-lg">
                       <p className="text-sm text-muted-foreground">20% Score</p>
                       <p className="text-2xl font-bold">{selectedSubmission.percentage_20}</p>
@@ -687,7 +687,7 @@ export default function MySubmissions() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   <div className="bg-primary/10 p-3 rounded-lg">
                     <p className="text-sm text-muted-foreground">Average Score</p>
                     <p className="text-2xl font-bold">{selectedSubmission.average_score}</p>
@@ -713,7 +713,7 @@ export default function MySubmissions() {
                   <p className="mt-1 p-3 bg-muted/50 rounded-lg">{selectedSubmission.teacher_comment}</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                   <div>
                     <Label className="text-muted-foreground">Submitted At</Label>
                     <p>{new Date(selectedSubmission.submitted_at).toLocaleString()}</p>
@@ -727,8 +727,8 @@ export default function MySubmissions() {
                 </div>
               </div>
             )}
-            <DialogFooter>
-              <Button onClick={() => setPreviewDialogOpen(false)}>
+            <DialogFooter className="flex-col sm:flex-row">
+              <Button className="w-full sm:w-auto" onClick={() => setPreviewDialogOpen(false)}>
                 Close
               </Button>
             </DialogFooter>
