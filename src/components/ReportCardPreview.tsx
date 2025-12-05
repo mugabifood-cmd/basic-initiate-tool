@@ -20,15 +20,13 @@ interface SubjectGrade {
 
 interface ReportCardPreviewProps {
   reportId: string;
-  autoPrint?: boolean;
-  onPrintComplete?: () => void;
   backgroundColor?: string;
 }
 
 // Ultra-thin border style constant for nearly invisible borders
 const thinBorder = '0.1px solid #ddd';
 
-export default function ReportCardPreview({ reportId, autoPrint = false, onPrintComplete, backgroundColor = '#ffffff' }: ReportCardPreviewProps) {
+export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff' }: ReportCardPreviewProps) {
   const [reportData, setReportData] = useState<any>(null);
   const [subjectGrades, setSubjectGrades] = useState<SubjectGrade[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,21 +34,6 @@ export default function ReportCardPreview({ reportId, autoPrint = false, onPrint
   useEffect(() => {
     fetchReportData();
   }, [reportId]);
-
-  useEffect(() => {
-    // Auto-print logic: trigger print when content is ready
-    if (autoPrint && !loading && reportData && subjectGrades.length > 0) {
-      const printTimeout = setTimeout(() => {
-        window.print();
-        // Call onPrintComplete after a short delay to ensure print dialog has appeared
-        setTimeout(() => {
-          onPrintComplete?.();
-        }, 500);
-      }, 300);
-
-      return () => clearTimeout(printTimeout);
-    }
-  }, [autoPrint, loading, reportData, subjectGrades, onPrintComplete]);
 
   const fetchReportData = async () => {
     try {
