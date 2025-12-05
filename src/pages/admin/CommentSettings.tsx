@@ -19,25 +19,23 @@ export default function CommentSettings() {
             <CardTitle className="text-2xl">Grade & Comments Settings</CardTitle>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="comments" orientation="vertical" className="flex gap-6">
-              <TabsList className="flex flex-col h-fit w-48">
-                <TabsTrigger value="grades" className="w-full justify-start">
+            <Tabs defaultValue="comments" className="w-full">
+              <TabsList className="flex justify-center gap-4 mb-6">
+                <TabsTrigger value="grades">
                   Grade Settings
                 </TabsTrigger>
-                <TabsTrigger value="comments" className="w-full justify-start">
+                <TabsTrigger value="comments">
                   Comment Templates
                 </TabsTrigger>
               </TabsList>
               
-              <div className="flex-1">
-                <TabsContent value="grades" className="mt-0">
-                  <GradeSettingsTab />
-                </TabsContent>
-                
-                <TabsContent value="comments" className="mt-0">
-                  <CommentTemplatesTab />
-                </TabsContent>
-              </div>
+              <TabsContent value="grades" className="mt-0">
+                <GradeSettingsTab />
+              </TabsContent>
+              
+              <TabsContent value="comments" className="mt-0">
+                <CommentTemplatesTab />
+              </TabsContent>
             </Tabs>
           </CardContent>
         </Card>
