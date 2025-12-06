@@ -353,6 +353,41 @@ export type Database = {
         }
         Relationships: []
       }
+      signatures: {
+        Row: {
+          created_at: string
+          id: string
+          profile_id: string | null
+          signature_data: string
+          signature_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          profile_id?: string | null
+          signature_data: string
+          signature_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          profile_id?: string | null
+          signature_data?: string
+          signature_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signatures_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       students: {
         Row: {
           age: number | null

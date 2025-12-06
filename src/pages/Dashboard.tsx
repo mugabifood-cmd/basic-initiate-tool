@@ -2,12 +2,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, Users, FileText, CheckCircle, Settings, MessageSquare } from 'lucide-react';
+import { LogOut, Users, FileText, CheckCircle, Settings, MessageSquare, PenTool } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { Skeleton } from '@/components/ui/skeleton';
+import TeacherSignatureSection from '@/components/TeacherSignatureSection';
+
 export default function Dashboard() {
   const {
     profile,
@@ -93,6 +95,12 @@ export default function Dashboard() {
         icon: MessageSquare,
         link: '/admin/comments',
         color: 'bg-pink-50 hover:bg-pink-100'
+      }, {
+        title: 'Headteacher Signature',
+        description: 'Manage headteacher digital signature for report cards',
+        icon: PenTool,
+        link: '/admin/signature',
+        color: 'bg-teal-50 hover:bg-teal-100'
       }];
     } else {
       return [{
@@ -203,6 +211,9 @@ export default function Dashboard() {
             </Card>
           </div>
         </div>
+
+        {/* Teacher Signature Section - Only visible for class teachers */}
+        {profile?.role === 'teacher' && <TeacherSignatureSection />}
       </main>
     </div>;
 }

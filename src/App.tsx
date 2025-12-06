@@ -14,6 +14,7 @@ import Approvals from './pages/admin/Approvals';
 import GenerateReports from './pages/admin/GenerateReports';
 import ReportManagement from './pages/admin/ReportManagement';
 import CommentSettings from './pages/admin/CommentSettings';
+import HeadteacherSignature from './pages/admin/HeadteacherSignature';
 import TeacherSubmissions from './pages/teacher/TeacherSubmissions';
 import MySubmissions from './pages/teacher/MySubmissions';
 
@@ -66,6 +67,11 @@ const App = () => (
                 <Route path="/admin/comments" element={
                   <ProtectedRoute roles={['admin']}>
                     <CommentSettings />
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/signature" element={
+                  <ProtectedRoute roles={['admin']}>
+                    <HeadteacherSignature />
                   </ProtectedRoute>
                 } />
                 
