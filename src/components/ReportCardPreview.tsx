@@ -30,6 +30,8 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
   const [reportData, setReportData] = useState<any>(null);
   const [subjectGrades, setSubjectGrades] = useState<SubjectGrade[]>([]);
   const [loading, setLoading] = useState(true);
+  const [classTeacherSignature, setClassTeacherSignature] = useState<string | null>(null);
+  const [headteacherSignature, setHeadteacherSignature] = useState<string | null>(null);
 
   useEffect(() => {
     fetchReportData();
@@ -113,10 +115,73 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
 
       setReportData({ ...report, school });
       setSubjectGrades(grades);
+
+      // Fetch class teacher signature
+      await fetchClassTeacherSignature(report.class_id);
+      
+      // Fetch headteacher signature
+      await fetchHeadteacherSignature();
     } catch (error: any) {
       console.error('Error fetching report data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchClassTeacherSignature = async (classId: string) => {
+    try {
+      // Get class info to find class teacher
+      const { data: classData, error: classError } = await supabase
+        .from('classes')
+        .select('name, stream')
+        .eq('id', classId)
+        .single();
+
+      if (classError) throw classError;
+
+      // Find the class teacher assignment
+      const { data: assignment, error: assignmentError } = await supabase
+        .from('teacher_assignments')
+        .select('teacher_id')
+        .eq('assignment_type', 'class_teacher')
+        .eq('class_name', classData.name)
+        .eq('stream', classData.stream)
+        .maybeSingle();
+
+      if (assignmentError) throw assignmentError;
+
+      if (assignment?.teacher_id) {
+        // Fetch the signature for this teacher
+        const { data: signature, error: signatureError } = await supabase
+          .from('signatures')
+          .select('signature_data')
+          .eq('profile_id', assignment.teacher_id)
+          .eq('signature_type', 'class_teacher')
+          .maybeSingle();
+
+        if (!signatureError && signature?.signature_data) {
+          setClassTeacherSignature(signature.signature_data);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching class teacher signature:', error);
+    }
+  };
+
+  const fetchHeadteacherSignature = async () => {
+    try {
+      const { data: signature, error } = await supabase
+        .from('signatures')
+        .select('signature_data')
+        .eq('signature_type', 'headteacher')
+        .is('profile_id', null)
+        .maybeSingle();
+
+      if (!error && signature?.signature_data) {
+        setHeadteacherSignature(signature.signature_data);
+      }
+    } catch (error) {
+      console.error('Error fetching headteacher signature:', error);
     }
   };
 
@@ -338,9 +403,20 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
             <p className="font-bold italic">Class teacher's Comment:</p>
             <p className="italic">{reportData.class_teacher_comment || 'No comment provided'}</p>
           </div>
-          <div className="text-right">
+          <div className="text-right min-w-[140px]">
             <p className="font-bold italic">Class Teacher's Signature:</p>
-            <p className="mt-2">_______________________</p>
+            {classTeacherSignature ? (
+              <div className="mt-1 flex justify-end">
+                <img 
+                  src={classTeacherSignature} 
+                  alt="Class Teacher Signature" 
+                  className="max-h-10 object-contain"
+                  style={{ maxWidth: '120px' }}
+                />
+              </div>
+            ) : (
+              <p className="mt-2 text-gray-400 text-xs italic">No signature provided</p>
+            )}
           </div>
         </div>
         <div className="flex justify-between">
@@ -348,9 +424,20 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
             <p className="font-bold italic">Headteacher's Comment:</p>
             <p className="italic">{reportData.headteacher_comment || 'No comment provided'}</p>
           </div>
-          <div className="text-right">
+          <div className="text-right min-w-[140px]">
             <p className="font-bold italic">Headteacher's Signature:</p>
-            <p className="mt-2">_______________________</p>
+            {headteacherSignature ? (
+              <div className="mt-1 flex justify-end">
+                <img 
+                  src={headteacherSignature} 
+                  alt="Headteacher Signature" 
+                  className="max-h-10 object-contain"
+                  style={{ maxWidth: '120px' }}
+                />
+              </div>
+            ) : (
+              <p className="mt-2 text-gray-400 text-xs italic">No signature provided</p>
+            )}
           </div>
         </div>
       </div>
