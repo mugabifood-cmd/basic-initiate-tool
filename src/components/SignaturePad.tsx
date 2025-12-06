@@ -75,21 +75,43 @@ export default function SignaturePad({ profileId, signatureType, title, descript
       setIsSaving(true);
       const signatureData = sigCanvas.current.toDataURL('image/png');
 
-      // Upsert the signature
-      const { error } = await supabase
+      // Check if signature already exists
+      let existingQuery = supabase
         .from('signatures')
-        .upsert({
-          profile_id: signatureType === 'headteacher' ? null : profileId,
-          signature_type: signatureType,
-          signature_data: signatureData,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: signatureType === 'headteacher' 
-            ? 'signature_type' 
-            : 'profile_id,signature_type'
-        });
+        .select('id')
+        .eq('signature_type', signatureType);
 
-      if (error) throw error;
+      if (signatureType === 'headteacher') {
+        existingQuery = existingQuery.is('profile_id', null);
+      } else {
+        existingQuery = existingQuery.eq('profile_id', profileId);
+      }
+
+      const { data: existing } = await existingQuery.maybeSingle();
+
+      if (existing) {
+        // Update existing signature
+        const { error } = await supabase
+          .from('signatures')
+          .update({
+            signature_data: signatureData,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existing.id);
+
+        if (error) throw error;
+      } else {
+        // Insert new signature
+        const { error } = await supabase
+          .from('signatures')
+          .insert({
+            profile_id: signatureType === 'headteacher' ? null : profileId,
+            signature_type: signatureType,
+            signature_data: signatureData
+          });
+
+        if (error) throw error;
+      }
 
       setSavedSignature(signatureData);
       setShowPreview(true);
