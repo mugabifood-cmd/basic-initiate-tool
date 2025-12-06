@@ -332,7 +332,7 @@ export default function TeacherManagement() {
       
       <Card>
         <CardHeader>
-          <CardTitle>Teacher Assignment Management</CardTitle>
+          <CardTitle>Teacher Assignments</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
