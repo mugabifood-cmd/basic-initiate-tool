@@ -2,10 +2,8 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import HeadteacherSignatureSection from '@/components/admin/HeadteacherSignatureSection';
-
 export default function HeadteacherSignature() {
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       <header className="bg-card shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-16">
@@ -15,7 +13,7 @@ export default function HeadteacherSignature() {
                 Back to Dashboard
               </Button>
             </Link>
-            <h1 className="ml-4 text-xl font-semibold">Headteacher Signature Management</h1>
+            <h1 className="ml-4 text-xl font-semibold">Headteacher Signature</h1>
           </div>
         </div>
       </header>
@@ -30,6 +28,5 @@ export default function HeadteacherSignature() {
 
         <HeadteacherSignatureSection />
       </main>
-    </div>
-  );
+    </div>;
 }
