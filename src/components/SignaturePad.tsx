@@ -73,7 +73,7 @@ export default function SignaturePad({ profileId, signatureType, title, descript
 
     try {
       setIsSaving(true);
-      const signatureData = sigCanvas.current.getTrimmedCanvas().toDataURL('image/png');
+      const signatureData = sigCanvas.current.toDataURL('image/png');
 
       // Upsert the signature
       const { error } = await supabase
