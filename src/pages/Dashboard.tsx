@@ -9,7 +9,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { Skeleton } from '@/components/ui/skeleton';
 import TeacherSignatureSection from '@/components/TeacherSignatureSection';
-
 export default function Dashboard() {
   const {
     profile,
@@ -124,9 +123,7 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div>
-              <h1 className="text-xl font-semibold">
-                O-Level Report Card System
-              </h1>
+              <h1 className="text-xl font-semibold">O-Level Report Card</h1>
             </div>
             <div className="flex items-center space-x-4">
               <div className="text-right">
