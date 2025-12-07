@@ -21,12 +21,13 @@ interface SubjectGrade {
 interface ReportCardPreviewProps {
   reportId: string;
   backgroundColor?: string;
+  onReady?: () => void;
 }
 
 // Ultra-thin border style constant for nearly invisible borders
 const thinBorder = '0.1px solid #ddd';
 
-export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff' }: ReportCardPreviewProps) {
+export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff', onReady }: ReportCardPreviewProps) {
   const [reportData, setReportData] = useState<any>(null);
   const [subjectGrades, setSubjectGrades] = useState<SubjectGrade[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,6 +37,17 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
   useEffect(() => {
     fetchReportData();
   }, [reportId]);
+
+  // Call onReady when content is fully loaded
+  useEffect(() => {
+    if (!loading && reportData && onReady) {
+      // Small delay to ensure DOM is painted
+      const timer = setTimeout(() => {
+        onReady();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, reportData, onReady]);
 
   const fetchReportData = async () => {
     try {

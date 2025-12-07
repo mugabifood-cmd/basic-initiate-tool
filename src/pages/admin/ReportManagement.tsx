@@ -52,8 +52,10 @@ export default function ReportManagement() {
   const [editOpen, setEditOpen] = useState(false);
   const [editingReport, setEditingReport] = useState<ReportCard | null>(null);
   const [saving, setSaving] = useState(false);
-  const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set());
+const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set());
   const [bulkProcessing, setBulkProcessing] = useState(false);
+  const [downloadPending, setDownloadPending] = useState<ReportCard | null>(null);
+  const [previewReady, setPreviewReady] = useState(false);
   useEffect(() => {
     fetchReportCards();
   }, []);
@@ -249,16 +251,18 @@ export default function ReportManagement() {
     }
   };
   const handleDownload = async (reportCard: ReportCard) => {
-    try {
-      toast({
-        title: "Preparing download",
-        description: "Please wait while we generate the PDF..."
-      });
-      setSelectedReportId(reportCard.id);
-      setPreviewOpen(true);
+    toast({
+      title: "Preparing download",
+      description: "Please wait while we generate the PDF..."
+    });
+    setDownloadPending(reportCard);
+    setPreviewReady(false);
+    setSelectedReportId(reportCard.id);
+    setPreviewOpen(true);
+  };
 
-      // Wait longer for dialog and content to fully render
-      await new Promise(resolve => setTimeout(resolve, 2000));
+  const processDownload = async (reportCard: ReportCard) => {
+    try {
       const element = document.getElementById('report-card-preview');
       if (!element) {
         throw new Error("Report card content not ready. Please try again.");
@@ -303,6 +307,7 @@ export default function ReportManagement() {
       const fileName = `${reportCard.students.full_name.replace(/\s+/g, '_')}_Report_Card.pdf`;
       pdf.save(fileName);
       setPreviewOpen(false);
+      setDownloadPending(null);
       toast({
         title: "Download complete",
         description: "Report card downloaded successfully"
@@ -310,12 +315,24 @@ export default function ReportManagement() {
     } catch (error: any) {
       console.error('Download error:', error);
       setPreviewOpen(false);
+      setDownloadPending(null);
       toast({
         title: "Error downloading report",
         description: error.message || "Failed to generate PDF. Please try again.",
         variant: "destructive"
       });
     }
+  };
+
+  // Process download when preview is ready
+  useEffect(() => {
+    if (previewReady && downloadPending) {
+      processDownload(downloadPending);
+    }
+  }, [previewReady, downloadPending]);
+
+  const handlePreviewReady = () => {
+    setPreviewReady(true);
   };
   const handleShare = async (reportCard: ReportCard) => {
     try {
@@ -521,7 +538,13 @@ export default function ReportManagement() {
       </main>
 
       {/* Preview Dialog */}
-      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+      <Dialog open={previewOpen} onOpenChange={(open) => {
+        setPreviewOpen(open);
+        if (!open) {
+          setDownloadPending(null);
+          setPreviewReady(false);
+        }
+      }}>
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto print:max-w-full">
           <DialogHeader>
             <DialogTitle>Report Card Preview</DialogTitle>
@@ -529,7 +552,7 @@ export default function ReportManagement() {
               Preview of the student report card
             </DialogDescription>
           </DialogHeader>
-          {selectedReportId && <ReportCardPreview reportId={selectedReportId} />}
+          {selectedReportId && <ReportCardPreview reportId={selectedReportId} onReady={handlePreviewReady} />}
         </DialogContent>
       </Dialog>
 
