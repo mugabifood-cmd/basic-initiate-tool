@@ -154,7 +154,7 @@ export default function Dashboard() {
         </div>
 
         {/* Menu Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {getMenuItems().map((item, index) => <Link key={index} to={item.link}>
               <Card className={`cursor-pointer transition-colors ${item.color}`}>
                 <CardHeader>
@@ -173,7 +173,7 @@ export default function Dashboard() {
         {/* Quick Stats */}
         <div className="mt-12">
           <h3 className="text-lg font-semibold mb-4">Quick Overview</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card>
               <CardContent className="p-4">
                 {statsLoading ? <Skeleton className="h-8 w-16 mb-2" /> : <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
