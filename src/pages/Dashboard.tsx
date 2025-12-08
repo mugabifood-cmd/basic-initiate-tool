@@ -159,7 +159,7 @@ export default function Dashboard() {
               <Card className={`cursor-pointer transition-colors ${item.color}`}>
                 <CardHeader>
                   <div className="flex items-center space-x-2">
-                    <item.icon className="w-6 h-6 text-gray-700" />
+                    
                     <CardTitle className="text-lg text-sky-700">{item.title}</CardTitle>
                   </div>
                   <CardDescription className="mt-2 text-gray-600">
