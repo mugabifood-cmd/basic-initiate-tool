@@ -24,8 +24,9 @@ interface ReportCardPreviewProps {
   onReady?: () => void;
 }
 
-// Ultra-thin border style constant for nearly invisible borders
-const thinBorder = '0.1px solid #ddd';
+// Border style matching reference template
+const thinBorder = '1px solid #8B7355';
+const thickBorder = '2px solid #8B7355';
 
 export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff', onReady }: ReportCardPreviewProps) {
   const [reportData, setReportData] = useState<any>(null);
@@ -228,7 +229,7 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
   return (
     <div id="report-card-preview" className="text-black p-6 mx-auto" style={{ fontFamily: 'Arial, sans-serif', fontSize: '10px', maxWidth: '210mm', width: '100%', backgroundColor: backgroundColor }}>
       {/* Header with Logo and Student Photo */}
-      <div style={{ border: thinBorder }} className="mb-2">
+      <div style={{ border: thickBorder }} className="mb-2">
         <div className="flex items-start justify-between p-3">
           {/* School Logo - Left */}
           <div className="w-20 h-20 flex-shrink-0">
@@ -306,12 +307,12 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
       </div>
 
       {/* Performance Records Header */}
-      <div className="text-center bg-blue-700 text-white font-bold py-1 text-sm mb-0">
+      <div className="text-center bg-blue-700 text-white font-bold py-1 text-sm mb-0" style={{ border: thickBorder, borderBottom: 'none' }}>
         PERFORMANCE RECORDS
       </div>
 
       {/* Subjects Table */}
-      <div style={{ border: thinBorder }}>
+      <div style={{ border: thickBorder, borderTop: 'none' }}>
         <table className="w-full text-xs report-table" style={{ borderCollapse: 'collapse', borderSpacing: 0 }}>
           <thead>
             <tr className="bg-gray-50">
@@ -373,7 +374,7 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
       </div>
 
       {/* Overall Performance Summary */}
-      <div style={{ border: thinBorder, borderTop: 'none' }} className="p-2 flex items-center justify-between text-xs">
+      <div style={{ border: thickBorder, borderTop: 'none' }} className="p-2 flex items-center justify-between text-xs">
         <div className="flex items-center gap-4">
           <span className="font-bold">Overall Identifier</span>
           <span className="px-3 py-1 bg-gray-100 font-bold">{reportData.identifier || '2'}</span>
@@ -385,7 +386,7 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
       </div>
 
       {/* Grade Scale */}
-      <div style={{ border: thinBorder, borderTop: 'none' }} className="mb-2">
+      <div style={{ border: thickBorder, borderTop: 'none' }} className="mb-2">
         <table className="w-full text-xs report-table" style={{ borderCollapse: 'collapse', borderSpacing: 0 }}>
           <tbody>
             <tr className="text-center font-bold">
@@ -399,17 +400,17 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
             <tr className="text-center">
               <td style={{ border: thinBorder, padding: '4px', fontWeight: 'bold', verticalAlign: 'middle' }}>SCORES</td>
               <td style={{ border: thinBorder, padding: '4px', verticalAlign: 'middle' }}>100 - 80</td>
-              <td style={{ border: thinBorder, padding: '4px', verticalAlign: 'middle' }}>80 - 70</td>
+              <td style={{ border: thinBorder, padding: '4px', verticalAlign: 'middle' }}>79 - 70</td>
               <td style={{ border: thinBorder, padding: '4px', verticalAlign: 'middle' }}>69 - 60</td>
-              <td style={{ border: thinBorder, padding: '4px', verticalAlign: 'middle' }}>60 - 40</td>
-              <td style={{ border: thinBorder, padding: '4px', verticalAlign: 'middle' }}>40 - 0</td>
+              <td style={{ border: thinBorder, padding: '4px', verticalAlign: 'middle' }}>59 - 40</td>
+              <td style={{ border: thinBorder, padding: '4px', verticalAlign: 'middle' }}>39 - 0</td>
             </tr>
           </tbody>
         </table>
       </div>
 
       {/* Comments */}
-      <div style={{ border: thinBorder }} className="p-2 mb-2 text-xs">
+      <div style={{ border: thickBorder }} className="p-2 mb-2 text-xs">
         <div className="mb-3 flex justify-between">
           <div className="flex-1">
             <p className="font-bold italic">Class teacher's Comment:</p>
@@ -455,7 +456,7 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
       </div>
 
       {/* Key to Terms */}
-      <div style={{ border: thinBorder }} className="p-2 mb-2 text-xs">
+      <div style={{ border: thickBorder }} className="p-2 mb-2 text-xs">
         <p className="font-bold mb-1">Key to Terms Used: <span className="font-normal"><span className="font-bold">A1</span> Average Chapter Assessment <span className="font-bold">80%</span> End of term assessment</span></p>
         <div className="grid grid-cols-3 gap-2">
           <div className="flex gap-2">
@@ -477,8 +478,8 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
       </div>
 
       {/* Footer Information */}
-      <div style={{ border: thinBorder }} className="text-xs">
-        <div className="grid grid-cols-5" style={{ borderBottom: thinBorder }}>
+      <div style={{ border: thickBorder }} className="text-xs">
+        <div className="grid grid-cols-5" style={{ borderBottom: thickBorder }}>
           <div style={{ borderRight: thinBorder }} className="p-2 text-center">
             <p className="font-bold mb-1">TERM ENDED ON</p>
             <p className="font-bold">{reportData.classes.term_ended_on ? format(new Date(reportData.classes.term_ended_on), 'MM/dd/yyyy') : '04/25/2025'}</p>
@@ -501,7 +502,7 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
           </div>
         </div>
         <div className="p-2 text-center italic font-semibold">
-          Work hard to excel
+          {reportData.school?.motto ? `"${reportData.school.motto}"` : 'Excellence in Education'}
         </div>
       </div>
     </div>
