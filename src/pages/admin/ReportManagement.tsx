@@ -157,8 +157,11 @@ const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set());
       setSaving(false);
     }
   };
+  const [printPending, setPrintPending] = useState(false);
   const handlePrint = async (reportCard: ReportCard) => {
     setSelectedReportId(reportCard.id);
+    setPrintPending(true);
+    setPreviewReady(false);
     setPreviewOpen(true);
   };
   const toggleReportSelection = (reportId: string) => {
@@ -329,7 +332,14 @@ const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set());
     if (previewReady && downloadPending) {
       processDownload(downloadPending);
     }
-  }, [previewReady, downloadPending]);
+    if (previewReady && printPending) {
+      // Small delay to ensure DOM is fully painted
+      setTimeout(() => {
+        window.print();
+        setPrintPending(false);
+      }, 500);
+    }
+  }, [previewReady, downloadPending, printPending]);
 
   const handlePreviewReady = () => {
     setPreviewReady(true);
