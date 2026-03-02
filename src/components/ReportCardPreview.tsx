@@ -26,7 +26,7 @@ interface ReportCardPreviewProps {
 
 // Border style matching reference template
   const thinBorder = '1px solid #8B7355';
-  const thickBorder = '1.5px solid #000000';
+  const thickBorder = '1px solid #000000';
 
 export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff', onReady }: ReportCardPreviewProps) {
   const [reportData, setReportData] = useState<any>(null);
