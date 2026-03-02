@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Eye, Edit, Trash2, Printer, FileText, Download, Share2 } from 'lucide-react';
+import { ArrowLeft, Eye, Edit, Trash2, Printer, FileText, Download, Share2, DollarSign } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -52,6 +52,9 @@ export default function ReportManagement() {
   const [editOpen, setEditOpen] = useState(false);
   const [editingReport, setEditingReport] = useState<ReportCard | null>(null);
   const [saving, setSaving] = useState(false);
+  const [financialOpen, setFinancialOpen] = useState(false);
+  const [financialReport, setFinancialReport] = useState<ReportCard | null>(null);
+  const [savingFinancial, setSavingFinancial] = useState(false);
 const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set());
   const [bulkProcessing, setBulkProcessing] = useState(false);
   const [downloadPending, setDownloadPending] = useState<ReportCard | null>(null);
@@ -122,6 +125,36 @@ const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set());
   const handleEdit = (reportCard: ReportCard) => {
     setEditingReport(reportCard);
     setEditOpen(true);
+  };
+  const handleFinancialInfo = (reportCard: ReportCard) => {
+    setFinancialReport(reportCard);
+    setFinancialOpen(true);
+  };
+  const handleSaveFinancial = async () => {
+    if (!financialReport) return;
+    try {
+      setSavingFinancial(true);
+      const { error } = await supabase.from('report_cards').update({
+        fees_balance: financialReport.fees_balance,
+        fees_next_term: financialReport.fees_next_term,
+        other_requirements: financialReport.other_requirements,
+      }).eq('id', financialReport.id);
+      if (error) throw error;
+      toast({
+        title: "Financial info updated",
+        description: "Fees and requirements saved successfully"
+      });
+      setFinancialOpen(false);
+      fetchReportCards();
+    } catch (error: any) {
+      toast({
+        title: "Error saving",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setSavingFinancial(false);
+    }
   };
   const handleSaveEdit = async () => {
     if (!editingReport) return;
@@ -506,6 +539,9 @@ const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set());
                             <Button variant="ghost" size="sm" onClick={() => handleEdit(report)} title="Edit">
                               <Edit className="w-4 h-4" />
                             </Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleFinancialInfo(report)} title="Financial Info">
+                              <DollarSign className="w-4 h-4" />
+                            </Button>
                             <Button variant="ghost" size="sm" onClick={() => handlePrint(report)} title="Print">
                               <Printer className="w-4 h-4" />
                             </Button>
@@ -699,6 +735,62 @@ const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set());
             </Button>
             <Button onClick={handleSaveEdit} disabled={saving}>
               {saving ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Financial Info Dialog */}
+      <Dialog open={financialOpen} onOpenChange={setFinancialOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Financial Information & Requirements</DialogTitle>
+            <DialogDescription>
+              {financialReport ? `${financialReport.students.full_name} — ${financialReport.classes.name} ${financialReport.classes.stream}` : ''}
+            </DialogDescription>
+          </DialogHeader>
+          {financialReport && (
+            <div className="space-y-4 py-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="fin_fees_balance">Fees Balance (KES)</Label>
+                  <Input
+                    id="fin_fees_balance"
+                    type="number"
+                    step="0.01"
+                    value={financialReport.fees_balance || ''}
+                    onChange={e => setFinancialReport({ ...financialReport, fees_balance: parseFloat(e.target.value) || undefined })}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="fin_fees_next_term">Fees Next Term (KES)</Label>
+                  <Input
+                    id="fin_fees_next_term"
+                    type="number"
+                    step="0.01"
+                    value={financialReport.fees_next_term || ''}
+                    onChange={e => setFinancialReport({ ...financialReport, fees_next_term: parseFloat(e.target.value) || undefined })}
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="fin_other_requirements">Other Requirements</Label>
+                <Textarea
+                  id="fin_other_requirements"
+                  value={financialReport.other_requirements || ''}
+                  onChange={e => setFinancialReport({ ...financialReport, other_requirements: e.target.value })}
+                  rows={3}
+                  placeholder="Additional requirements or notes"
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setFinancialOpen(false)}>Cancel</Button>
+            <Button onClick={handleSaveFinancial} disabled={savingFinancial}>
+              {savingFinancial ? "Saving..." : "Save"}
             </Button>
           </DialogFooter>
         </DialogContent>
