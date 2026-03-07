@@ -854,5 +854,81 @@ export default function ReportManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Bulk Financial Info Dialog */}
+      <Dialog open={bulkFinancialOpen} onOpenChange={setBulkFinancialOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Bulk Financial Info Update</DialogTitle>
+            <DialogDescription>
+              Set fees and requirements for all students in a class at once. Only filled fields will be updated.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Select Class</Label>
+              <Select value={bulkFinancialData.class_filter} onValueChange={v => setBulkFinancialData({ ...bulkFinancialData, class_filter: v })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All classes" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Classes ({reportCards.length} reports)</SelectItem>
+                  {uniqueClasses.map(c => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.label} ({reportCards.filter(r => r.class_id === c.id).length} reports)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Fees Balance (KES)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={bulkFinancialData.fees_balance}
+                  onChange={e => setBulkFinancialData({ ...bulkFinancialData, fees_balance: e.target.value })}
+                  placeholder="Leave empty to skip"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Fees Next Term (KES)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={bulkFinancialData.fees_next_term}
+                  onChange={e => setBulkFinancialData({ ...bulkFinancialData, fees_next_term: e.target.value })}
+                  placeholder="Leave empty to skip"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Other Requirements</Label>
+              <Textarea
+                value={bulkFinancialData.other_requirements}
+                onChange={e => setBulkFinancialData({ ...bulkFinancialData, other_requirements: e.target.value })}
+                rows={3}
+                placeholder="Leave empty to skip"
+              />
+            </div>
+            <p className="text-sm text-muted-foreground">
+              This will update{' '}
+              <strong>
+                {bulkFinancialData.class_filter === 'all'
+                  ? reportCards.length
+                  : reportCards.filter(r => r.class_id === bulkFinancialData.class_filter).length}
+              </strong>{' '}
+              report card(s).
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkFinancialOpen(false)}>Cancel</Button>
+            <Button onClick={handleSaveBulkFinancial} disabled={savingBulkFinancial}>
+              {savingBulkFinancial ? "Updating..." : "Update All"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>;
 }
