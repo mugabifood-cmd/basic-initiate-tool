@@ -55,7 +55,15 @@ export default function ReportManagement() {
   const [financialOpen, setFinancialOpen] = useState(false);
   const [financialReport, setFinancialReport] = useState<ReportCard | null>(null);
   const [savingFinancial, setSavingFinancial] = useState(false);
-const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set());
+  const [bulkFinancialOpen, setBulkFinancialOpen] = useState(false);
+  const [bulkFinancialData, setBulkFinancialData] = useState({
+    fees_balance: '',
+    fees_next_term: '',
+    other_requirements: '',
+    class_filter: 'all',
+  });
+  const [savingBulkFinancial, setSavingBulkFinancial] = useState(false);
+  const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set());
   const [bulkProcessing, setBulkProcessing] = useState(false);
   const [downloadPending, setDownloadPending] = useState<ReportCard | null>(null);
   const [previewReady, setPreviewReady] = useState(false);
@@ -154,6 +162,51 @@ const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set());
       });
     } finally {
       setSavingFinancial(false);
+    }
+  };
+
+  // Get unique classes for the filter dropdown
+  const uniqueClasses = Array.from(
+    new Map(reportCards.map(r => [`${r.class_id}`, { id: r.class_id, label: `${r.classes.name} ${r.classes.stream}` }])).values()
+  );
+
+  const handleSaveBulkFinancial = async () => {
+    try {
+      setSavingBulkFinancial(true);
+      const targetReports = bulkFinancialData.class_filter === 'all'
+        ? reportCards
+        : reportCards.filter(r => r.class_id === bulkFinancialData.class_filter);
+
+      if (targetReports.length === 0) {
+        toast({ title: "No reports found", description: "No report cards match the selected class", variant: "destructive" });
+        return;
+      }
+
+      const updateData: Record<string, any> = {};
+      if (bulkFinancialData.fees_balance !== '') updateData.fees_balance = parseFloat(bulkFinancialData.fees_balance);
+      if (bulkFinancialData.fees_next_term !== '') updateData.fees_next_term = parseFloat(bulkFinancialData.fees_next_term);
+      if (bulkFinancialData.other_requirements !== '') updateData.other_requirements = bulkFinancialData.other_requirements;
+
+      if (Object.keys(updateData).length === 0) {
+        toast({ title: "Nothing to update", description: "Please fill in at least one field", variant: "destructive" });
+        return;
+      }
+
+      const ids = targetReports.map(r => r.id);
+      const { error } = await supabase.from('report_cards').update(updateData).in('id', ids);
+      if (error) throw error;
+
+      toast({
+        title: "Bulk update complete",
+        description: `Updated financial info for ${ids.length} report card(s)`
+      });
+      setBulkFinancialOpen(false);
+      setBulkFinancialData({ fees_balance: '', fees_next_term: '', other_requirements: '', class_filter: 'all' });
+      fetchReportCards();
+    } catch (error: any) {
+      toast({ title: "Error saving", description: error.message, variant: "destructive" });
+    } finally {
+      setSavingBulkFinancial(false);
     }
   };
   const handleSaveEdit = async () => {
@@ -462,6 +515,12 @@ const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set());
                   {reportCards.length} total
                 </Badge>
               </CardTitle>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" onClick={() => setBulkFinancialOpen(true)}>
+                  <DollarSign className="w-4 h-4 mr-2" />
+                  Bulk Financial Info
+                </Button>
+              </div>
               {selectedReports.size > 0 && (
                 <div className="flex items-center gap-2">
                   <Button onClick={handleBulkPrint} disabled={bulkProcessing}>
@@ -791,6 +850,82 @@ const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set());
             <Button variant="outline" onClick={() => setFinancialOpen(false)}>Cancel</Button>
             <Button onClick={handleSaveFinancial} disabled={savingFinancial}>
               {savingFinancial ? "Saving..." : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Financial Info Dialog */}
+      <Dialog open={bulkFinancialOpen} onOpenChange={setBulkFinancialOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Bulk Financial Info Update</DialogTitle>
+            <DialogDescription>
+              Set fees and requirements for all students in a class at once. Only filled fields will be updated.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Select Class</Label>
+              <Select value={bulkFinancialData.class_filter} onValueChange={v => setBulkFinancialData({ ...bulkFinancialData, class_filter: v })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All classes" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Classes ({reportCards.length} reports)</SelectItem>
+                  {uniqueClasses.map(c => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.label} ({reportCards.filter(r => r.class_id === c.id).length} reports)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Fees Balance (KES)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={bulkFinancialData.fees_balance}
+                  onChange={e => setBulkFinancialData({ ...bulkFinancialData, fees_balance: e.target.value })}
+                  placeholder="Leave empty to skip"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Fees Next Term (KES)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={bulkFinancialData.fees_next_term}
+                  onChange={e => setBulkFinancialData({ ...bulkFinancialData, fees_next_term: e.target.value })}
+                  placeholder="Leave empty to skip"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Other Requirements</Label>
+              <Textarea
+                value={bulkFinancialData.other_requirements}
+                onChange={e => setBulkFinancialData({ ...bulkFinancialData, other_requirements: e.target.value })}
+                rows={3}
+                placeholder="Leave empty to skip"
+              />
+            </div>
+            <p className="text-sm text-muted-foreground">
+              This will update{' '}
+              <strong>
+                {bulkFinancialData.class_filter === 'all'
+                  ? reportCards.length
+                  : reportCards.filter(r => r.class_id === bulkFinancialData.class_filter).length}
+              </strong>{' '}
+              report card(s).
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkFinancialOpen(false)}>Cancel</Button>
+            <Button onClick={handleSaveBulkFinancial} disabled={savingBulkFinancial}>
+              {savingBulkFinancial ? "Updating..." : "Update All"}
             </Button>
           </DialogFooter>
         </DialogContent>
