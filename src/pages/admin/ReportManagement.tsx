@@ -515,6 +515,12 @@ export default function ReportManagement() {
                   {reportCards.length} total
                 </Badge>
               </CardTitle>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" onClick={() => setBulkFinancialOpen(true)}>
+                  <DollarSign className="w-4 h-4 mr-2" />
+                  Bulk Financial Info
+                </Button>
+              </div>
               {selectedReports.size > 0 && (
                 <div className="flex items-center gap-2">
                   <Button onClick={handleBulkPrint} disabled={bulkProcessing}>
