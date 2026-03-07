@@ -55,7 +55,15 @@ export default function ReportManagement() {
   const [financialOpen, setFinancialOpen] = useState(false);
   const [financialReport, setFinancialReport] = useState<ReportCard | null>(null);
   const [savingFinancial, setSavingFinancial] = useState(false);
-const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set());
+  const [bulkFinancialOpen, setBulkFinancialOpen] = useState(false);
+  const [bulkFinancialData, setBulkFinancialData] = useState({
+    fees_balance: '',
+    fees_next_term: '',
+    other_requirements: '',
+    class_filter: 'all',
+  });
+  const [savingBulkFinancial, setSavingBulkFinancial] = useState(false);
+  const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set());
   const [bulkProcessing, setBulkProcessing] = useState(false);
   const [downloadPending, setDownloadPending] = useState<ReportCard | null>(null);
   const [previewReady, setPreviewReady] = useState(false);
