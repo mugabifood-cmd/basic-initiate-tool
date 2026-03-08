@@ -100,6 +100,12 @@ export default function Dashboard() {
         icon: PenTool,
         link: '/admin/signature',
         color: 'bg-teal-50 hover:bg-teal-100'
+      }, {
+        title: 'Finance Management',
+        description: 'Manage fee structures, payments, bursaries & audit trail',
+        icon: DollarSign,
+        link: '/admin/finance',
+        color: 'bg-emerald-50 hover:bg-emerald-100'
       }];
     } else {
       return [{

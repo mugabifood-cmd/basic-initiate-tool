@@ -75,6 +75,11 @@ const App = () => (
                     <HeadteacherSignature />
                   </ProtectedRoute>
                 } />
+                <Route path="/admin/finance" element={
+                  <ProtectedRoute roles={['admin']}>
+                    <FinanceManagement />
+                  </ProtectedRoute>
+                } />
                 
                 {/* Teacher Routes */}
                 <Route path="/teacher/submissions" element={
