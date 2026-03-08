@@ -230,9 +230,7 @@ serve(async (req) => {
         let reportCardId;
 
         if (existingReport) {
-          // Update existing report card
-          // NOTE: Financial fields (fees_balance, fees_next_term, other_requirements) are NOT updated
-          // here to preserve admin-only data. These fields can only be modified via the admin interface.
+          // Update existing report card with auto-calculated fees balance
           const { data: updatedReport, error: updateError } = await supabase
             .from('report_cards')
             .update({
@@ -240,6 +238,7 @@ serve(async (req) => {
               overall_grade: overallGrade,
               class_teacher_comment: commentTemplate?.class_teacher_comment || null,
               headteacher_comment: commentTemplate?.headteacher_comment || null,
+              fees_balance: calculatedFeesBalance,
               template_id: template_id || 1,
               generated_at: new Date().toISOString(),
               generated_by: profile.id,
