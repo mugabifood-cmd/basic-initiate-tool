@@ -15,6 +15,7 @@ import GenerateReports from './pages/admin/GenerateReports';
 import ReportManagement from './pages/admin/ReportManagement';
 import CommentSettings from './pages/admin/CommentSettings';
 import HeadteacherSignature from './pages/admin/HeadteacherSignature';
+import FinanceManagement from './pages/admin/FinanceManagement';
 import TeacherSubmissions from './pages/teacher/TeacherSubmissions';
 import MySubmissions from './pages/teacher/MySubmissions';
 
@@ -72,6 +73,11 @@ const App = () => (
                 <Route path="/admin/signature" element={
                   <ProtectedRoute roles={['admin']}>
                     <HeadteacherSignature />
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/finance" element={
+                  <ProtectedRoute roles={['admin']}>
+                    <FinanceManagement />
                   </ProtectedRoute>
                 } />
                 

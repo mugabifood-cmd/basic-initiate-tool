@@ -164,6 +164,61 @@ serve(async (req) => {
         console.log('Overall average:', overallAverage, 'Found comment template:', commentTemplate?.id, 
           'Class comment:', commentTemplate?.class_teacher_comment?.substring(0, 30) || 'none');
 
+        // ===== AUTO FEES CALCULATION =====
+        // 1. Get fee structure for this student's class
+        const { data: feeStructures } = await supabase
+          .from('fee_structures')
+          .select('*')
+          .eq('class_name', classData.name)
+          .eq('academic_year', classData.academic_year);
+
+        // Find matching fee structure (prefer exact stream match, then null stream)
+        let feeStructure = feeStructures?.find(f => f.stream === classData.stream && (f.term === classData.term || !f.term));
+        if (!feeStructure) {
+          feeStructure = feeStructures?.find(f => !f.stream && (f.term === classData.term || !f.term));
+        }
+        if (!feeStructure) {
+          feeStructure = feeStructures?.[0]; // fallback to any match
+        }
+
+        let totalFeesRequired = feeStructure ? parseFloat(feeStructure.amount) : 0;
+
+        // 2. Apply bursary discount if applicable
+        const { data: bursary } = await supabase
+          .from('student_bursaries')
+          .select('*')
+          .eq('student_id', student_id)
+          .maybeSingle();
+
+        if (bursary) {
+          let discountPct = 0;
+          if (bursary.bursary_type === 'full') discountPct = 100;
+          else if (bursary.bursary_type === 'half') discountPct = 50;
+          else if (bursary.bursary_type === 'custom') discountPct = parseFloat(bursary.custom_percentage) || 0;
+          
+          totalFeesRequired = totalFeesRequired * (1 - discountPct / 100);
+        }
+
+        // 3. Sum all payments for this student in this academic year/term
+        let paymentsQuery = supabase
+          .from('student_payments')
+          .select('amount')
+          .eq('student_id', student_id)
+          .eq('academic_year', classData.academic_year);
+
+        if (classData.term) {
+          paymentsQuery = paymentsQuery.or(`term.eq.${classData.term},term.is.null`);
+        }
+
+        const { data: paymentRecords } = await paymentsQuery;
+
+        const totalPaid = paymentRecords?.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0) || 0;
+
+        // 4. Calculate balance
+        const calculatedFeesBalance = totalFeesRequired - totalPaid;
+
+        console.log(`Fees for ${studentData.full_name}: required=${totalFeesRequired}, paid=${totalPaid}, balance=${calculatedFeesBalance}`);
+
         // Check if report card already exists
         const { data: existingReport, error: existingError } = await supabase
           .from('report_cards')
@@ -175,9 +230,7 @@ serve(async (req) => {
         let reportCardId;
 
         if (existingReport) {
-          // Update existing report card
-          // NOTE: Financial fields (fees_balance, fees_next_term, other_requirements) are NOT updated
-          // here to preserve admin-only data. These fields can only be modified via the admin interface.
+          // Update existing report card with auto-calculated fees balance
           const { data: updatedReport, error: updateError } = await supabase
             .from('report_cards')
             .update({
@@ -185,6 +238,7 @@ serve(async (req) => {
               overall_grade: overallGrade,
               class_teacher_comment: commentTemplate?.class_teacher_comment || null,
               headteacher_comment: commentTemplate?.headteacher_comment || null,
+              fees_balance: calculatedFeesBalance,
               template_id: template_id || 1,
               generated_at: new Date().toISOString(),
               generated_by: profile.id,
@@ -200,9 +254,7 @@ serve(async (req) => {
           }
           reportCardId = updatedReport.id;
         } else {
-          // Create new report card
-          // NOTE: Financial fields (fees_balance, fees_next_term, other_requirements) are initialized
-          // as null and can only be set by admin users via the admin interface.
+          // Create new report card with auto-calculated fees balance
           const { data: newReport, error: insertError } = await supabase
             .from('report_cards')
             .insert({
@@ -212,6 +264,7 @@ serve(async (req) => {
               overall_grade: overallGrade,
               class_teacher_comment: commentTemplate?.class_teacher_comment || null,
               headteacher_comment: commentTemplate?.headteacher_comment || null,
+              fees_balance: calculatedFeesBalance,
               template_id: template_id || 1,
               generated_at: new Date().toISOString(),
               generated_by: profile.id,
