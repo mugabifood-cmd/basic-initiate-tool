@@ -30,12 +30,13 @@ interface ReportCardPreviewProps {
   const thinBorder = '1px solid #8B7355';
   const thickBorder = '1px solid #000000';
 
-export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff', onReady }: ReportCardPreviewProps) {
+export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff', onReady, showStamp = false, stampPosition = 'bottom-right' }: ReportCardPreviewProps) {
   const [reportData, setReportData] = useState<any>(null);
   const [subjectGrades, setSubjectGrades] = useState<SubjectGrade[]>([]);
   const [loading, setLoading] = useState(true);
   const [classTeacherSignature, setClassTeacherSignature] = useState<string | null>(null);
   const [headteacherSignature, setHeadteacherSignature] = useState<string | null>(null);
+  const [schoolStampUrl, setSchoolStampUrl] = useState<string | null>(null);
 
   useEffect(() => {
     fetchReportData();
