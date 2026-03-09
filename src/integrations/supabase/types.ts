@@ -419,6 +419,7 @@ export type Database = {
           motto: string | null
           name: string
           po_box: string | null
+          stamp_url: string | null
           telephone: string | null
           updated_at: string | null
           website: string | null
@@ -432,6 +433,7 @@ export type Database = {
           motto?: string | null
           name: string
           po_box?: string | null
+          stamp_url?: string | null
           telephone?: string | null
           updated_at?: string | null
           website?: string | null
@@ -445,6 +447,7 @@ export type Database = {
           motto?: string | null
           name?: string
           po_box?: string | null
+          stamp_url?: string | null
           telephone?: string | null
           updated_at?: string | null
           website?: string | null
