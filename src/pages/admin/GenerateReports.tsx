@@ -194,6 +194,27 @@ export default function GenerateReports() {
     }
   };
 
+  const checkSchoolStamp = async () => {
+    if (!selectedSchool) return;
+    try {
+      const { data, error } = await supabase
+        .from('schools')
+        .select('stamp_url')
+        .eq('id', selectedSchool)
+        .single();
+      if (error) throw error;
+      setSchoolHasStamp(!!(data as any).stamp_url);
+    } catch {
+      setSchoolHasStamp(false);
+    }
+  };
+
+  const handleApplyStamp = () => {
+    if (schoolHasStamp) {
+      setStampApplied(true);
+    }
+  };
+
   const handleGenerate = async () => {
     if (!selectedClass) {
       toast({
