@@ -5,12 +5,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { ArrowLeft, FileText, Users, Settings, Eye, Palette } from 'lucide-react';
+import { ArrowLeft, FileText, Users, Settings, Eye, Palette, Stamp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ClassTermSettingsDialog } from '@/components/admin/ClassTermSettingsDialog';
-import ReportCardPreview from '@/components/ReportCardPreview';
+import ReportCardPreview, { StampPosition } from '@/components/ReportCardPreview';
 
 const REPORT_COLORS = [
   { id: 'white', name: 'White (Default)', value: '#ffffff' },
