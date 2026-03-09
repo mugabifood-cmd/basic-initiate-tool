@@ -1,10 +1,11 @@
 import SignaturePad from '../SignaturePad';
+import SchoolStampUpload from './SchoolStampUpload';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info } from 'lucide-react';
 
 export default function HeadteacherSignatureSection() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <Alert>
         <Info className="h-4 w-4" />
         <AlertDescription>
@@ -17,6 +18,7 @@ export default function HeadteacherSignatureSection() {
         title="Headteacher's Digital Signature"
         description="Draw the headteacher's signature using finger or stylus. This will appear on all student report cards."
       />
+      <SchoolStampUpload />
     </div>
   );
 }
