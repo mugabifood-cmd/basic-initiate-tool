@@ -636,16 +636,76 @@ export default function GenerateReports() {
       />
 
       {/* Report Card Preview Dialog */}
-      <Dialog open={showPreview} onOpenChange={setShowPreview}>
+      <Dialog open={showPreview} onOpenChange={(open) => {
+        setShowPreview(open);
+        if (!open) {
+          setStampApplied(false);
+        } else {
+          checkSchoolStamp();
+        }
+      }}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
           <DialogHeader>
             <DialogTitle>Report Card Preview</DialogTitle>
           </DialogHeader>
           {previewReportId && (
-            <ReportCardPreview 
-              reportId={previewReportId} 
-              backgroundColor={REPORT_COLORS.find(c => c.id === selectedColor)?.value || '#ffffff'}
-            />
+            <>
+              <ReportCardPreview 
+                reportId={previewReportId} 
+                backgroundColor={REPORT_COLORS.find(c => c.id === selectedColor)?.value || '#ffffff'}
+                showStamp={stampApplied}
+                stampPosition={stampPosition}
+              />
+              <div className="border-t pt-4 mt-2 space-y-3">
+                {schoolHasStamp === false && (
+                  <Alert>
+                    <Stamp className="h-4 w-4" />
+                    <AlertDescription>
+                      No stamp uploaded for this school. Please upload a stamp in the{' '}
+                      <Link to="/admin/headteacher-signature" className="underline font-medium text-primary">
+                        Headteacher Signature
+                      </Link>{' '}page first.
+                    </AlertDescription>
+                  </Alert>
+                )}
+                {schoolHasStamp && !stampApplied && (
+                  <div className="flex items-center gap-3">
+                    <Select value={stampPosition} onValueChange={(v: StampPosition) => setStampPosition(v)}>
+                      <SelectTrigger className="w-48">
+                        <SelectValue placeholder="Stamp position" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="bottom-right">Bottom Right</SelectItem>
+                        <SelectItem value="center">Center</SelectItem>
+                        <SelectItem value="over-signatures">Over Signatures</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button onClick={handleApplyStamp} className="gap-2">
+                      <Stamp className="h-4 w-4" />
+                      Apply Stamp
+                    </Button>
+                  </div>
+                )}
+                {stampApplied && (
+                  <div className="flex items-center gap-3">
+                    <Badge className="bg-green-600">Stamp Applied</Badge>
+                    <Select value={stampPosition} onValueChange={(v: StampPosition) => setStampPosition(v)}>
+                      <SelectTrigger className="w-48">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="bottom-right">Bottom Right</SelectItem>
+                        <SelectItem value="center">Center</SelectItem>
+                        <SelectItem value="over-signatures">Over Signatures</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button variant="outline" size="sm" onClick={() => setStampApplied(false)}>
+                      Remove Stamp
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </DialogContent>
       </Dialog>
