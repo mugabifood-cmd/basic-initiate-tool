@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 
+export type StampPosition = 'bottom-right' | 'center' | 'over-signatures';
+
 interface SubjectGrade {
   subject_name: string;
   subject_code: string;
@@ -22,18 +24,21 @@ interface ReportCardPreviewProps {
   reportId: string;
   backgroundColor?: string;
   onReady?: () => void;
+  showStamp?: boolean;
+  stampPosition?: StampPosition;
 }
 
 // Border style matching reference template
   const thinBorder = '1px solid #8B7355';
   const thickBorder = '1px solid #000000';
 
-export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff', onReady }: ReportCardPreviewProps) {
+export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff', onReady, showStamp = false, stampPosition = 'bottom-right' }: ReportCardPreviewProps) {
   const [reportData, setReportData] = useState<any>(null);
   const [subjectGrades, setSubjectGrades] = useState<SubjectGrade[]>([]);
   const [loading, setLoading] = useState(true);
   const [classTeacherSignature, setClassTeacherSignature] = useState<string | null>(null);
   const [headteacherSignature, setHeadteacherSignature] = useState<string | null>(null);
+  const [schoolStampUrl, setSchoolStampUrl] = useState<string | null>(null);
 
   useEffect(() => {
     fetchReportData();
@@ -128,6 +133,7 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
 
       setReportData({ ...report, school });
       setSubjectGrades(grades);
+      setSchoolStampUrl((school as any).stamp_url || null);
 
       // Fetch class teacher signature
       await fetchClassTeacherSignature(report.class_id);
@@ -227,7 +233,7 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
   }
 
   return (
-    <div id="report-card-preview" className="text-black p-6 mx-auto" style={{ fontFamily: 'Arial, sans-serif', fontSize: '10px', maxWidth: '210mm', width: '100%', backgroundColor: backgroundColor }}>
+    <div id="report-card-preview" className="text-black p-6 mx-auto" style={{ fontFamily: 'Arial, sans-serif', fontSize: '10px', maxWidth: '210mm', width: '100%', backgroundColor: backgroundColor, position: 'relative' }}>
       {/* Header with Logo and Student Photo */}
       <div style={{ border: thickBorder }} className="mb-2">
         <div className="flex items-start justify-between p-3">
@@ -505,6 +511,25 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
           {reportData.school?.motto ? `"${reportData.school.motto}"` : 'Excellence in Education'}
         </div>
       </div>
+
+      {/* School Stamp Overlay */}
+      {showStamp && schoolStampUrl && (
+        <div style={{
+          position: 'absolute',
+          ...(stampPosition === 'bottom-right' ? { bottom: '60px', right: '40px' } : {}),
+          ...(stampPosition === 'center' ? { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' } : {}),
+          ...(stampPosition === 'over-signatures' ? { bottom: '160px', right: '60px' } : {}),
+          opacity: 0.85,
+          pointerEvents: 'none',
+          zIndex: 10,
+        }}>
+          <img
+            src={schoolStampUrl}
+            alt="School Stamp"
+            style={{ width: '120px', height: '120px', objectFit: 'contain' }}
+          />
+        </div>
+      )}
     </div>
   );
 }
