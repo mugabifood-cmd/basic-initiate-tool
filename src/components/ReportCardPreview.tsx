@@ -22,6 +22,8 @@ interface ReportCardPreviewProps {
   reportId: string;
   backgroundColor?: string;
   onReady?: () => void;
+  showStamp?: boolean;
+  stampPosition?: StampPosition;
 }
 
 // Border style matching reference template
