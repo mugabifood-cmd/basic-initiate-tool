@@ -67,6 +67,9 @@ export default function GenerateReports() {
   const [showTermSettings, setShowTermSettings] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [previewReportId, setPreviewReportId] = useState<string | null>(null);
+  const [stampApplied, setStampApplied] = useState(false);
+  const [stampPosition, setStampPosition] = useState<StampPosition>('bottom-right');
+  const [schoolHasStamp, setSchoolHasStamp] = useState<boolean | null>(null);
 
   useEffect(() => {
     fetchSchools();
