@@ -511,6 +511,25 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
           {reportData.school?.motto ? `"${reportData.school.motto}"` : 'Excellence in Education'}
         </div>
       </div>
+
+      {/* School Stamp Overlay */}
+      {showStamp && schoolStampUrl && (
+        <div style={{
+          position: 'absolute',
+          ...(stampPosition === 'bottom-right' ? { bottom: '60px', right: '40px' } : {}),
+          ...(stampPosition === 'center' ? { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' } : {}),
+          ...(stampPosition === 'over-signatures' ? { bottom: '160px', right: '60px' } : {}),
+          opacity: 0.85,
+          pointerEvents: 'none',
+          zIndex: 10,
+        }}>
+          <img
+            src={schoolStampUrl}
+            alt="School Stamp"
+            style={{ width: '120px', height: '120px', objectFit: 'contain' }}
+          />
+        </div>
+      )}
     </div>
   );
 }
