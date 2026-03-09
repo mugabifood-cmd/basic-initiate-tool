@@ -133,6 +133,7 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
 
       setReportData({ ...report, school });
       setSubjectGrades(grades);
+      setSchoolStampUrl((school as any).stamp_url || null);
 
       // Fetch class teacher signature
       await fetchClassTeacherSignature(report.class_id);
