@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 
+export type StampPosition = 'bottom-right' | 'center' | 'over-signatures';
+
 interface SubjectGrade {
   subject_name: string;
   subject_code: string;
