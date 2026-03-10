@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
+import type { StampConfig } from '@/components/admin/StampConfigurator';
 
 export type StampPosition = 'bottom-right' | 'center' | 'over-signatures';
 
@@ -26,13 +27,13 @@ interface ReportCardPreviewProps {
   onReady?: () => void;
   showStamp?: boolean;
   stampPosition?: StampPosition;
+  stampConfig?: StampConfig | null;
 }
 
-// Border style matching reference template
-  const thinBorder = '1px solid #8B7355';
-  const thickBorder = '1px solid #000000';
+const thinBorder = '1px solid #8B7355';
+const thickBorder = '1px solid #000000';
 
-export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff', onReady, showStamp = false, stampPosition = 'bottom-right' }: ReportCardPreviewProps) {
+export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff', onReady, showStamp = false, stampPosition = 'bottom-right', stampConfig }: ReportCardPreviewProps) {
   const [reportData, setReportData] = useState<any>(null);
   const [subjectGrades, setSubjectGrades] = useState<SubjectGrade[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,10 +45,8 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
     fetchReportData();
   }, [reportId]);
 
-  // Call onReady when content is fully loaded
   useEffect(() => {
     if (!loading && reportData && onReady) {
-      // Small delay to ensure DOM is painted
       const timer = setTimeout(() => {
         onReady();
       }, 100);
@@ -57,7 +56,6 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
 
   const fetchReportData = async () => {
     try {
-      // Fetch report card with all relations
       const { data: report, error: reportError } = await supabase
         .from('report_cards')
         .select(`
@@ -87,7 +85,6 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
 
       if (reportError) throw reportError;
 
-      // Fetch school information
       const { data: school, error: schoolError } = await supabase
         .from('schools')
         .select('*')
@@ -96,7 +93,6 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
 
       if (schoolError) throw schoolError;
 
-      // Fetch subject submissions with teacher info
       const { data: submissions, error: submissionsError } = await supabase
         .from('subject_submissions')
         .select(`
@@ -135,10 +131,7 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
       setSubjectGrades(grades);
       setSchoolStampUrl((school as any).stamp_url || null);
 
-      // Fetch class teacher signature
       await fetchClassTeacherSignature(report.class_id);
-      
-      // Fetch headteacher signature
       await fetchHeadteacherSignature();
     } catch (error: any) {
       console.error('Error fetching report data:', error);
@@ -149,7 +142,6 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
 
   const fetchClassTeacherSignature = async (classId: string) => {
     try {
-      // Get class info to find class teacher
       const { data: classData, error: classError } = await supabase
         .from('classes')
         .select('name, stream')
@@ -158,7 +150,6 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
 
       if (classError) throw classError;
 
-      // Find the class teacher assignment
       const { data: assignment, error: assignmentError } = await supabase
         .from('teacher_assignments')
         .select('teacher_id')
@@ -170,7 +161,6 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
       if (assignmentError) throw assignmentError;
 
       if (assignment?.teacher_id) {
-        // Fetch the signature for this teacher
         const { data: signature, error: signatureError } = await supabase
           .from('signatures')
           .select('signature_data')
@@ -205,10 +195,10 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
   };
 
   const calculateIdentifier = (percentage: number): number => {
-    if (percentage >= 80) return 3; // Outstanding
-    if (percentage >= 70) return 2; // Moderate
-    if (percentage >= 40) return 1; // Basic
-    return 0; // Below basic
+    if (percentage >= 80) return 3;
+    if (percentage >= 70) return 2;
+    if (percentage >= 40) return 1;
+    return 0;
   };
 
   const getAchievementText = (identifier: number): string => {
@@ -219,6 +209,29 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
       default: return 'Below Basic';
     }
   };
+
+  // Compute stamp style from config or legacy position
+  const getStampStyle = (): React.CSSProperties => {
+    if (stampConfig) {
+      return {
+        position: 'absolute',
+        left: `${stampConfig.x}%`,
+        top: `${stampConfig.y}%`,
+        transform: 'translate(-50%, -50%)',
+        opacity: stampConfig.opacity,
+        pointerEvents: 'none',
+        zIndex: 10,
+      };
+    }
+    // Legacy fallback
+    const base: React.CSSProperties = { position: 'absolute', opacity: 0.85, pointerEvents: 'none', zIndex: 10 };
+    if (stampPosition === 'bottom-right') return { ...base, bottom: '60px', right: '40px' };
+    if (stampPosition === 'center') return { ...base, top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
+    if (stampPosition === 'over-signatures') return { ...base, bottom: '160px', right: '60px' };
+    return base;
+  };
+
+  const stampSizePx = stampConfig?.size || 120;
 
   if (loading) {
     return (
@@ -237,7 +250,6 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
       {/* Header with Logo and Student Photo */}
       <div style={{ border: thickBorder }} className="mb-2">
         <div className="flex items-start justify-between p-3">
-          {/* School Logo - Left */}
           <div className="w-20 h-20 flex-shrink-0">
             {reportData.school?.logo_url ? (
               <img src={reportData.school.logo_url} alt="School Logo" className="w-full h-full object-contain" style={{ border: thinBorder }} />
@@ -248,7 +260,6 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
             )}
           </div>
 
-          {/* School Info - Center */}
           <div className="flex-1 text-center px-4">
             <h1 className="text-xl font-bold text-blue-700 uppercase mb-1">{reportData.school?.name || 'School Name'}</h1>
             {reportData.school?.motto && <p className="text-xs italic text-blue-600 mb-1">"{reportData.school.motto}"</p>}
@@ -263,7 +274,6 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
             <h2 className="text-lg font-bold text-blue-700 mt-2">TERM {reportData.classes.term?.toUpperCase()} REPORT CARD {reportData.classes.academic_year}</h2>
           </div>
 
-          {/* Student Photo - Right */}
           <div className="w-24 h-28 flex-shrink-0">
             {reportData.students.photo_url ? (
               <img src={reportData.students.photo_url} alt="Student" className="w-full h-full object-cover" style={{ border: thinBorder }} />
@@ -275,7 +285,6 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
           </div>
         </div>
 
-        {/* Student Information */}
         <div style={{ borderTop: thinBorder }} className="p-2 grid grid-cols-3 gap-x-8 text-xs">
           <div className="flex gap-2">
             <span className="font-bold">NAME:</span>
@@ -514,19 +523,11 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
 
       {/* School Stamp Overlay */}
       {showStamp && schoolStampUrl && (
-        <div style={{
-          position: 'absolute',
-          ...(stampPosition === 'bottom-right' ? { bottom: '60px', right: '40px' } : {}),
-          ...(stampPosition === 'center' ? { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' } : {}),
-          ...(stampPosition === 'over-signatures' ? { bottom: '160px', right: '60px' } : {}),
-          opacity: 0.85,
-          pointerEvents: 'none',
-          zIndex: 10,
-        }}>
+        <div style={getStampStyle()}>
           <img
             src={schoolStampUrl}
             alt="School Stamp"
-            style={{ width: '120px', height: '120px', objectFit: 'contain' }}
+            style={{ width: `${stampSizePx}px`, height: `${stampSizePx}px`, objectFit: 'contain' }}
           />
         </div>
       )}

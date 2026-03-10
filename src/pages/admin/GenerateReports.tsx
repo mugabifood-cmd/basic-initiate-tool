@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -8,10 +8,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { ArrowLeft, FileText, Users, Settings, Eye, Palette, Stamp } from 'lucide-react';
+import { ArrowLeft, FileText, Users, Settings, Eye, Palette, Stamp, GripVertical } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ClassTermSettingsDialog } from '@/components/admin/ClassTermSettingsDialog';
-import ReportCardPreview, { StampPosition } from '@/components/ReportCardPreview';
+import ReportCardPreview from '@/components/ReportCardPreview';
+import StampConfigurator, { type StampConfig } from '@/components/admin/StampConfigurator';
 
 const REPORT_COLORS = [
   { id: 'white', name: 'White (Default)', value: '#ffffff' },
@@ -56,7 +57,6 @@ export default function GenerateReports() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
 
-  // Form state
   const [selectedSchool, setSelectedSchool] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedStudent, setSelectedStudent] = useState('');
@@ -67,9 +67,14 @@ export default function GenerateReports() {
   const [showTermSettings, setShowTermSettings] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [previewReportId, setPreviewReportId] = useState<string | null>(null);
+
+  // Stamp state
   const [stampApplied, setStampApplied] = useState(false);
-  const [stampPosition, setStampPosition] = useState<StampPosition>('bottom-right');
-  const [schoolHasStamp, setSchoolHasStamp] = useState<boolean | null>(null);
+  const [schoolStampUrl, setSchoolStampUrl] = useState<string | null>(null);
+  const [stampConfig, setStampConfig] = useState<StampConfig>({ x: 85, y: 75, size: 120, opacity: 0.4 });
+  const [isDragging, setIsDragging] = useState(false);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
+  const dragStartRef = useRef<{ startX: number; startY: number; startConfigX: number; startConfigY: number } | null>(null);
 
   useEffect(() => {
     fetchSchools();
@@ -94,15 +99,10 @@ export default function GenerateReports() {
         .from('schools')
         .select('id, name')
         .order('name');
-
       if (error) throw error;
       setSchools(data || []);
     } catch (error: any) {
-      toast({
-        title: "Error fetching schools",
-        description: error.message,
-        variant: "destructive"
-      });
+      toast({ title: "Error fetching schools", description: error.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -110,60 +110,31 @@ export default function GenerateReports() {
 
   const fetchClasses = async () => {
     if (!selectedSchool) return;
-
     try {
       const { data, error } = await supabase
         .from('classes')
-        .select(`
-          id,
-          name,
-          stream,
-          academic_year,
-          term,
-          schools (
-            id,
-            name
-          )
-        `)
+        .select(`id, name, stream, academic_year, term, schools (id, name)`)
         .eq('school_id', selectedSchool)
         .order('name');
-
       if (error) throw error;
       setClasses((data as any) || []);
     } catch (error: any) {
-      toast({
-        title: "Error fetching classes",
-        description: error.message,
-        variant: "destructive"
-      });
+      toast({ title: "Error fetching classes", description: error.message, variant: "destructive" });
     }
   };
 
   const fetchStudents = async () => {
     if (!selectedClass) return;
-
     try {
       const { data, error } = await supabase
         .from('class_students')
-        .select(`
-          students (
-            id,
-            full_name,
-            student_number
-          )
-        `)
+        .select(`students (id, full_name, student_number)`)
         .eq('class_id', selectedClass);
-
       if (error) throw error;
-      
       const studentData = data?.map(item => item.students).filter(Boolean) || [];
       setStudents(studentData);
     } catch (error: any) {
-      toast({
-        title: "Error fetching students",
-        description: error.message,
-        variant: "destructive"
-      });
+      toast({ title: "Error fetching students", description: error.message, variant: "destructive" });
     }
   };
 
@@ -171,22 +142,9 @@ export default function GenerateReports() {
     try {
       const { data, error } = await supabase
         .from('report_cards')
-        .select(`
-          *,
-          students (
-            full_name,
-            student_number
-          ),
-          classes (
-            name,
-            stream,
-            academic_year,
-            term
-          )
-        `)
+        .select(`*, students (full_name, student_number), classes (name, stream, academic_year, term)`)
         .order('created_at', { ascending: false })
         .limit(5);
-
       if (error) throw error;
       setRecentReports(data || []);
     } catch (error: any) {
@@ -194,67 +152,120 @@ export default function GenerateReports() {
     }
   };
 
-  const checkSchoolStamp = async () => {
+  const loadStampConfig = async () => {
     if (!selectedSchool) return;
     try {
       const { data, error } = await supabase
         .from('schools')
-        .select('stamp_url')
+        .select('stamp_url, stamp_position_x, stamp_position_y, stamp_size, stamp_opacity')
         .eq('id', selectedSchool)
         .single();
       if (error) throw error;
-      setSchoolHasStamp(!!(data as any).stamp_url);
+      const school = data as any;
+      setSchoolStampUrl(school.stamp_url || null);
+      if (school.stamp_url) {
+        setStampConfig({
+          x: school.stamp_position_x ?? 85,
+          y: school.stamp_position_y ?? 75,
+          size: school.stamp_size ?? 120,
+          opacity: school.stamp_opacity ?? 0.4,
+        });
+      }
     } catch {
-      setSchoolHasStamp(false);
+      setSchoolStampUrl(null);
     }
   };
 
   const handleApplyStamp = () => {
-    if (schoolHasStamp) {
+    if (schoolStampUrl) {
       setStampApplied(true);
     }
   };
 
+  // Drag handlers for stamp on preview
+  const handleStampMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+    dragStartRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      startConfigX: stampConfig.x,
+      startConfigY: stampConfig.y,
+    };
+  }, [stampConfig.x, stampConfig.y]);
+
+  const handleStampTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    setIsDragging(true);
+    dragStartRef.current = {
+      startX: touch.clientX,
+      startY: touch.clientY,
+      startConfigX: stampConfig.x,
+      startConfigY: stampConfig.y,
+    };
+  }, [stampConfig.x, stampConfig.y]);
+
+  useEffect(() => {
+    if (!isDragging) return;
+    const onMouseMove = (e: MouseEvent) => {
+      if (!dragStartRef.current || !previewContainerRef.current) return;
+      const rect = previewContainerRef.current.getBoundingClientRect();
+      const dx = ((e.clientX - dragStartRef.current.startX) / rect.width) * 100;
+      const dy = ((e.clientY - dragStartRef.current.startY) / rect.height) * 100;
+      setStampConfig(prev => ({
+        ...prev,
+        x: Math.max(0, Math.min(100, Math.round((dragStartRef.current!.startConfigX + dx) * 10) / 10)),
+        y: Math.max(0, Math.min(100, Math.round((dragStartRef.current!.startConfigY + dy) * 10) / 10)),
+      }));
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      if (!dragStartRef.current || !previewContainerRef.current) return;
+      const touch = e.touches[0];
+      const rect = previewContainerRef.current.getBoundingClientRect();
+      const dx = ((touch.clientX - dragStartRef.current.startX) / rect.width) * 100;
+      const dy = ((touch.clientY - dragStartRef.current.startY) / rect.height) * 100;
+      setStampConfig(prev => ({
+        ...prev,
+        x: Math.max(0, Math.min(100, Math.round((dragStartRef.current!.startConfigX + dx) * 10) / 10)),
+        y: Math.max(0, Math.min(100, Math.round((dragStartRef.current!.startConfigY + dy) * 10) / 10)),
+      }));
+    };
+    const onEnd = () => {
+      setIsDragging(false);
+      dragStartRef.current = null;
+    };
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onEnd);
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
+    window.addEventListener('touchend', onEnd);
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onEnd);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onEnd);
+    };
+  }, [isDragging]);
+
   const handleGenerate = async () => {
     if (!selectedClass) {
-      toast({
-        title: "Selection Required",
-        description: "Please select a class to generate reports.",
-        variant: "destructive"
-      });
+      toast({ title: "Selection Required", description: "Please select a class to generate reports.", variant: "destructive" });
       return;
     }
-
     if (generationType === 'individual' && !selectedStudent) {
-      toast({
-        title: "Selection Required",
-        description: "Please select a student for individual report generation.",
-        variant: "destructive"
-      });
+      toast({ title: "Selection Required", description: "Please select a student for individual report generation.", variant: "destructive" });
       return;
     }
-
     try {
       setGenerating(true);
-
-      // Determine which students to generate reports for
-      let targetStudents = [];
-      if (generationType === 'individual' && selectedStudent) {
-        targetStudents = students.filter(s => s.id === selectedStudent);
-      } else {
-        targetStudents = students;
-      }
+      let targetStudents = generationType === 'individual' && selectedStudent
+        ? students.filter(s => s.id === selectedStudent)
+        : students;
 
       if (targetStudents.length === 0) {
-        toast({
-          title: "No Students Found",
-          description: "No students found for report generation.",
-          variant: "destructive"
-        });
+        toast({ title: "No Students Found", description: "No students found for report generation.", variant: "destructive" });
         return;
       }
 
-      // Call the report generation edge function
       const { data, error } = await supabase.functions.invoke('generate-report-cards', {
         body: {
           class_id: selectedClass,
@@ -263,33 +274,20 @@ export default function GenerateReports() {
           generation_type: generationType
         }
       });
-
       if (error) throw error;
 
-      toast({
-        title: "Report Generation Started",
-        description: `Started generating ${targetStudents.length} report card${targetStudents.length > 1 ? 's' : ''}.`
-      });
-
-      // Reset form and refresh recent reports
+      toast({ title: "Report Generation Started", description: `Started generating ${targetStudents.length} report card${targetStudents.length > 1 ? 's' : ''}.` });
       setSelectedStudent('');
       fetchRecentReports();
-      
     } catch (error: any) {
       console.error('Report generation error:', error);
-      toast({
-        title: "Generation Failed",
-        description: error.message || "Failed to send a request to the Edge Function. Please try again.",
-        variant: "destructive"
-      });
+      toast({ title: "Generation Failed", description: error.message || "Failed to send a request to the Edge Function. Please try again.", variant: "destructive" });
     } finally {
       setGenerating(false);
     }
   };
 
-  const getSelectedClass = () => {
-    return classes.find(c => c.id === selectedClass);
-  };
+  const getSelectedClass = () => classes.find(c => c.id === selectedClass);
 
   if (loading) {
     return (
@@ -325,43 +323,30 @@ export default function GenerateReports() {
               <CardTitle>Report Card Generation</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* School Selection */}
               <div>
                 <Label htmlFor="school">School</Label>
                 <Select value={selectedSchool} onValueChange={setSelectedSchool}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select school" />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Select school" /></SelectTrigger>
                   <SelectContent>
                     {schools.map((school) => (
-                      <SelectItem key={school.id} value={school.id}>
-                        {school.name}
-                      </SelectItem>
+                      <SelectItem key={school.id} value={school.id}>{school.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* Class Selection */}
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <Label htmlFor="class">Class</Label>
                   {selectedClass && (
-                    <Button
-                      variant="default"
-                      size="sm"
-                      onClick={() => setShowTermSettings(true)}
-                      className="h-8 text-xs bg-blue-600 hover:bg-blue-700 text-white animate-pulse"
-                    >
-                      <Settings className="w-3 h-3 mr-1" />
-                      Term Settings
+                    <Button variant="default" size="sm" onClick={() => setShowTermSettings(true)}
+                      className="h-8 text-xs bg-blue-600 hover:bg-blue-700 text-white animate-pulse">
+                      <Settings className="w-3 h-3 mr-1" />Term Settings
                     </Button>
                   )}
                 </div>
                 <Select value={selectedClass} onValueChange={setSelectedClass} disabled={!selectedSchool}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select class" />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
                   <SelectContent>
                     {classes.map((classItem) => (
                       <SelectItem key={classItem.id} value={classItem.id}>
@@ -372,13 +357,10 @@ export default function GenerateReports() {
                 </Select>
               </div>
 
-              {/* Generation Type */}
               <div>
                 <Label htmlFor="generation-type">Generation Type</Label>
                 <Select value={generationType} onValueChange={(value: any) => setGenerationType(value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="individual">Individual Student</SelectItem>
                     <SelectItem value="class">Entire Class</SelectItem>
@@ -387,14 +369,11 @@ export default function GenerateReports() {
                 </Select>
               </div>
 
-              {/* Student Selection (for individual) */}
               {generationType === 'individual' && (
                 <div>
                   <Label htmlFor="student">Student</Label>
                   <Select value={selectedStudent} onValueChange={setSelectedStudent} disabled={!selectedClass}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select student" />
-                    </SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="Select student" /></SelectTrigger>
                     <SelectContent>
                       {students.map((student) => (
                         <SelectItem key={student.id} value={student.id}>
@@ -406,13 +385,10 @@ export default function GenerateReports() {
                 </div>
               )}
 
-              {/* Template Selection */}
               <div>
                 <Label htmlFor="template">Report Card Template</Label>
                 <Select value={templateId} onValueChange={setTemplateId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select template" />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Select template" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="1">Template 1 - Standard</SelectItem>
                     <SelectItem value="2">Template 2 - Modern</SelectItem>
@@ -421,24 +397,17 @@ export default function GenerateReports() {
                 </Select>
               </div>
 
-              {/* Color Selection */}
               <div>
                 <Label htmlFor="color" className="flex items-center gap-2">
-                  <Palette className="w-4 h-4" />
-                  Report Card Color
+                  <Palette className="w-4 h-4" />Report Card Color
                 </Label>
                 <Select value={selectedColor} onValueChange={setSelectedColor}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {REPORT_COLORS.map((color) => (
                       <SelectItem key={color.id} value={color.id}>
                         <div className="flex items-center gap-2">
-                          <div 
-                            className="w-4 h-4 rounded border border-gray-300" 
-                            style={{ backgroundColor: color.value }}
-                          />
+                          <div className="w-4 h-4 rounded border border-gray-300" style={{ backgroundColor: color.value }} />
                           {color.name}
                         </div>
                       </SelectItem>
@@ -447,37 +416,20 @@ export default function GenerateReports() {
                 </Select>
               </div>
 
-              {/* Preview Button */}
               {recentReports.length > 0 && (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setPreviewReportId(recentReports[0].id);
-                    setShowPreview(true);
-                  }}
-                  className="w-full"
-                >
-                  <Eye className="w-4 h-4 mr-2" />
-                  Preview Report Card Template
+                <Button variant="outline" onClick={() => {
+                  setPreviewReportId(recentReports[0].id);
+                  setShowPreview(true);
+                }} className="w-full">
+                  <Eye className="w-4 h-4 mr-2" />Preview Report Card Template
                 </Button>
               )}
 
-              {/* Generate Button */}
-              <Button 
-                onClick={handleGenerate} 
-                disabled={generating || !selectedClass}
-                className="w-full"
-              >
+              <Button onClick={handleGenerate} disabled={generating || !selectedClass} className="w-full">
                 {generating ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Generating...
-                  </>
+                  <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>Generating...</>
                 ) : (
-                  <>
-                    <FileText className="w-4 h-4 mr-2" />
-                    Generate Report Cards
-                  </>
+                  <><FileText className="w-4 h-4 mr-2" />Generate Report Cards</>
                 )}
               </Button>
             </CardContent>
@@ -493,60 +445,40 @@ export default function GenerateReports() {
                 <>
                   <div className="bg-blue-50 p-4 rounded-lg">
                     <h4 className="font-semibold text-blue-900 mb-2">Selected Class</h4>
-                    <p className="text-blue-800">
-                      {getSelectedClass()?.name} {getSelectedClass()?.stream}
-                    </p>
-                    <p className="text-sm text-blue-600">
-                      {getSelectedClass()?.academic_year} - Term {getSelectedClass()?.term}
-                    </p>
+                    <p className="text-blue-800">{getSelectedClass()?.name} {getSelectedClass()?.stream}</p>
+                    <p className="text-sm text-blue-600">{getSelectedClass()?.academic_year} - Term {getSelectedClass()?.term}</p>
                   </div>
 
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium">Generation Type:</span>
                       <Badge variant="outline">
-                        {generationType === 'individual' ? 'Individual Student' : 
-                         generationType === 'class' ? 'Entire Class' : 'Entire Stream'}
+                        {generationType === 'individual' ? 'Individual Student' : generationType === 'class' ? 'Entire Class' : 'Entire Stream'}
                       </Badge>
                     </div>
-                    
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium">Template:</span>
-                      <Badge variant="outline">
-                        Template {templateId}
-                      </Badge>
+                      <Badge variant="outline">Template {templateId}</Badge>
                     </div>
-                    
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium">Students to Generate:</span>
-                      <Badge>
-                        <Users className="w-3 h-3 mr-1" />
-                        {generationType === 'individual' && selectedStudent ? 1 : students.length}
-                      </Badge>
+                      <Badge><Users className="w-3 h-3 mr-1" />{generationType === 'individual' && selectedStudent ? 1 : students.length}</Badge>
                     </div>
                   </div>
 
                   {generationType === 'individual' && selectedStudent && (
                     <div className="bg-green-50 p-4 rounded-lg">
                       <h4 className="font-semibold text-green-900 mb-2">Selected Student</h4>
-                      <p className="text-green-800">
-                        {students.find(s => s.id === selectedStudent)?.full_name}
-                      </p>
-                      <p className="text-sm text-green-600">
-                        {students.find(s => s.id === selectedStudent)?.student_number}
-                      </p>
+                      <p className="text-green-800">{students.find(s => s.id === selectedStudent)?.full_name}</p>
+                      <p className="text-sm text-green-600">{students.find(s => s.id === selectedStudent)?.student_number}</p>
                     </div>
                   )}
 
                   {generationType !== 'individual' && students.length > 0 && (
                     <div className="bg-purple-50 p-4 rounded-lg">
                       <h4 className="font-semibold text-purple-900 mb-2">Bulk Generation</h4>
-                      <p className="text-purple-800">
-                        {students.length} report cards will be generated
-                      </p>
-                      <p className="text-sm text-purple-600">
-                        A ZIP file will be created for download
-                      </p>
+                      <p className="text-purple-800">{students.length} report cards will be generated</p>
+                      <p className="text-sm text-purple-600">A ZIP file will be created for download</p>
                     </div>
                   )}
                 </>
@@ -568,11 +500,7 @@ export default function GenerateReports() {
             <CardTitle className="flex items-center justify-between">
               <span>Recent Generations</span>
               {recentReports.length > 0 && (
-                <Link to="/admin/reports">
-                  <Button variant="outline" size="sm">
-                    View All
-                  </Button>
-                </Link>
+                <Link to="/admin/reports"><Button variant="outline" size="sm">View All</Button></Link>
               )}
             </CardTitle>
           </CardHeader>
@@ -585,40 +513,21 @@ export default function GenerateReports() {
             ) : (
               <div className="space-y-3">
                 {recentReports.map((report) => (
-                  <div
-                    key={report.id}
-                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                  >
+                  <div key={report.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                     <div className="flex-1">
-                      <p className="font-medium text-gray-900">
-                        {report.students.full_name}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        {report.classes.name} {report.classes.stream} - {report.classes.term} {report.classes.academic_year}
-                      </p>
+                      <p className="font-medium text-gray-900">{report.students.full_name}</p>
+                      <p className="text-sm text-gray-600">{report.classes.name} {report.classes.stream} - {report.classes.term} {report.classes.academic_year}</p>
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-right">
-                        <p className="text-sm font-medium text-gray-900">
-                          {report.overall_average?.toFixed(1) || 'N/A'}%
-                        </p>
-                        <Badge variant="outline" className="text-xs">
-                          {report.overall_grade || 'N/A'}
-                        </Badge>
+                        <p className="text-sm font-medium text-gray-900">{report.overall_average?.toFixed(1) || 'N/A'}%</p>
+                        <Badge variant="outline" className="text-xs">{report.overall_grade || 'N/A'}</Badge>
                       </div>
-                      <Badge className={report.status === 'published' ? 'bg-green-500' : 'bg-yellow-500'}>
-                        {report.status}
-                      </Badge>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setPreviewReportId(report.id);
-                          setShowPreview(true);
-                        }}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
+                      <Badge className={report.status === 'published' ? 'bg-green-500' : 'bg-yellow-500'}>{report.status}</Badge>
+                      <Button variant="outline" size="sm" onClick={() => {
+                        setPreviewReportId(report.id);
+                        setShowPreview(true);
+                      }}><Eye className="w-4 h-4" /></Button>
                     </div>
                   </div>
                 ))}
@@ -641,23 +550,61 @@ export default function GenerateReports() {
         if (!open) {
           setStampApplied(false);
         } else {
-          checkSchoolStamp();
+          loadStampConfig();
         }
       }}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+        <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-auto">
           <DialogHeader>
             <DialogTitle>Report Card Preview</DialogTitle>
           </DialogHeader>
           {previewReportId && (
-            <>
-              <ReportCardPreview 
-                reportId={previewReportId} 
-                backgroundColor={REPORT_COLORS.find(c => c.id === selectedColor)?.value || '#ffffff'}
-                showStamp={stampApplied}
-                stampPosition={stampPosition}
-              />
-              <div className="border-t pt-4 mt-2 space-y-3">
-                {schoolHasStamp === false && (
+            <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-4">
+              {/* Report preview with draggable stamp */}
+              <div ref={previewContainerRef} className="relative border rounded-lg overflow-hidden">
+                <ReportCardPreview
+                  reportId={previewReportId}
+                  backgroundColor={REPORT_COLORS.find(c => c.id === selectedColor)?.value || '#ffffff'}
+                  showStamp={stampApplied}
+                  stampConfig={stampApplied ? stampConfig : null}
+                />
+                {/* Draggable stamp overlay (interactive, above the read-only stamp in preview) */}
+                {stampApplied && schoolStampUrl && (
+                  <div
+                    onMouseDown={handleStampMouseDown}
+                    onTouchStart={handleStampTouchStart}
+                    style={{
+                      position: 'absolute',
+                      left: `${stampConfig.x}%`,
+                      top: `${stampConfig.y}%`,
+                      transform: 'translate(-50%, -50%)',
+                      opacity: stampConfig.opacity,
+                      zIndex: 30,
+                      cursor: isDragging ? 'grabbing' : 'grab',
+                      touchAction: 'none',
+                      userSelect: 'none',
+                    }}
+                  >
+                    <img
+                      src={schoolStampUrl}
+                      alt="School Stamp (drag to reposition)"
+                      draggable={false}
+                      style={{
+                        width: `${stampConfig.size}px`,
+                        height: `${stampConfig.size}px`,
+                        objectFit: 'contain',
+                        pointerEvents: 'none',
+                      }}
+                    />
+                    <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full p-1 shadow-md">
+                      <GripVertical className="h-3 w-3" />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Stamp controls sidebar */}
+              <div className="space-y-3">
+                {!schoolStampUrl && (
                   <Alert>
                     <Stamp className="h-4 w-4" />
                     <AlertDescription>
@@ -668,44 +615,33 @@ export default function GenerateReports() {
                     </AlertDescription>
                   </Alert>
                 )}
-                {schoolHasStamp && !stampApplied && (
-                  <div className="flex items-center gap-3">
-                    <Select value={stampPosition} onValueChange={(v: StampPosition) => setStampPosition(v)}>
-                      <SelectTrigger className="w-48">
-                        <SelectValue placeholder="Stamp position" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="bottom-right">Bottom Right</SelectItem>
-                        <SelectItem value="center">Center</SelectItem>
-                        <SelectItem value="over-signatures">Over Signatures</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Button onClick={handleApplyStamp} className="gap-2">
-                      <Stamp className="h-4 w-4" />
-                      Apply Stamp
-                    </Button>
-                  </div>
+
+                {schoolStampUrl && !stampApplied && (
+                  <Button onClick={handleApplyStamp} className="w-full gap-2">
+                    <Stamp className="h-4 w-4" />
+                    Apply Stamp
+                  </Button>
                 )}
+
                 {stampApplied && (
-                  <div className="flex items-center gap-3">
-                    <Badge className="bg-green-600">Stamp Applied</Badge>
-                    <Select value={stampPosition} onValueChange={(v: StampPosition) => setStampPosition(v)}>
-                      <SelectTrigger className="w-48">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="bottom-right">Bottom Right</SelectItem>
-                        <SelectItem value="center">Center</SelectItem>
-                        <SelectItem value="over-signatures">Over Signatures</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Button variant="outline" size="sm" onClick={() => setStampApplied(false)}>
-                      Remove Stamp
-                    </Button>
-                  </div>
+                  <>
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-green-600">Stamp Applied</Badge>
+                      <Button variant="outline" size="sm" onClick={() => setStampApplied(false)}>
+                        Remove
+                      </Button>
+                    </div>
+                    <StampConfigurator
+                      stampUrl={schoolStampUrl!}
+                      config={stampConfig}
+                      onChange={setStampConfig}
+                      schoolId={selectedSchool}
+                      previewRef={previewContainerRef}
+                    />
+                  </>
                 )}
               </div>
-            </>
+            </div>
           )}
         </DialogContent>
       </Dialog>
