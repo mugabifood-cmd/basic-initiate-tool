@@ -419,6 +419,10 @@ export type Database = {
           motto: string | null
           name: string
           po_box: string | null
+          stamp_opacity: number | null
+          stamp_position_x: number | null
+          stamp_position_y: number | null
+          stamp_size: number | null
           stamp_url: string | null
           telephone: string | null
           updated_at: string | null
@@ -433,6 +437,10 @@ export type Database = {
           motto?: string | null
           name: string
           po_box?: string | null
+          stamp_opacity?: number | null
+          stamp_position_x?: number | null
+          stamp_position_y?: number | null
+          stamp_size?: number | null
           stamp_url?: string | null
           telephone?: string | null
           updated_at?: string | null
@@ -447,6 +455,10 @@ export type Database = {
           motto?: string | null
           name?: string
           po_box?: string | null
+          stamp_opacity?: number | null
+          stamp_position_x?: number | null
+          stamp_position_y?: number | null
+          stamp_size?: number | null
           stamp_url?: string | null
           telephone?: string | null
           updated_at?: string | null
