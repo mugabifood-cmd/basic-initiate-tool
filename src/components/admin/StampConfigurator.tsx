@@ -288,15 +288,20 @@ export function DraggableStampOverlay({
   onTouchStart: (e: React.TouchEvent) => void;
   isDragging: boolean;
 }) {
+  const clampedX = Math.max(0, Math.min(100, config.x));
+  const clampedY = Math.max(0, Math.min(100, config.y));
+  const translateX = -clampedX;
+  const translateY = -clampedY;
+
   return (
     <div
       onMouseDown={onMouseDown}
       onTouchStart={onTouchStart}
       style={{
         position: 'absolute',
-        left: `${config.x}%`,
-        top: `${config.y}%`,
-        transform: 'translate(-50%, -50%)',
+        left: `${clampedX}%`,
+        top: `${clampedY}%`,
+        transform: `translate(${translateX}%, ${translateY}%)`,
         opacity: config.opacity,
         zIndex: 20,
         cursor: isDragging ? 'grabbing' : 'grab',

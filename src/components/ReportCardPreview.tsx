@@ -213,11 +213,22 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
   // Compute stamp style from config or legacy position
   const getStampStyle = (): React.CSSProperties => {
     if (stampConfig) {
+      // Clamp position so stamp stays fully inside the container
+      const clampedX = Math.max(0, Math.min(100, stampConfig.x));
+      const clampedY = Math.max(0, Math.min(100, stampConfig.y));
+      
+      // Calculate transform percentages to keep stamp within bounds
+      // At 0% position, anchor at left/top edge (translate 0%)
+      // At 50% position, anchor at center (translate -50%)
+      // At 100% position, anchor at right/bottom edge (translate -100%)
+      const translateX = -clampedX;
+      const translateY = -clampedY;
+      
       return {
         position: 'absolute',
-        left: `${stampConfig.x}%`,
-        top: `${stampConfig.y}%`,
-        transform: 'translate(-50%, -50%)',
+        left: `${clampedX}%`,
+        top: `${clampedY}%`,
+        transform: `translate(${translateX}%, ${translateY}%)`,
         opacity: stampConfig.opacity,
         pointerEvents: 'none',
         zIndex: 10,
@@ -246,7 +257,7 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
   }
 
   return (
-    <div id="report-card-preview" className="text-black p-6 mx-auto" style={{ fontFamily: 'Arial, sans-serif', fontSize: '10px', maxWidth: '210mm', width: '100%', backgroundColor: backgroundColor, position: 'relative' }}>
+    <div id="report-card-preview" className="text-black p-6 mx-auto" style={{ fontFamily: 'Arial, sans-serif', fontSize: '10px', maxWidth: '210mm', width: '100%', backgroundColor: backgroundColor, position: 'relative', overflow: 'hidden' }}>
       {/* Header with Logo and Student Photo */}
       <div style={{ border: thickBorder }} className="mb-2">
         <div className="flex items-start justify-between p-3">
