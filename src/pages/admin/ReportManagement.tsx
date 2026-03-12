@@ -69,6 +69,15 @@ export default function ReportManagement() {
   const [bulkProcessing, setBulkProcessing] = useState(false);
   const [downloadPending, setDownloadPending] = useState<ReportCard | null>(null);
   const [previewReady, setPreviewReady] = useState(false);
+  
+  // Stamp state
+  const [stampApplied, setStampApplied] = useState(false);
+  const [schoolStampUrl, setSchoolStampUrl] = useState<string | null>(null);
+  const [stampConfig, setStampConfig] = useState<StampConfig>({ x: 85, y: 75, size: 120, opacity: 0.4 });
+  const [isDraggingStamp, setIsDraggingStamp] = useState(false);
+  const [previewSchoolId, setPreviewSchoolId] = useState<string | null>(null);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
+  const dragStartRef = useRef<{ startX: number; startY: number; startConfigX: number; startConfigY: number } | null>(null);
   useEffect(() => {
     fetchReportCards();
   }, []);
