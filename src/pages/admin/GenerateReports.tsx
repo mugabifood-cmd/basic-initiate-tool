@@ -75,6 +75,11 @@ export default function GenerateReports() {
   const [isDragging, setIsDragging] = useState(false);
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const dragStartRef = useRef<{ startX: number; startY: number; startConfigX: number; startConfigY: number } | null>(null);
+  
+  // Print/Download state
+  const [previewReady, setPreviewReady] = useState(false);
+  const [printPending, setPrintPending] = useState(false);
+  const [downloadPending, setDownloadPending] = useState(false);
 
   useEffect(() => {
     fetchSchools();
