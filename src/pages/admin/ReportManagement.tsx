@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -9,12 +9,14 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Eye, Edit, Trash2, Printer, FileText, Download, Share2, DollarSign } from 'lucide-react';
+import { ArrowLeft, Eye, Edit, Trash2, Printer, FileText, Download, Share2, DollarSign, Stamp, GripVertical, X } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import ReportCardPreview from '@/components/ReportCardPreview';
+import StampConfigurator, { type StampConfig } from '@/components/admin/StampConfigurator';
 interface ReportCard {
   id: string;
   student_id: string;
@@ -67,6 +69,15 @@ export default function ReportManagement() {
   const [bulkProcessing, setBulkProcessing] = useState(false);
   const [downloadPending, setDownloadPending] = useState<ReportCard | null>(null);
   const [previewReady, setPreviewReady] = useState(false);
+  
+  // Stamp state
+  const [stampApplied, setStampApplied] = useState(false);
+  const [schoolStampUrl, setSchoolStampUrl] = useState<string | null>(null);
+  const [stampConfig, setStampConfig] = useState<StampConfig>({ x: 85, y: 75, size: 120, opacity: 0.4 });
+  const [isDraggingStamp, setIsDraggingStamp] = useState(false);
+  const [previewSchoolId, setPreviewSchoolId] = useState<string | null>(null);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
+  const dragStartRef = useRef<{ startX: number; startY: number; startConfigX: number; startConfigY: number } | null>(null);
   useEffect(() => {
     fetchReportCards();
   }, []);
@@ -128,6 +139,8 @@ export default function ReportManagement() {
   };
   const handlePreview = (reportCard: ReportCard) => {
     setSelectedReportId(reportCard.id);
+    setStampApplied(false);
+    loadStampForReport(reportCard);
     setPreviewOpen(true);
   };
   const handleEdit = (reportCard: ReportCard) => {
@@ -430,6 +443,84 @@ export default function ReportManagement() {
   const handlePreviewReady = () => {
     setPreviewReady(true);
   };
+
+  // Stamp helpers
+  const loadStampForReport = async (reportCard: ReportCard) => {
+    try {
+      // Get school_id from the class
+      const { data: classData } = await supabase
+        .from('classes')
+        .select('school_id')
+        .eq('id', reportCard.class_id)
+        .single();
+      if (!classData) return;
+      setPreviewSchoolId(classData.school_id);
+      const { data: school } = await supabase
+        .from('schools')
+        .select('stamp_url, stamp_position_x, stamp_position_y, stamp_size, stamp_opacity')
+        .eq('id', classData.school_id)
+        .single();
+      if (!school) return;
+      const s = school as any;
+      setSchoolStampUrl(s.stamp_url || null);
+      if (s.stamp_url) {
+        setStampConfig({
+          x: s.stamp_position_x ?? 85,
+          y: s.stamp_position_y ?? 75,
+          size: s.stamp_size ?? 120,
+          opacity: s.stamp_opacity ?? 0.4,
+        });
+      }
+    } catch {
+      setSchoolStampUrl(null);
+    }
+  };
+
+  const handleStampMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDraggingStamp(true);
+    dragStartRef.current = {
+      startX: e.clientX, startY: e.clientY,
+      startConfigX: stampConfig.x, startConfigY: stampConfig.y,
+    };
+  }, [stampConfig.x, stampConfig.y]);
+
+  const handleStampTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    setIsDraggingStamp(true);
+    dragStartRef.current = {
+      startX: touch.clientX, startY: touch.clientY,
+      startConfigX: stampConfig.x, startConfigY: stampConfig.y,
+    };
+  }, [stampConfig.x, stampConfig.y]);
+
+  useEffect(() => {
+    if (!isDraggingStamp) return;
+    const onMove = (clientX: number, clientY: number) => {
+      if (!dragStartRef.current || !previewContainerRef.current) return;
+      const rect = previewContainerRef.current.getBoundingClientRect();
+      const dx = ((clientX - dragStartRef.current.startX) / rect.width) * 100;
+      const dy = ((clientY - dragStartRef.current.startY) / rect.height) * 100;
+      setStampConfig(prev => ({
+        ...prev,
+        x: Math.max(0, Math.min(100, Math.round((dragStartRef.current!.startConfigX + dx) * 10) / 10)),
+        y: Math.max(0, Math.min(100, Math.round((dragStartRef.current!.startConfigY + dy) * 10) / 10)),
+      }));
+    };
+    const onMouseMove = (e: MouseEvent) => onMove(e.clientX, e.clientY);
+    const onTouchMove = (e: TouchEvent) => onMove(e.touches[0].clientX, e.touches[0].clientY);
+    const onEnd = () => { setIsDraggingStamp(false); dragStartRef.current = null; };
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onEnd);
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
+    window.addEventListener('touchend', onEnd);
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onEnd);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onEnd);
+    };
+  }, [isDraggingStamp]);
   const handleShare = async (reportCard: ReportCard) => {
     try {
       if (!navigator.share) {
@@ -648,16 +739,118 @@ export default function ReportManagement() {
         if (!open) {
           setDownloadPending(null);
           setPreviewReady(false);
+          setStampApplied(false);
         }
       }}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto print:max-w-full">
+        <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-auto print:max-w-full">
           <DialogHeader>
             <DialogTitle>Report Card Preview</DialogTitle>
-            <DialogDescription>
-              Preview of the student report card
-            </DialogDescription>
           </DialogHeader>
-          {selectedReportId && <ReportCardPreview reportId={selectedReportId} onReady={handlePreviewReady} />}
+          {selectedReportId && (
+            <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-4">
+              <div ref={previewContainerRef} className="relative border rounded-lg overflow-hidden">
+                <ReportCardPreview
+                  reportId={selectedReportId}
+                  onReady={handlePreviewReady}
+                  showStamp={stampApplied}
+                  stampConfig={stampApplied ? stampConfig : null}
+                />
+                {/* Draggable stamp overlay */}
+                {stampApplied && schoolStampUrl && (
+                  <div
+                    onMouseDown={handleStampMouseDown}
+                    onTouchStart={handleStampTouchStart}
+                    className="print:hidden"
+                    style={{
+                      position: 'absolute',
+                      left: `${stampConfig.x}%`,
+                      top: `${stampConfig.y}%`,
+                      transform: 'translate(-50%, -50%)',
+                      opacity: stampConfig.opacity,
+                      zIndex: 30,
+                      cursor: isDraggingStamp ? 'grabbing' : 'grab',
+                      touchAction: 'none',
+                      userSelect: 'none',
+                    }}
+                  >
+                    <img
+                      src={schoolStampUrl}
+                      alt="School Stamp (drag to reposition)"
+                      draggable={false}
+                      style={{ width: `${stampConfig.size}px`, height: `${stampConfig.size}px`, objectFit: 'contain', pointerEvents: 'none' }}
+                    />
+                    <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full p-1 shadow-md">
+                      <GripVertical className="h-3 w-3" />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Stamp controls sidebar */}
+              <div className="space-y-3">
+                {!schoolStampUrl && (
+                  <Alert>
+                    <Stamp className="h-4 w-4" />
+                    <AlertDescription>
+                      No stamp uploaded for this school. Upload one in the{' '}
+                      <Link to="/admin/headteacher-signature" className="underline font-medium text-primary">
+                        Headteacher Signature
+                      </Link>{' '}page.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {schoolStampUrl && !stampApplied && (
+                  <Button onClick={() => setStampApplied(true)} className="w-full gap-2">
+                    <Stamp className="h-4 w-4" />
+                    Apply Stamp
+                  </Button>
+                )}
+
+                {stampApplied && previewSchoolId && (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-green-600">Stamp Applied</Badge>
+                      <Button variant="outline" size="sm" onClick={() => setStampApplied(false)}>Remove</Button>
+                    </div>
+                    <StampConfigurator
+                      stampUrl={schoolStampUrl!}
+                      config={stampConfig}
+                      onChange={setStampConfig}
+                      schoolId={previewSchoolId}
+                      previewRef={previewContainerRef}
+                    />
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Footer with action buttons */}
+          <div className="flex items-center justify-end gap-3 pt-4 border-t mt-4 print:hidden">
+            <Button variant="outline" onClick={() => setPreviewOpen(false)} className="gap-2">
+              <X className="h-4 w-4" />
+              Close
+            </Button>
+            <Button variant="outline" onClick={() => {
+              if (selectedReportId) {
+                const rc = reportCards.find(r => r.id === selectedReportId);
+                if (rc) handlePrint(rc);
+              }
+            }} className="gap-2">
+              <Printer className="h-4 w-4" />
+              Print
+            </Button>
+            <Button onClick={() => {
+              if (selectedReportId) {
+                const rc = reportCards.find(r => r.id === selectedReportId);
+                if (rc) handleDownload(rc);
+              }
+            }} className="gap-2">
+              <Download className="h-4 w-4" />
+              Download PDF
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 

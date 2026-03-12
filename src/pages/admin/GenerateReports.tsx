@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { ArrowLeft, FileText, Users, Settings, Eye, Palette, Stamp, GripVertical } from 'lucide-react';
+import { ArrowLeft, FileText, Users, Settings, Eye, Palette, Stamp, GripVertical, Printer, Download, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ClassTermSettingsDialog } from '@/components/admin/ClassTermSettingsDialog';
 import ReportCardPreview from '@/components/ReportCardPreview';
@@ -75,6 +75,11 @@ export default function GenerateReports() {
   const [isDragging, setIsDragging] = useState(false);
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const dragStartRef = useRef<{ startX: number; startY: number; startConfigX: number; startConfigY: number } | null>(null);
+  
+  // Print/Download state
+  const [previewReady, setPreviewReady] = useState(false);
+  const [printPending, setPrintPending] = useState(false);
+  const [downloadPending, setDownloadPending] = useState(false);
 
   useEffect(() => {
     fetchSchools();
@@ -181,6 +186,76 @@ export default function GenerateReports() {
       setStampApplied(true);
     }
   };
+
+  const handlePreviewReady = useCallback(() => {
+    setPreviewReady(true);
+  }, []);
+
+  const handlePrint = () => {
+    setPrintPending(true);
+    setPreviewReady(false);
+  };
+
+  const processDownload = async () => {
+    try {
+      const element = document.getElementById('report-card-preview');
+      if (!element || !element.offsetHeight || !element.offsetWidth) {
+        throw new Error("Report card not fully loaded. Please try again.");
+      }
+      const html2canvas = (await import('html2canvas')).default;
+      const jsPDF = (await import('jspdf')).default;
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        allowTaint: true,
+        imageTimeout: 0
+      });
+      if (!canvas || canvas.width === 0 || canvas.height === 0) {
+        throw new Error("Failed to capture report card.");
+      }
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const imgWidth = 210;
+      const pageHeight = 297;
+      const imgHeight = canvas.height * imgWidth / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+      pdf.save('Report_Card.pdf');
+      toast({ title: "Download complete", description: "Report card PDF downloaded successfully." });
+    } catch (error: any) {
+      toast({ title: "Download failed", description: error.message, variant: "destructive" });
+    } finally {
+      setDownloadPending(false);
+    }
+  };
+
+  const handleDownloadPDF = () => {
+    setDownloadPending(true);
+    setPreviewReady(false);
+  };
+
+  useEffect(() => {
+    if (!previewReady) return;
+    if (downloadPending) {
+      processDownload();
+    }
+    if (printPending) {
+      setTimeout(() => {
+        window.print();
+        setPrintPending(false);
+      }, 500);
+    }
+  }, [previewReady, downloadPending, printPending]);
 
   // Drag handlers for stamp on preview
   const handleStampMouseDown = useCallback((e: React.MouseEvent) => {
@@ -549,11 +624,14 @@ export default function GenerateReports() {
         setShowPreview(open);
         if (!open) {
           setStampApplied(false);
+          setPreviewReady(false);
+          setPrintPending(false);
+          setDownloadPending(false);
         } else {
           loadStampConfig();
         }
       }}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-auto">
+        <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-auto print:max-w-full">
           <DialogHeader>
             <DialogTitle>Report Card Preview</DialogTitle>
           </DialogHeader>
@@ -566,12 +644,14 @@ export default function GenerateReports() {
                   backgroundColor={REPORT_COLORS.find(c => c.id === selectedColor)?.value || '#ffffff'}
                   showStamp={stampApplied}
                   stampConfig={stampApplied ? stampConfig : null}
+                  onReady={handlePreviewReady}
                 />
                 {/* Draggable stamp overlay (interactive, above the read-only stamp in preview) */}
                 {stampApplied && schoolStampUrl && (
                   <div
                     onMouseDown={handleStampMouseDown}
                     onTouchStart={handleStampTouchStart}
+                    className="print:hidden"
                     style={{
                       position: 'absolute',
                       left: `${stampConfig.x}%`,
@@ -643,6 +723,22 @@ export default function GenerateReports() {
               </div>
             </div>
           )}
+          
+          {/* Footer with action buttons */}
+          <div className="flex items-center justify-end gap-3 pt-4 border-t mt-4 print:hidden">
+            <Button variant="outline" onClick={() => setShowPreview(false)} className="gap-2">
+              <X className="h-4 w-4" />
+              Close
+            </Button>
+            <Button variant="outline" onClick={handlePrint} disabled={printPending} className="gap-2">
+              <Printer className="h-4 w-4" />
+              {printPending ? 'Preparing...' : 'Print'}
+            </Button>
+            <Button onClick={handleDownloadPDF} disabled={downloadPending} className="gap-2">
+              <Download className="h-4 w-4" />
+              {downloadPending ? 'Generating...' : 'Download PDF'}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
