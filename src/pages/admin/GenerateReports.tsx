@@ -187,6 +187,76 @@ export default function GenerateReports() {
     }
   };
 
+  const handlePreviewReady = useCallback(() => {
+    setPreviewReady(true);
+  }, []);
+
+  const handlePrint = () => {
+    setPrintPending(true);
+    setPreviewReady(false);
+  };
+
+  const processDownload = async () => {
+    try {
+      const element = document.getElementById('report-card-preview');
+      if (!element || !element.offsetHeight || !element.offsetWidth) {
+        throw new Error("Report card not fully loaded. Please try again.");
+      }
+      const html2canvas = (await import('html2canvas')).default;
+      const jsPDF = (await import('jspdf')).default;
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        allowTaint: true,
+        imageTimeout: 0
+      });
+      if (!canvas || canvas.width === 0 || canvas.height === 0) {
+        throw new Error("Failed to capture report card.");
+      }
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const imgWidth = 210;
+      const pageHeight = 297;
+      const imgHeight = canvas.height * imgWidth / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+      pdf.save('Report_Card.pdf');
+      toast({ title: "Download complete", description: "Report card PDF downloaded successfully." });
+    } catch (error: any) {
+      toast({ title: "Download failed", description: error.message, variant: "destructive" });
+    } finally {
+      setDownloadPending(false);
+    }
+  };
+
+  const handleDownloadPDF = () => {
+    setDownloadPending(true);
+    setPreviewReady(false);
+  };
+
+  useEffect(() => {
+    if (!previewReady) return;
+    if (downloadPending) {
+      processDownload();
+    }
+    if (printPending) {
+      setTimeout(() => {
+        window.print();
+        setPrintPending(false);
+      }, 500);
+    }
+  }, [previewReady, downloadPending, printPending]);
+
   // Drag handlers for stamp on preview
   const handleStampMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
