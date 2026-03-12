@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import ReportCardPreview from '@/components/ReportCardPreview';
+import StampConfigurator, { type StampConfig } from '@/components/admin/StampConfigurator';
 interface ReportCard {
   id: string;
   student_id: string;
