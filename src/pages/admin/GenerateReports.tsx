@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { ArrowLeft, FileText, Users, Settings, Eye, Palette, Stamp, GripVertical } from 'lucide-react';
+import { ArrowLeft, FileText, Users, Settings, Eye, Palette, Stamp, GripVertical, Printer, Download, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ClassTermSettingsDialog } from '@/components/admin/ClassTermSettingsDialog';
 import ReportCardPreview from '@/components/ReportCardPreview';
