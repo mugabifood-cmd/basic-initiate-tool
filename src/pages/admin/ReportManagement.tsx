@@ -441,6 +441,84 @@ export default function ReportManagement() {
   const handlePreviewReady = () => {
     setPreviewReady(true);
   };
+
+  // Stamp helpers
+  const loadStampForReport = async (reportCard: ReportCard) => {
+    try {
+      // Get school_id from the class
+      const { data: classData } = await supabase
+        .from('classes')
+        .select('school_id')
+        .eq('id', reportCard.class_id)
+        .single();
+      if (!classData) return;
+      setPreviewSchoolId(classData.school_id);
+      const { data: school } = await supabase
+        .from('schools')
+        .select('stamp_url, stamp_position_x, stamp_position_y, stamp_size, stamp_opacity')
+        .eq('id', classData.school_id)
+        .single();
+      if (!school) return;
+      const s = school as any;
+      setSchoolStampUrl(s.stamp_url || null);
+      if (s.stamp_url) {
+        setStampConfig({
+          x: s.stamp_position_x ?? 85,
+          y: s.stamp_position_y ?? 75,
+          size: s.stamp_size ?? 120,
+          opacity: s.stamp_opacity ?? 0.4,
+        });
+      }
+    } catch {
+      setSchoolStampUrl(null);
+    }
+  };
+
+  const handleStampMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDraggingStamp(true);
+    dragStartRef.current = {
+      startX: e.clientX, startY: e.clientY,
+      startConfigX: stampConfig.x, startConfigY: stampConfig.y,
+    };
+  }, [stampConfig.x, stampConfig.y]);
+
+  const handleStampTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    setIsDraggingStamp(true);
+    dragStartRef.current = {
+      startX: touch.clientX, startY: touch.clientY,
+      startConfigX: stampConfig.x, startConfigY: stampConfig.y,
+    };
+  }, [stampConfig.x, stampConfig.y]);
+
+  useEffect(() => {
+    if (!isDraggingStamp) return;
+    const onMove = (clientX: number, clientY: number) => {
+      if (!dragStartRef.current || !previewContainerRef.current) return;
+      const rect = previewContainerRef.current.getBoundingClientRect();
+      const dx = ((clientX - dragStartRef.current.startX) / rect.width) * 100;
+      const dy = ((clientY - dragStartRef.current.startY) / rect.height) * 100;
+      setStampConfig(prev => ({
+        ...prev,
+        x: Math.max(0, Math.min(100, Math.round((dragStartRef.current!.startConfigX + dx) * 10) / 10)),
+        y: Math.max(0, Math.min(100, Math.round((dragStartRef.current!.startConfigY + dy) * 10) / 10)),
+      }));
+    };
+    const onMouseMove = (e: MouseEvent) => onMove(e.clientX, e.clientY);
+    const onTouchMove = (e: TouchEvent) => onMove(e.touches[0].clientX, e.touches[0].clientY);
+    const onEnd = () => { setIsDraggingStamp(false); dragStartRef.current = null; };
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onEnd);
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
+    window.addEventListener('touchend', onEnd);
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onEnd);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onEnd);
+    };
+  }, [isDraggingStamp]);
   const handleShare = async (reportCard: ReportCard) => {
     try {
       if (!navigator.share) {
