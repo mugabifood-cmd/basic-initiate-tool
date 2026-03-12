@@ -624,11 +624,14 @@ export default function GenerateReports() {
         setShowPreview(open);
         if (!open) {
           setStampApplied(false);
+          setPreviewReady(false);
+          setPrintPending(false);
+          setDownloadPending(false);
         } else {
           loadStampConfig();
         }
       }}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-auto">
+        <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-auto print:max-w-full">
           <DialogHeader>
             <DialogTitle>Report Card Preview</DialogTitle>
           </DialogHeader>
@@ -641,12 +644,14 @@ export default function GenerateReports() {
                   backgroundColor={REPORT_COLORS.find(c => c.id === selectedColor)?.value || '#ffffff'}
                   showStamp={stampApplied}
                   stampConfig={stampApplied ? stampConfig : null}
+                  onReady={handlePreviewReady}
                 />
                 {/* Draggable stamp overlay (interactive, above the read-only stamp in preview) */}
                 {stampApplied && schoolStampUrl && (
                   <div
                     onMouseDown={handleStampMouseDown}
                     onTouchStart={handleStampTouchStart}
+                    className="print:hidden"
                     style={{
                       position: 'absolute',
                       left: `${stampConfig.x}%`,
@@ -718,6 +723,22 @@ export default function GenerateReports() {
               </div>
             </div>
           )}
+          
+          {/* Footer with action buttons */}
+          <div className="flex items-center justify-end gap-3 pt-4 border-t mt-4 print:hidden">
+            <Button variant="outline" onClick={() => setShowPreview(false)} className="gap-2">
+              <X className="h-4 w-4" />
+              Close
+            </Button>
+            <Button variant="outline" onClick={handlePrint} disabled={printPending} className="gap-2">
+              <Printer className="h-4 w-4" />
+              {printPending ? 'Preparing...' : 'Print'}
+            </Button>
+            <Button onClick={handleDownloadPDF} disabled={downloadPending} className="gap-2">
+              <Download className="h-4 w-4" />
+              {downloadPending ? 'Generating...' : 'Download PDF'}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
