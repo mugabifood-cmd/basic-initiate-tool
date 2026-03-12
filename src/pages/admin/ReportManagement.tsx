@@ -139,6 +139,8 @@ export default function ReportManagement() {
   };
   const handlePreview = (reportCard: ReportCard) => {
     setSelectedReportId(reportCard.id);
+    setStampApplied(false);
+    loadStampForReport(reportCard);
     setPreviewOpen(true);
   };
   const handleEdit = (reportCard: ReportCard) => {
