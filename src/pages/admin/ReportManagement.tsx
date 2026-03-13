@@ -258,6 +258,7 @@ export default function ReportManagement() {
   const [printPending, setPrintPending] = useState(false);
   const handlePrint = async (reportCard: ReportCard) => {
     setSelectedReportId(reportCard.id);
+    await loadStampForReport(reportCard);
     setPrintPending(true);
     setPreviewReady(false);
     setPreviewOpen(true);
