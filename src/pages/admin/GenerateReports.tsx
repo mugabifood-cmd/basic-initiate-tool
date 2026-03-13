@@ -714,7 +714,7 @@ export default function GenerateReports() {
                       stampUrl={schoolStampUrl!}
                       config={stampConfig}
                       onChange={setStampConfig}
-                      schoolId={selectedSchool}
+                      schoolId={previewSchoolId || selectedSchool}
                       previewRef={previewContainerRef}
                     />
                   </>
