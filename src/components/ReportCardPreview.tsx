@@ -28,12 +28,16 @@ interface ReportCardPreviewProps {
   showStamp?: boolean;
   stampPosition?: StampPosition;
   stampConfig?: StampConfig | null;
+  stampInteractive?: boolean;
+  onStampMouseDown?: (e: React.MouseEvent<HTMLDivElement>) => void;
+  onStampTouchStart?: (e: React.TouchEvent<HTMLDivElement>) => void;
+  isStampDragging?: boolean;
 }
 
 const thinBorder = '1px solid #8B7355';
 const thickBorder = '1px solid #000000';
 
-export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff', onReady, showStamp = false, stampPosition = 'bottom-right', stampConfig }: ReportCardPreviewProps) {
+export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff', onReady, showStamp = false, stampPosition = 'bottom-right', stampConfig, stampInteractive = false, onStampMouseDown, onStampTouchStart, isStampDragging = false }: ReportCardPreviewProps) {
   const [reportData, setReportData] = useState<any>(null);
   const [subjectGrades, setSubjectGrades] = useState<SubjectGrade[]>([]);
   const [loading, setLoading] = useState(true);
