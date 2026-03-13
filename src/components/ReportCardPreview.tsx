@@ -530,11 +530,22 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
 
       {/* School Stamp Overlay */}
       {showStamp && schoolStampUrl && (
-        <div style={getStampStyle()}>
+        <div
+          onMouseDown={stampInteractive ? onStampMouseDown : undefined}
+          onTouchStart={stampInteractive ? onStampTouchStart : undefined}
+          style={{
+            ...getStampStyle(),
+            pointerEvents: stampInteractive ? 'auto' : 'none',
+            cursor: stampInteractive ? (isStampDragging ? 'grabbing' : 'grab') : 'default',
+            touchAction: stampInteractive ? 'none' : undefined,
+            userSelect: 'none',
+          }}
+        >
           <img
             src={schoolStampUrl}
             alt="School Stamp"
-            style={{ width: `${stampSizePx}px`, height: `${stampSizePx}px`, objectFit: 'contain' }}
+            draggable={false}
+            style={{ width: `${stampSizePx}px`, height: `${stampSizePx}px`, objectFit: 'contain', pointerEvents: 'none' }}
           />
         </div>
       )}
