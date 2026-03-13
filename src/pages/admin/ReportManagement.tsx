@@ -447,23 +447,39 @@ export default function ReportManagement() {
   // Stamp helpers
   const loadStampForReport = async (reportCard: ReportCard) => {
     try {
-      // Get school_id from the class
       const { data: classData } = await supabase
         .from('classes')
         .select('school_id')
         .eq('id', reportCard.class_id)
         .single();
-      if (!classData) return;
+
+      if (!classData?.school_id) {
+        setPreviewSchoolId(null);
+        setSchoolStampUrl(null);
+        setStampApplied(false);
+        return;
+      }
+
       setPreviewSchoolId(classData.school_id);
+
       const { data: school } = await supabase
         .from('schools')
         .select('stamp_url, stamp_position_x, stamp_position_y, stamp_size, stamp_opacity')
         .eq('id', classData.school_id)
         .single();
-      if (!school) return;
+
+      if (!school) {
+        setSchoolStampUrl(null);
+        setStampApplied(false);
+        return;
+      }
+
       const s = school as any;
+      const hasStamp = Boolean(s.stamp_url);
       setSchoolStampUrl(s.stamp_url || null);
-      if (s.stamp_url) {
+      setStampApplied(hasStamp);
+
+      if (hasStamp) {
         setStampConfig({
           x: s.stamp_position_x ?? 85,
           y: s.stamp_position_y ?? 75,
@@ -472,7 +488,9 @@ export default function ReportManagement() {
         });
       }
     } catch {
+      setPreviewSchoolId(null);
       setSchoolStampUrl(null);
+      setStampApplied(false);
     }
   };
 
