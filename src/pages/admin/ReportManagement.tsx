@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Eye, Edit, Trash2, Printer, FileText, Download, Share2, DollarSign, Stamp, GripVertical, X } from 'lucide-react';
+import { ArrowLeft, Eye, Edit, Trash2, Printer, FileText, Download, Share2, DollarSign, Stamp, X } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -137,10 +137,9 @@ export default function ReportManagement() {
       setDeleting(null);
     }
   };
-  const handlePreview = (reportCard: ReportCard) => {
+  const handlePreview = async (reportCard: ReportCard) => {
     setSelectedReportId(reportCard.id);
-    setStampApplied(false);
-    loadStampForReport(reportCard);
+    await loadStampForReport(reportCard);
     setPreviewOpen(true);
   };
   const handleEdit = (reportCard: ReportCard) => {
@@ -259,6 +258,7 @@ export default function ReportManagement() {
   const [printPending, setPrintPending] = useState(false);
   const handlePrint = async (reportCard: ReportCard) => {
     setSelectedReportId(reportCard.id);
+    await loadStampForReport(reportCard);
     setPrintPending(true);
     setPreviewReady(false);
     setPreviewOpen(true);
@@ -357,9 +357,10 @@ export default function ReportManagement() {
       title: "Preparing download",
       description: "Please wait while we generate the PDF..."
     });
+    setSelectedReportId(reportCard.id);
+    await loadStampForReport(reportCard);
     setDownloadPending(reportCard);
     setPreviewReady(false);
-    setSelectedReportId(reportCard.id);
     setPreviewOpen(true);
   };
 
@@ -447,23 +448,39 @@ export default function ReportManagement() {
   // Stamp helpers
   const loadStampForReport = async (reportCard: ReportCard) => {
     try {
-      // Get school_id from the class
       const { data: classData } = await supabase
         .from('classes')
         .select('school_id')
         .eq('id', reportCard.class_id)
         .single();
-      if (!classData) return;
+
+      if (!classData?.school_id) {
+        setPreviewSchoolId(null);
+        setSchoolStampUrl(null);
+        setStampApplied(false);
+        return;
+      }
+
       setPreviewSchoolId(classData.school_id);
+
       const { data: school } = await supabase
         .from('schools')
         .select('stamp_url, stamp_position_x, stamp_position_y, stamp_size, stamp_opacity')
         .eq('id', classData.school_id)
         .single();
-      if (!school) return;
+
+      if (!school) {
+        setSchoolStampUrl(null);
+        setStampApplied(false);
+        return;
+      }
+
       const s = school as any;
+      const hasStamp = Boolean(s.stamp_url);
       setSchoolStampUrl(s.stamp_url || null);
-      if (s.stamp_url) {
+      setStampApplied(hasStamp);
+
+      if (hasStamp) {
         setStampConfig({
           x: s.stamp_position_x ?? 85,
           y: s.stamp_position_y ?? 75,
@@ -472,7 +489,9 @@ export default function ReportManagement() {
         });
       }
     } catch {
+      setPreviewSchoolId(null);
       setSchoolStampUrl(null);
+      setStampApplied(false);
     }
   };
 
@@ -754,36 +773,11 @@ export default function ReportManagement() {
                   onReady={handlePreviewReady}
                   showStamp={stampApplied}
                   stampConfig={stampApplied ? stampConfig : null}
+                  stampInteractive={stampApplied}
+                  onStampMouseDown={handleStampMouseDown}
+                  onStampTouchStart={handleStampTouchStart}
+                  isStampDragging={isDraggingStamp}
                 />
-                {/* Draggable stamp overlay */}
-                {stampApplied && schoolStampUrl && (
-                  <div
-                    onMouseDown={handleStampMouseDown}
-                    onTouchStart={handleStampTouchStart}
-                    className="print:hidden"
-                    style={{
-                      position: 'absolute',
-                      left: `${stampConfig.x}%`,
-                      top: `${stampConfig.y}%`,
-                      transform: 'translate(-50%, -50%)',
-                      opacity: stampConfig.opacity,
-                      zIndex: 30,
-                      cursor: isDraggingStamp ? 'grabbing' : 'grab',
-                      touchAction: 'none',
-                      userSelect: 'none',
-                    }}
-                  >
-                    <img
-                      src={schoolStampUrl}
-                      alt="School Stamp (drag to reposition)"
-                      draggable={false}
-                      style={{ width: `${stampConfig.size}px`, height: `${stampConfig.size}px`, objectFit: 'contain', pointerEvents: 'none' }}
-                    />
-                    <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full p-1 shadow-md">
-                      <GripVertical className="h-3 w-3" />
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* Stamp controls sidebar */}

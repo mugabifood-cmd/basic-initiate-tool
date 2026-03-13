@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { ArrowLeft, FileText, Users, Settings, Eye, Palette, Stamp, GripVertical, Printer, Download, X } from 'lucide-react';
+import { ArrowLeft, FileText, Users, Settings, Eye, Palette, Stamp, Printer, Download, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ClassTermSettingsDialog } from '@/components/admin/ClassTermSettingsDialog';
 import ReportCardPreview from '@/components/ReportCardPreview';
@@ -73,6 +73,7 @@ export default function GenerateReports() {
   const [schoolStampUrl, setSchoolStampUrl] = useState<string | null>(null);
   const [stampConfig, setStampConfig] = useState<StampConfig>({ x: 85, y: 75, size: 120, opacity: 0.4 });
   const [isDragging, setIsDragging] = useState(false);
+  const [previewSchoolId, setPreviewSchoolId] = useState<string>('');
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const dragStartRef = useRef<{ startX: number; startY: number; startConfigX: number; startConfigY: number } | null>(null);
   
@@ -97,6 +98,12 @@ export default function GenerateReports() {
       fetchStudents();
     }
   }, [selectedClass]);
+
+  useEffect(() => {
+    if (showPreview && previewReportId) {
+      loadStampConfig(previewReportId);
+    }
+  }, [showPreview, previewReportId, selectedSchool]);
 
   const fetchSchools = async () => {
     try {
@@ -157,18 +164,47 @@ export default function GenerateReports() {
     }
   };
 
-  const loadStampConfig = async () => {
-    if (!selectedSchool) return;
+  const loadStampConfig = async (reportId?: string) => {
     try {
+      let schoolId = '';
+
+      if (reportId) {
+        const { data: reportWithClass } = await supabase
+          .from('report_cards')
+          .select('classes ( school_id )')
+          .eq('id', reportId)
+          .single();
+
+        schoolId = (reportWithClass as any)?.classes?.school_id || '';
+      }
+
+      if (!schoolId) {
+        schoolId = selectedSchool;
+      }
+
+      if (!schoolId) {
+        setPreviewSchoolId('');
+        setSchoolStampUrl(null);
+        setStampApplied(false);
+        return;
+      }
+
+      setPreviewSchoolId(schoolId);
+
       const { data, error } = await supabase
         .from('schools')
         .select('stamp_url, stamp_position_x, stamp_position_y, stamp_size, stamp_opacity')
-        .eq('id', selectedSchool)
+        .eq('id', schoolId)
         .single();
+
       if (error) throw error;
+
       const school = data as any;
+      const hasStamp = Boolean(school.stamp_url);
       setSchoolStampUrl(school.stamp_url || null);
-      if (school.stamp_url) {
+      setStampApplied(hasStamp);
+
+      if (hasStamp) {
         setStampConfig({
           x: school.stamp_position_x ?? 85,
           y: school.stamp_position_y ?? 75,
@@ -177,7 +213,9 @@ export default function GenerateReports() {
         });
       }
     } catch {
+      setPreviewSchoolId('');
       setSchoolStampUrl(null);
+      setStampApplied(false);
     }
   };
 
@@ -627,8 +665,7 @@ export default function GenerateReports() {
           setPreviewReady(false);
           setPrintPending(false);
           setDownloadPending(false);
-        } else {
-          loadStampConfig();
+          setPreviewSchoolId('');
         }
       }}>
         <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-auto print:max-w-full">
@@ -637,49 +674,19 @@ export default function GenerateReports() {
           </DialogHeader>
           {previewReportId && (
             <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-4">
-              {/* Report preview with draggable stamp */}
+              {/* Report preview with single draggable stamp layer */}
               <div ref={previewContainerRef} className="relative border rounded-lg overflow-hidden">
                 <ReportCardPreview
                   reportId={previewReportId}
                   backgroundColor={REPORT_COLORS.find(c => c.id === selectedColor)?.value || '#ffffff'}
                   showStamp={stampApplied}
                   stampConfig={stampApplied ? stampConfig : null}
+                  stampInteractive={stampApplied}
+                  onStampMouseDown={handleStampMouseDown}
+                  onStampTouchStart={handleStampTouchStart}
+                  isStampDragging={isDragging}
                   onReady={handlePreviewReady}
                 />
-                {/* Draggable stamp overlay (interactive, above the read-only stamp in preview) */}
-                {stampApplied && schoolStampUrl && (
-                  <div
-                    onMouseDown={handleStampMouseDown}
-                    onTouchStart={handleStampTouchStart}
-                    className="print:hidden"
-                    style={{
-                      position: 'absolute',
-                      left: `${stampConfig.x}%`,
-                      top: `${stampConfig.y}%`,
-                      transform: 'translate(-50%, -50%)',
-                      opacity: stampConfig.opacity,
-                      zIndex: 30,
-                      cursor: isDragging ? 'grabbing' : 'grab',
-                      touchAction: 'none',
-                      userSelect: 'none',
-                    }}
-                  >
-                    <img
-                      src={schoolStampUrl}
-                      alt="School Stamp (drag to reposition)"
-                      draggable={false}
-                      style={{
-                        width: `${stampConfig.size}px`,
-                        height: `${stampConfig.size}px`,
-                        objectFit: 'contain',
-                        pointerEvents: 'none',
-                      }}
-                    />
-                    <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full p-1 shadow-md">
-                      <GripVertical className="h-3 w-3" />
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* Stamp controls sidebar */}
@@ -715,7 +722,7 @@ export default function GenerateReports() {
                       stampUrl={schoolStampUrl!}
                       config={stampConfig}
                       onChange={setStampConfig}
-                      schoolId={selectedSchool}
+                      schoolId={previewSchoolId || selectedSchool}
                       previewRef={previewContainerRef}
                     />
                   </>

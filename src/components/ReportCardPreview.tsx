@@ -28,12 +28,16 @@ interface ReportCardPreviewProps {
   showStamp?: boolean;
   stampPosition?: StampPosition;
   stampConfig?: StampConfig | null;
+  stampInteractive?: boolean;
+  onStampMouseDown?: (e: React.MouseEvent<HTMLDivElement>) => void;
+  onStampTouchStart?: (e: React.TouchEvent<HTMLDivElement>) => void;
+  isStampDragging?: boolean;
 }
 
 const thinBorder = '1px solid #8B7355';
 const thickBorder = '1px solid #000000';
 
-export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff', onReady, showStamp = false, stampPosition = 'bottom-right', stampConfig }: ReportCardPreviewProps) {
+export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff', onReady, showStamp = false, stampPosition = 'bottom-right', stampConfig, stampInteractive = false, onStampMouseDown, onStampTouchStart, isStampDragging = false }: ReportCardPreviewProps) {
   const [reportData, setReportData] = useState<any>(null);
   const [subjectGrades, setSubjectGrades] = useState<SubjectGrade[]>([]);
   const [loading, setLoading] = useState(true);
@@ -526,11 +530,22 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
 
       {/* School Stamp Overlay */}
       {showStamp && schoolStampUrl && (
-        <div style={getStampStyle()}>
+        <div
+          onMouseDown={stampInteractive ? onStampMouseDown : undefined}
+          onTouchStart={stampInteractive ? onStampTouchStart : undefined}
+          style={{
+            ...getStampStyle(),
+            pointerEvents: stampInteractive ? 'auto' : 'none',
+            cursor: stampInteractive ? (isStampDragging ? 'grabbing' : 'grab') : 'default',
+            touchAction: stampInteractive ? 'none' : undefined,
+            userSelect: 'none',
+          }}
+        >
           <img
             src={schoolStampUrl}
             alt="School Stamp"
-            style={{ width: `${stampSizePx}px`, height: `${stampSizePx}px`, objectFit: 'contain' }}
+            draggable={false}
+            style={{ width: `${stampSizePx}px`, height: `${stampSizePx}px`, objectFit: 'contain', pointerEvents: 'none' }}
           />
         </div>
       )}
