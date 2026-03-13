@@ -160,9 +160,9 @@ export default function GenerateReports() {
 
   const loadStampConfig = async (reportId?: string) => {
     try {
-      let schoolId = selectedSchool;
+      let schoolId = '';
 
-      if (!schoolId && reportId) {
+      if (reportId) {
         const { data: reportWithClass } = await supabase
           .from('report_cards')
           .select('classes ( school_id )')
@@ -170,6 +170,10 @@ export default function GenerateReports() {
           .single();
 
         schoolId = (reportWithClass as any)?.classes?.school_id || '';
+      }
+
+      if (!schoolId) {
+        schoolId = selectedSchool;
       }
 
       if (!schoolId) {
