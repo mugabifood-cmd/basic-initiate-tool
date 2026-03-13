@@ -357,9 +357,10 @@ export default function ReportManagement() {
       title: "Preparing download",
       description: "Please wait while we generate the PDF..."
     });
+    setSelectedReportId(reportCard.id);
+    await loadStampForReport(reportCard);
     setDownloadPending(reportCard);
     setPreviewReady(false);
-    setSelectedReportId(reportCard.id);
     setPreviewOpen(true);
   };
 
