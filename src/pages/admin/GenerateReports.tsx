@@ -73,6 +73,7 @@ export default function GenerateReports() {
   const [schoolStampUrl, setSchoolStampUrl] = useState<string | null>(null);
   const [stampConfig, setStampConfig] = useState<StampConfig>({ x: 85, y: 75, size: 120, opacity: 0.4 });
   const [isDragging, setIsDragging] = useState(false);
+  const [previewSchoolId, setPreviewSchoolId] = useState<string>('');
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const dragStartRef = useRef<{ startX: number; startY: number; startConfigX: number; startConfigY: number } | null>(null);
   
