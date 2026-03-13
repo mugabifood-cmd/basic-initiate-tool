@@ -99,6 +99,12 @@ export default function GenerateReports() {
     }
   }, [selectedClass]);
 
+  useEffect(() => {
+    if (showPreview && previewReportId) {
+      loadStampConfig(previewReportId);
+    }
+  }, [showPreview, previewReportId, selectedSchool]);
+
   const fetchSchools = async () => {
     try {
       const { data, error } = await supabase
