@@ -666,8 +666,6 @@ export default function GenerateReports() {
           setPrintPending(false);
           setDownloadPending(false);
           setPreviewSchoolId('');
-        } else {
-          loadStampConfig(previewReportId ?? undefined);
         }
       }}>
         <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-auto print:max-w-full">
