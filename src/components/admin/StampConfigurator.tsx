@@ -290,8 +290,6 @@ export function DraggableStampOverlay({
 }) {
   const clampedX = Math.max(0, Math.min(100, config.x));
   const clampedY = Math.max(0, Math.min(100, config.y));
-  const translateX = -clampedX;
-  const translateY = -clampedY;
 
   return (
     <div
@@ -301,7 +299,7 @@ export function DraggableStampOverlay({
         position: 'absolute',
         left: `${clampedX}%`,
         top: `${clampedY}%`,
-        transform: `translate(${translateX}%, ${translateY}%)`,
+        transform: 'translate(-50%, -50%)',
         opacity: config.opacity,
         zIndex: 20,
         cursor: isDragging ? 'grabbing' : 'grab',
