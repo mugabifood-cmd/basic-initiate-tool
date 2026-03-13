@@ -158,18 +158,43 @@ export default function GenerateReports() {
     }
   };
 
-  const loadStampConfig = async () => {
-    if (!selectedSchool) return;
+  const loadStampConfig = async (reportId?: string) => {
     try {
+      let schoolId = selectedSchool;
+
+      if (!schoolId && reportId) {
+        const { data: reportWithClass } = await supabase
+          .from('report_cards')
+          .select('classes ( school_id )')
+          .eq('id', reportId)
+          .single();
+
+        schoolId = (reportWithClass as any)?.classes?.school_id || '';
+      }
+
+      if (!schoolId) {
+        setPreviewSchoolId('');
+        setSchoolStampUrl(null);
+        setStampApplied(false);
+        return;
+      }
+
+      setPreviewSchoolId(schoolId);
+
       const { data, error } = await supabase
         .from('schools')
         .select('stamp_url, stamp_position_x, stamp_position_y, stamp_size, stamp_opacity')
-        .eq('id', selectedSchool)
+        .eq('id', schoolId)
         .single();
+
       if (error) throw error;
+
       const school = data as any;
+      const hasStamp = Boolean(school.stamp_url);
       setSchoolStampUrl(school.stamp_url || null);
-      if (school.stamp_url) {
+      setStampApplied(hasStamp);
+
+      if (hasStamp) {
         setStampConfig({
           x: school.stamp_position_x ?? 85,
           y: school.stamp_position_y ?? 75,
@@ -178,7 +203,9 @@ export default function GenerateReports() {
         });
       }
     } catch {
+      setPreviewSchoolId('');
       setSchoolStampUrl(null);
+      setStampApplied(false);
     }
   };
 
