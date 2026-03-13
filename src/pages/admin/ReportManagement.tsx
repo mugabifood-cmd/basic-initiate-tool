@@ -773,36 +773,11 @@ export default function ReportManagement() {
                   onReady={handlePreviewReady}
                   showStamp={stampApplied}
                   stampConfig={stampApplied ? stampConfig : null}
+                  stampInteractive={stampApplied}
+                  onStampMouseDown={handleStampMouseDown}
+                  onStampTouchStart={handleStampTouchStart}
+                  isStampDragging={isDraggingStamp}
                 />
-                {/* Draggable stamp overlay */}
-                {stampApplied && schoolStampUrl && (
-                  <div
-                    onMouseDown={handleStampMouseDown}
-                    onTouchStart={handleStampTouchStart}
-                    className="print:hidden"
-                    style={{
-                      position: 'absolute',
-                      left: `${stampConfig.x}%`,
-                      top: `${stampConfig.y}%`,
-                      transform: 'translate(-50%, -50%)',
-                      opacity: stampConfig.opacity,
-                      zIndex: 30,
-                      cursor: isDraggingStamp ? 'grabbing' : 'grab',
-                      touchAction: 'none',
-                      userSelect: 'none',
-                    }}
-                  >
-                    <img
-                      src={schoolStampUrl}
-                      alt="School Stamp (drag to reposition)"
-                      draggable={false}
-                      style={{ width: `${stampConfig.size}px`, height: `${stampConfig.size}px`, objectFit: 'contain', pointerEvents: 'none' }}
-                    />
-                    <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full p-1 shadow-md">
-                      <GripVertical className="h-3 w-3" />
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* Stamp controls sidebar */}
