@@ -137,10 +137,9 @@ export default function ReportManagement() {
       setDeleting(null);
     }
   };
-  const handlePreview = (reportCard: ReportCard) => {
+  const handlePreview = async (reportCard: ReportCard) => {
     setSelectedReportId(reportCard.id);
-    setStampApplied(false);
-    loadStampForReport(reportCard);
+    await loadStampForReport(reportCard);
     setPreviewOpen(true);
   };
   const handleEdit = (reportCard: ReportCard) => {
