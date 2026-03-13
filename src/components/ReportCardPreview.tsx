@@ -213,22 +213,14 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
   // Compute stamp style from config or legacy position
   const getStampStyle = (): React.CSSProperties => {
     if (stampConfig) {
-      // Clamp position so stamp stays fully inside the container
       const clampedX = Math.max(0, Math.min(100, stampConfig.x));
       const clampedY = Math.max(0, Math.min(100, stampConfig.y));
-      
-      // Calculate transform percentages to keep stamp within bounds
-      // At 0% position, anchor at left/top edge (translate 0%)
-      // At 50% position, anchor at center (translate -50%)
-      // At 100% position, anchor at right/bottom edge (translate -100%)
-      const translateX = -clampedX;
-      const translateY = -clampedY;
       
       return {
         position: 'absolute',
         left: `${clampedX}%`,
         top: `${clampedY}%`,
-        transform: `translate(${translateX}%, ${translateY}%)`,
+        transform: 'translate(-50%, -50%)',
         opacity: stampConfig.opacity,
         pointerEvents: 'none',
         zIndex: 10,
