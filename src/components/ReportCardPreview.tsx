@@ -217,8 +217,8 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
   // Compute stamp style from config or legacy position
   const getStampStyle = (): React.CSSProperties => {
     if (stampConfig) {
-      const clampedX = Math.max(0, Math.min(100, stampConfig.x));
-      const clampedY = Math.max(0, Math.min(100, stampConfig.y));
+      const clampedX = Math.max(5, Math.min(95, stampConfig.x));
+      const clampedY = Math.max(5, Math.min(95, stampConfig.y));
       
       return {
         position: 'absolute',
@@ -226,12 +226,11 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
         top: `${clampedY}%`,
         transform: 'translate(-50%, -50%)',
         opacity: stampConfig.opacity,
-        pointerEvents: 'none',
         zIndex: 10,
       };
     }
     // Legacy fallback
-    const base: React.CSSProperties = { position: 'absolute', opacity: 0.85, pointerEvents: 'none', zIndex: 10 };
+    const base: React.CSSProperties = { position: 'absolute', opacity: 0.85, zIndex: 10 };
     if (stampPosition === 'bottom-right') return { ...base, bottom: '60px', right: '40px' };
     if (stampPosition === 'center') return { ...base, top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
     if (stampPosition === 'over-signatures') return { ...base, bottom: '160px', right: '60px' };
