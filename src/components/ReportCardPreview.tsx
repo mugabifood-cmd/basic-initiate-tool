@@ -527,7 +527,7 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
         </div>
       </div>
 
-      {/* School Stamp Overlay */}
+      {/* School Stamp - single instance only */}
       {showStamp && schoolStampUrl && (
         <div
           onMouseDown={stampInteractive ? onStampMouseDown : undefined}
@@ -546,6 +546,24 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
             draggable={false}
             style={{ width: `${stampSizePx}px`, height: `${stampSizePx}px`, objectFit: 'contain', pointerEvents: 'none' }}
           />
+          {stampInteractive && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '-4px',
+                right: '-4px',
+                width: '16px',
+                height: '16px',
+                borderRadius: '50%',
+                backgroundColor: '#3b82f6',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <span style={{ color: 'white', fontSize: '8px', fontWeight: 'bold' }}>⠿</span>
+            </div>
+          )}
         </div>
       )}
     </div>
