@@ -138,13 +138,15 @@ export default function StampConfigurator({ stampUrl, config, onChange, schoolId
   useEffect(() => {
     if (!isDragging) return;
     const onTouchMove = (e: TouchEvent) => {
-      if (!dragStartRef.current || !previewRef?.current) return;
+      if (!dragStartRef.current) return;
+      const el = previewRef?.current || document.getElementById('report-card-preview');
+      if (!el) return;
       const touch = e.touches[0];
-      const rect = previewRef.current.getBoundingClientRect();
+      const rect = el.getBoundingClientRect();
       const dx = ((touch.clientX - dragStartRef.current.startX) / rect.width) * 100;
       const dy = ((touch.clientY - dragStartRef.current.startY) / rect.height) * 100;
-      const newX = Math.max(0, Math.min(100, dragStartRef.current.startConfigX + dx));
-      const newY = Math.max(0, Math.min(100, dragStartRef.current.startConfigY + dy));
+      const newX = Math.max(5, Math.min(95, dragStartRef.current.startConfigX + dx));
+      const newY = Math.max(5, Math.min(95, dragStartRef.current.startConfigY + dy));
       onChange({ ...config, x: Math.round(newX * 10) / 10, y: Math.round(newY * 10) / 10 });
     };
     const onTouchEnd = () => {
