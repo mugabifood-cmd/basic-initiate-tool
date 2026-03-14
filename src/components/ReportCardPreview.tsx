@@ -217,8 +217,8 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
   // Compute stamp style from config or legacy position
   const getStampStyle = (): React.CSSProperties => {
     if (stampConfig) {
-      const clampedX = Math.max(0, Math.min(100, stampConfig.x));
-      const clampedY = Math.max(0, Math.min(100, stampConfig.y));
+      const clampedX = Math.max(5, Math.min(95, stampConfig.x));
+      const clampedY = Math.max(5, Math.min(95, stampConfig.y));
       
       return {
         position: 'absolute',
@@ -226,12 +226,11 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
         top: `${clampedY}%`,
         transform: 'translate(-50%, -50%)',
         opacity: stampConfig.opacity,
-        pointerEvents: 'none',
         zIndex: 10,
       };
     }
     // Legacy fallback
-    const base: React.CSSProperties = { position: 'absolute', opacity: 0.85, pointerEvents: 'none', zIndex: 10 };
+    const base: React.CSSProperties = { position: 'absolute', opacity: 0.85, zIndex: 10 };
     if (stampPosition === 'bottom-right') return { ...base, bottom: '60px', right: '40px' };
     if (stampPosition === 'center') return { ...base, top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
     if (stampPosition === 'over-signatures') return { ...base, bottom: '160px', right: '60px' };
@@ -528,7 +527,7 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
         </div>
       </div>
 
-      {/* School Stamp Overlay */}
+      {/* School Stamp - single instance only */}
       {showStamp && schoolStampUrl && (
         <div
           onMouseDown={stampInteractive ? onStampMouseDown : undefined}
@@ -547,6 +546,24 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
             draggable={false}
             style={{ width: `${stampSizePx}px`, height: `${stampSizePx}px`, objectFit: 'contain', pointerEvents: 'none' }}
           />
+          {stampInteractive && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '-4px',
+                right: '-4px',
+                width: '16px',
+                height: '16px',
+                borderRadius: '50%',
+                backgroundColor: '#3b82f6',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <span style={{ color: 'white', fontSize: '8px', fontWeight: 'bold' }}>⠿</span>
+            </div>
+          )}
         </div>
       )}
     </div>

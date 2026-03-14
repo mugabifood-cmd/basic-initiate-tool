@@ -295,9 +295,15 @@ export default function GenerateReports() {
     }
   }, [previewReady, downloadPending, printPending]);
 
+  // Get the actual report card element for accurate drag bounds
+  const getReportCardElement = useCallback(() => {
+    return document.getElementById('report-card-preview');
+  }, []);
+
   // Drag handlers for stamp on preview
   const handleStampMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragging(true);
     dragStartRef.current = {
       startX: e.clientX,
@@ -308,6 +314,7 @@ export default function GenerateReports() {
   }, [stampConfig.x, stampConfig.y]);
 
   const handleStampTouchStart = useCallback((e: React.TouchEvent) => {
+    e.stopPropagation();
     const touch = e.touches[0];
     setIsDragging(true);
     dragStartRef.current = {
@@ -321,26 +328,29 @@ export default function GenerateReports() {
   useEffect(() => {
     if (!isDragging) return;
     const onMouseMove = (e: MouseEvent) => {
-      if (!dragStartRef.current || !previewContainerRef.current) return;
-      const rect = previewContainerRef.current.getBoundingClientRect();
+      const el = getReportCardElement();
+      if (!dragStartRef.current || !el) return;
+      const rect = el.getBoundingClientRect();
       const dx = ((e.clientX - dragStartRef.current.startX) / rect.width) * 100;
       const dy = ((e.clientY - dragStartRef.current.startY) / rect.height) * 100;
       setStampConfig(prev => ({
         ...prev,
-        x: Math.max(0, Math.min(100, Math.round((dragStartRef.current!.startConfigX + dx) * 10) / 10)),
-        y: Math.max(0, Math.min(100, Math.round((dragStartRef.current!.startConfigY + dy) * 10) / 10)),
+        x: Math.max(5, Math.min(95, Math.round((dragStartRef.current!.startConfigX + dx) * 10) / 10)),
+        y: Math.max(5, Math.min(95, Math.round((dragStartRef.current!.startConfigY + dy) * 10) / 10)),
       }));
     };
     const onTouchMove = (e: TouchEvent) => {
-      if (!dragStartRef.current || !previewContainerRef.current) return;
+      e.preventDefault();
+      const el = getReportCardElement();
+      if (!dragStartRef.current || !el) return;
       const touch = e.touches[0];
-      const rect = previewContainerRef.current.getBoundingClientRect();
+      const rect = el.getBoundingClientRect();
       const dx = ((touch.clientX - dragStartRef.current.startX) / rect.width) * 100;
       const dy = ((touch.clientY - dragStartRef.current.startY) / rect.height) * 100;
       setStampConfig(prev => ({
         ...prev,
-        x: Math.max(0, Math.min(100, Math.round((dragStartRef.current!.startConfigX + dx) * 10) / 10)),
-        y: Math.max(0, Math.min(100, Math.round((dragStartRef.current!.startConfigY + dy) * 10) / 10)),
+        x: Math.max(5, Math.min(95, Math.round((dragStartRef.current!.startConfigX + dx) * 10) / 10)),
+        y: Math.max(5, Math.min(95, Math.round((dragStartRef.current!.startConfigY + dy) * 10) / 10)),
       }));
     };
     const onEnd = () => {
@@ -357,7 +367,7 @@ export default function GenerateReports() {
       window.removeEventListener('touchmove', onTouchMove);
       window.removeEventListener('touchend', onEnd);
     };
-  }, [isDragging]);
+  }, [isDragging, getReportCardElement]);
 
   const handleGenerate = async () => {
     if (!selectedClass) {
