@@ -145,7 +145,7 @@ serve(async (req) => {
         }
 
         const overallAverage = subjectCount > 0 ? totalScore / subjectCount : 0;
-        const overallGrade = calculateGrade(overallAverage);
+        const overallGrade = calculateGrade(overallAverage, classData.name);
 
         // Fetch all comment templates and find matching one based on average
         const { data: commentTemplates, error: templateError } = await supabase
@@ -335,8 +335,24 @@ serve(async (req) => {
   }
 });
 
-// Helper function to calculate grade based on percentage
-function calculateGrade(percentage: number): string {
+// Helper function to detect academic level from class name
+function getAcademicLevel(className: string): 'a-level' | 'o-level' {
+  const normalized = className.toUpperCase().replace(/\s+/g, '').replace(/\./g, '');
+  if (/S[56]/.test(normalized)) return 'a-level';
+  return 'o-level';
+}
+
+// Helper function to calculate grade based on percentage and academic level
+function calculateGrade(percentage: number, className?: string): string {
+  const level = className ? getAcademicLevel(className) : 'o-level';
+  if (level === 'a-level') {
+    if (percentage >= 75) return 'A';
+    if (percentage >= 65) return 'B';
+    if (percentage >= 50) return 'C';
+    if (percentage >= 35) return 'D';
+    return 'E';
+  }
+  // O-Level
   if (percentage >= 80) return 'A';
   if (percentage >= 70) return 'B';
   if (percentage >= 60) return 'C';

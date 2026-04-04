@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import type { StampConfig } from '@/components/admin/StampConfigurator';
+import { getAcademicLevel } from '@/lib/academicLevel';
+import ALevelReportCardPreview from '@/components/ALevelReportCardPreview';
 
 export type StampPosition = 'bottom-right' | 'center' | 'over-signatures';
 
@@ -44,10 +46,33 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
   const [classTeacherSignature, setClassTeacherSignature] = useState<string | null>(null);
   const [headteacherSignature, setHeadteacherSignature] = useState<string | null>(null);
   const [schoolStampUrl, setSchoolStampUrl] = useState<string | null>(null);
+  const [academicLevel, setAcademicLevel] = useState<'o-level' | 'a-level' | null>(null);
 
   useEffect(() => {
-    fetchReportData();
+    detectLevelAndFetch();
   }, [reportId]);
+
+  const detectLevelAndFetch = async () => {
+    try {
+      const { data: report } = await supabase
+        .from('report_cards')
+        .select('class_id, classes (name)')
+        .eq('id', reportId)
+        .single();
+      
+      if (report?.classes) {
+        const level = getAcademicLevel((report.classes as any).name);
+        setAcademicLevel(level);
+        if (level === 'a-level') {
+          setLoading(false);
+          return; // A-Level will be rendered by ALevelReportCardPreview
+        }
+      }
+    } catch (e) {
+      console.error('Error detecting academic level:', e);
+    }
+    fetchReportData();
+  };
 
   useEffect(() => {
     if (!loading && reportData && onReady) {
@@ -238,6 +263,24 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
   };
 
   const stampSizePx = stampConfig?.size || 120;
+
+  // Route to A-Level template if detected
+  if (academicLevel === 'a-level') {
+    return (
+      <ALevelReportCardPreview
+        reportId={reportId}
+        backgroundColor={backgroundColor}
+        onReady={onReady}
+        showStamp={showStamp}
+        stampPosition={stampPosition}
+        stampConfig={stampConfig}
+        stampInteractive={stampInteractive}
+        onStampMouseDown={onStampMouseDown}
+        onStampTouchStart={onStampTouchStart}
+        isStampDragging={isStampDragging}
+      />
+    );
+  }
 
   if (loading) {
     return (
