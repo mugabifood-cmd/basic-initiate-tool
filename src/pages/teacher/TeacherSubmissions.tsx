@@ -196,12 +196,19 @@ export default function TeacherSubmissions() {
 
   const fetchSubjects = async () => {
     try {
-      // Get ALL subject IDs assigned to this teacher across all classes
+      // Find the selected class details to match assignments
+      const selectedClassObj = assignedClasses.find(c => c.id === selectedClass);
+      
+      // Filter assignments to only subjects assigned to this teacher in the selected class
       const assignedSubjectIds = teacherAssignments
-        .filter(a => 
-          a.assignment_type === 'subject_teacher' &&
-          a.subject_id
-        )
+        .filter(a => {
+          if (a.assignment_type !== 'subject_teacher' || !a.subject_id) return false;
+          // If a class is selected, only show subjects assigned to that class
+          if (selectedClassObj) {
+            return a.class_name === selectedClassObj.name && a.stream === selectedClassObj.stream;
+          }
+          return true;
+        })
         .map(a => a.subject_id);
 
       // Remove duplicates
@@ -212,7 +219,7 @@ export default function TeacherSubmissions() {
         return;
       }
 
-      // Fetch all assigned subjects
+      // Fetch assigned subjects for this class
       const { data, error } = await supabase
         .from('subjects')
         .select('*')
