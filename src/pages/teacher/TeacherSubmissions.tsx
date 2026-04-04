@@ -113,9 +113,14 @@ export default function TeacherSubmissions() {
     if (teacherAssignments.length > 0) {
       fetchClasses();
       fetchGradeBoundaries();
-      fetchSubjects();
     }
   }, [teacherAssignments]);
+
+  useEffect(() => {
+    if (teacherAssignments.length > 0 && selectedClass) {
+      fetchSubjects();
+    }
+  }, [teacherAssignments, selectedClass]);
 
   useEffect(() => {
     if (selectedClass) {
