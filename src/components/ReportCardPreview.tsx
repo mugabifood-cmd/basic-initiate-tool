@@ -264,6 +264,24 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
 
   const stampSizePx = stampConfig?.size || 120;
 
+  // Route to A-Level template if detected
+  if (academicLevel === 'a-level') {
+    return (
+      <ALevelReportCardPreview
+        reportId={reportId}
+        backgroundColor={backgroundColor}
+        onReady={onReady}
+        showStamp={showStamp}
+        stampPosition={stampPosition}
+        stampConfig={stampConfig}
+        stampInteractive={stampInteractive}
+        onStampMouseDown={onStampMouseDown}
+        onStampTouchStart={onStampTouchStart}
+        isStampDragging={isStampDragging}
+      />
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
