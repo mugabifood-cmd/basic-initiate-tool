@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import type { StampConfig } from '@/components/admin/StampConfigurator';
+import { getAcademicLevel } from '@/lib/academicLevel';
+import ALevelReportCardPreview from '@/components/ALevelReportCardPreview';
 
 export type StampPosition = 'bottom-right' | 'center' | 'over-signatures';
 
