@@ -145,7 +145,7 @@ serve(async (req) => {
         }
 
         const overallAverage = subjectCount > 0 ? totalScore / subjectCount : 0;
-        const overallGrade = calculateGrade(overallAverage);
+        const overallGrade = calculateGrade(overallAverage, classData.name);
 
         // Fetch all comment templates and find matching one based on average
         const { data: commentTemplates, error: templateError } = await supabase
