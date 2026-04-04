@@ -119,6 +119,13 @@ export default function TeacherSubmissions() {
   useEffect(() => {
     if (teacherAssignments.length > 0 && selectedClass) {
       fetchSubjects();
+      // Reset subject entries when class changes
+      setSubjectEntries([{
+        id: '1', subjectId: '', subjectCode: '',
+        a1Score: '', a2Score: '', a3Score: '',
+        teacherInitials: profile?.initials || '', identifier: '1',
+        percentage20: '', percentage80: '', percentage100: ''
+      }]);
     }
   }, [teacherAssignments, selectedClass]);
 
