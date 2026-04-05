@@ -61,6 +61,7 @@ export default function GenerateReports() {
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedStudent, setSelectedStudent] = useState('');
   const [templateId, setTemplateId] = useState('1');
+  const [aLevelTemplateId, setALevelTemplateId] = useState('1');
   const [selectedColor, setSelectedColor] = useState('white');
   const [generationType, setGenerationType] = useState<'individual' | 'class' | 'stream'>('individual');
   const [recentReports, setRecentReports] = useState<any[]>([]);
@@ -81,6 +82,13 @@ export default function GenerateReports() {
   const [previewReady, setPreviewReady] = useState(false);
   const [printPending, setPrintPending] = useState(false);
   const [downloadPending, setDownloadPending] = useState(false);
+
+  // Detected academic level for selected class
+  const detectedLevel = (() => {
+    const cls = classes.find(c => c.id === selectedClass);
+    if (!cls) return null;
+    return getAcademicLevel(cls.name);
+  })();
 
   useEffect(() => {
     fetchSchools();
