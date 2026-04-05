@@ -273,7 +273,8 @@ export default function SchoolManagement() {
           full_name: studentForm.full_name,
           gender: studentForm.gender,
           house: studentForm.house,
-          age: Number(studentForm.age)
+          age: Number(studentForm.age),
+          academic_level: 'o-level'
         }])
         .select()
         .single();

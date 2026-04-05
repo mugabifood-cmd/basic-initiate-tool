@@ -581,7 +581,9 @@ export default function GenerateReports() {
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium">Template:</span>
-                      <Badge variant="outline">Template {templateId}</Badge>
+                      <Badge variant="outline">
+                        {detectedLevel === 'a-level' ? `A-Level Template ${aLevelTemplateId}` : `Template ${templateId}`}
+                      </Badge>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium">Students to Generate:</span>
