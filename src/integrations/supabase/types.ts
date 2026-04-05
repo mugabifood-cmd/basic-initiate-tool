@@ -411,6 +411,7 @@ export type Database = {
       }
       schools: {
         Row: {
+          a_level_template_id: number
           created_at: string | null
           email: string | null
           id: string
@@ -429,6 +430,7 @@ export type Database = {
           website: string | null
         }
         Insert: {
+          a_level_template_id?: number
           created_at?: string | null
           email?: string | null
           id?: string
@@ -447,6 +449,7 @@ export type Database = {
           website?: string | null
         }
         Update: {
+          a_level_template_id?: number
           created_at?: string | null
           email?: string | null
           id?: string
@@ -611,6 +614,7 @@ export type Database = {
       }
       students: {
         Row: {
+          academic_level: string
           age: number | null
           created_at: string | null
           full_name: string
@@ -623,6 +627,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          academic_level: string
           age?: number | null
           created_at?: string | null
           full_name: string
@@ -635,6 +640,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          academic_level?: string
           age?: number | null
           created_at?: string | null
           full_name?: string
