@@ -107,6 +107,13 @@ serve(async (req) => {
           continue;
         }
 
+        // Validate student's academic level matches class
+        const expectedLevel = getAcademicLevel(classData.name);
+        const studentLevel = studentData.academic_level || expectedLevel;
+        if (studentLevel !== expectedLevel) {
+          console.warn(`Student ${studentData.full_name} academic_level=${studentLevel} but class ${classData.name} expects ${expectedLevel}`);
+        }
+
         // Fetch subject submissions for this student and class
         const { data: submissions, error: submissionsError } = await supabase
           .from('subject_submissions')

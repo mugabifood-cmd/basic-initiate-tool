@@ -65,6 +65,13 @@ export default function ALevelReportCardPreview({
   const [schoolStampUrl, setSchoolStampUrl] = useState<string | null>(null);
 
   useEffect(() => {
+   // Clear previous state before fetching new report
+   setReportData(null);
+   setSubjectGrades([]);
+   setLoading(true);
+   setClassTeacherSignature(null);
+   setHeadteacherSignature(null);
+   setSchoolStampUrl(null);
     fetchReportData();
   }, [reportId]);
 

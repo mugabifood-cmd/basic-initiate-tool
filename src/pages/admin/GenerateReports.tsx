@@ -13,6 +13,7 @@ import { Link } from 'react-router-dom';
 import { ClassTermSettingsDialog } from '@/components/admin/ClassTermSettingsDialog';
 import ReportCardPreview from '@/components/ReportCardPreview';
 import StampConfigurator, { type StampConfig } from '@/components/admin/StampConfigurator';
+import { getAcademicLevel } from '@/lib/academicLevel';
 
 const REPORT_COLORS = [
   { id: 'white', name: 'White (Default)', value: '#ffffff' },
@@ -61,6 +62,7 @@ export default function GenerateReports() {
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedStudent, setSelectedStudent] = useState('');
   const [templateId, setTemplateId] = useState('1');
+  const [aLevelTemplateId, setALevelTemplateId] = useState('1');
   const [selectedColor, setSelectedColor] = useState('white');
   const [generationType, setGenerationType] = useState<'individual' | 'class' | 'stream'>('individual');
   const [recentReports, setRecentReports] = useState<any[]>([]);
@@ -82,6 +84,13 @@ export default function GenerateReports() {
   const [printPending, setPrintPending] = useState(false);
   const [downloadPending, setDownloadPending] = useState(false);
 
+  // Detected academic level for selected class
+  const detectedLevel = (() => {
+    const cls = classes.find(c => c.id === selectedClass);
+    if (!cls) return null;
+    return getAcademicLevel(cls.name);
+  })();
+
   useEffect(() => {
     fetchSchools();
     fetchRecentReports();
@@ -90,12 +99,21 @@ export default function GenerateReports() {
   useEffect(() => {
     if (selectedSchool) {
       fetchClasses();
+      setSelectedClass('');
+      setSelectedStudent('');
+      setStudents([]);
+      setPreviewReportId(null);
+      setShowPreview(false);
     }
   }, [selectedSchool]);
 
   useEffect(() => {
     if (selectedClass) {
       fetchStudents();
+      setSelectedStudent('');
+      setPreviewReportId(null);
+      setShowPreview(false);
+      loadALevelTemplateSetting();
     }
   }, [selectedClass]);
 
@@ -104,6 +122,34 @@ export default function GenerateReports() {
       loadStampConfig(previewReportId);
     }
   }, [showPreview, previewReportId, selectedSchool]);
+
+  const loadALevelTemplateSetting = async () => {
+    if (!selectedSchool) return;
+    try {
+      const { data } = await supabase
+        .from('schools')
+        .select('a_level_template_id')
+        .eq('id', selectedSchool)
+        .single();
+      if (data) {
+        setALevelTemplateId(String((data as any).a_level_template_id || 1));
+      }
+    } catch {}
+  };
+
+  const saveALevelTemplateSetting = async (value: string) => {
+    setALevelTemplateId(value);
+    if (!selectedSchool) return;
+    try {
+      await supabase
+        .from('schools')
+        .update({ a_level_template_id: parseInt(value) } as any)
+        .eq('id', selectedSchool);
+      toast({ title: 'A-Level template saved', description: `Template ${value} selected for this school.` });
+    } catch (error: any) {
+      toast({ title: 'Error saving template', description: error.message, variant: 'destructive' });
+    }
+  };
 
   const fetchSchools = async () => {
     try {
@@ -378,6 +424,14 @@ export default function GenerateReports() {
       toast({ title: "Selection Required", description: "Please select a student for individual report generation.", variant: "destructive" });
       return;
     }
+    // Validate student belongs to selected class
+    if (generationType === 'individual' && selectedStudent) {
+      const studentInClass = students.find(s => s.id === selectedStudent);
+      if (!studentInClass) {
+        toast({ title: "Validation Error", description: "The selected student does not belong to this class. Please re-select.", variant: "destructive" });
+        return;
+      }
+    }
     try {
       setGenerating(true);
       let targetStudents = generationType === 'individual' && selectedStudent
@@ -508,17 +562,33 @@ export default function GenerateReports() {
                 </div>
               )}
 
-              <div>
-                <Label htmlFor="template">Report Card Template</Label>
-                <Select value={templateId} onValueChange={setTemplateId}>
-                  <SelectTrigger><SelectValue placeholder="Select template" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">Template 1 - Standard</SelectItem>
-                    <SelectItem value="2">Template 2 - Modern</SelectItem>
-                    <SelectItem value="3">Template 3 - Classic</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {detectedLevel === 'a-level' ? (
+                <div>
+                  <Label htmlFor="template">A-Level Report Card Template</Label>
+                  <Select value={aLevelTemplateId} onValueChange={saveALevelTemplateSetting}>
+                    <SelectTrigger><SelectValue placeholder="Select A-Level template" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">A-Level Template 1 - Standard</SelectItem>
+                      <SelectItem value="2">A-Level Template 2 - Formal</SelectItem>
+                      <SelectItem value="3">A-Level Template 3 - Detailed</SelectItem>
+                      <SelectItem value="4">A-Level Template 4 - Compact</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">This template applies to all A-Level classes for this school.</p>
+                </div>
+              ) : (
+                <div>
+                  <Label htmlFor="template">O-Level Report Card Template</Label>
+                  <Select value={templateId} onValueChange={setTemplateId}>
+                    <SelectTrigger><SelectValue placeholder="Select template" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">Template 1 - Standard</SelectItem>
+                      <SelectItem value="2">Template 2 - Modern</SelectItem>
+                      <SelectItem value="3">Template 3 - Classic</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <div>
                 <Label htmlFor="color" className="flex items-center gap-2">
@@ -541,6 +611,9 @@ export default function GenerateReports() {
 
               {recentReports.length > 0 && (
                 <Button variant="outline" onClick={() => {
+                  setPreviewReady(false);
+                  setPrintPending(false);
+                  setDownloadPending(false);
                   setPreviewReportId(recentReports[0].id);
                   setShowPreview(true);
                 }} className="w-full">
@@ -581,7 +654,9 @@ export default function GenerateReports() {
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium">Template:</span>
-                      <Badge variant="outline">Template {templateId}</Badge>
+                      <Badge variant="outline">
+                        {detectedLevel === 'a-level' ? `A-Level Template ${aLevelTemplateId}` : `Template ${templateId}`}
+                      </Badge>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium">Students to Generate:</span>
@@ -648,6 +723,9 @@ export default function GenerateReports() {
                       </div>
                       <Badge className={report.status === 'published' ? 'bg-green-500' : 'bg-yellow-500'}>{report.status}</Badge>
                       <Button variant="outline" size="sm" onClick={() => {
+                        setPreviewReady(false);
+                        setPrintPending(false);
+                        setDownloadPending(false);
                         setPreviewReportId(report.id);
                         setShowPreview(true);
                       }}><Eye className="w-4 h-4" /></Button>
