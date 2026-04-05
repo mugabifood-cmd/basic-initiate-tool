@@ -99,12 +99,21 @@ export default function GenerateReports() {
   useEffect(() => {
     if (selectedSchool) {
       fetchClasses();
+      setSelectedClass('');
+      setSelectedStudent('');
+      setStudents([]);
+      setPreviewReportId(null);
+      setShowPreview(false);
     }
   }, [selectedSchool]);
 
   useEffect(() => {
     if (selectedClass) {
       fetchStudents();
+      setSelectedStudent('');
+      setPreviewReportId(null);
+      setShowPreview(false);
+      loadALevelTemplateSetting();
     }
   }, [selectedClass]);
 
@@ -113,6 +122,34 @@ export default function GenerateReports() {
       loadStampConfig(previewReportId);
     }
   }, [showPreview, previewReportId, selectedSchool]);
+
+  const loadALevelTemplateSetting = async () => {
+    if (!selectedSchool) return;
+    try {
+      const { data } = await supabase
+        .from('schools')
+        .select('a_level_template_id')
+        .eq('id', selectedSchool)
+        .single();
+      if (data) {
+        setALevelTemplateId(String((data as any).a_level_template_id || 1));
+      }
+    } catch {}
+  };
+
+  const saveALevelTemplateSetting = async (value: string) => {
+    setALevelTemplateId(value);
+    if (!selectedSchool) return;
+    try {
+      await supabase
+        .from('schools')
+        .update({ a_level_template_id: parseInt(value) } as any)
+        .eq('id', selectedSchool);
+      toast({ title: 'A-Level template saved', description: `Template ${value} selected for this school.` });
+    } catch (error: any) {
+      toast({ title: 'Error saving template', description: error.message, variant: 'destructive' });
+    }
+  };
 
   const fetchSchools = async () => {
     try {
