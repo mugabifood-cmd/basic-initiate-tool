@@ -49,6 +49,14 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
   const [academicLevel, setAcademicLevel] = useState<'o-level' | 'a-level' | null>(null);
 
   useEffect(() => {
+   // Clear previous state before fetching new report
+   setReportData(null);
+   setSubjectGrades([]);
+   setLoading(true);
+   setClassTeacherSignature(null);
+   setHeadteacherSignature(null);
+   setSchoolStampUrl(null);
+   setAcademicLevel(null);
     detectLevelAndFetch();
   }, [reportId]);
 
