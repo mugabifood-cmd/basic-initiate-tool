@@ -611,6 +611,9 @@ export default function GenerateReports() {
 
               {recentReports.length > 0 && (
                 <Button variant="outline" onClick={() => {
+                  setPreviewReady(false);
+                  setPrintPending(false);
+                  setDownloadPending(false);
                   setPreviewReportId(recentReports[0].id);
                   setShowPreview(true);
                 }} className="w-full">
