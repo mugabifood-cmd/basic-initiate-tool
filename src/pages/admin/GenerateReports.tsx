@@ -723,6 +723,9 @@ export default function GenerateReports() {
                       </div>
                       <Badge className={report.status === 'published' ? 'bg-green-500' : 'bg-yellow-500'}>{report.status}</Badge>
                       <Button variant="outline" size="sm" onClick={() => {
+                        setPreviewReady(false);
+                        setPrintPending(false);
+                        setDownloadPending(false);
                         setPreviewReportId(report.id);
                         setShowPreview(true);
                       }}><Eye className="w-4 h-4" /></Button>
