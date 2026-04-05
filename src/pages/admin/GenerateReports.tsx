@@ -424,6 +424,14 @@ export default function GenerateReports() {
       toast({ title: "Selection Required", description: "Please select a student for individual report generation.", variant: "destructive" });
       return;
     }
+    // Validate student belongs to selected class
+    if (generationType === 'individual' && selectedStudent) {
+      const studentInClass = students.find(s => s.id === selectedStudent);
+      if (!studentInClass) {
+        toast({ title: "Validation Error", description: "The selected student does not belong to this class. Please re-select.", variant: "destructive" });
+        return;
+      }
+    }
     try {
       setGenerating(true);
       let targetStudents = generationType === 'individual' && selectedStudent
@@ -554,17 +562,33 @@ export default function GenerateReports() {
                 </div>
               )}
 
-              <div>
-                <Label htmlFor="template">Report Card Template</Label>
-                <Select value={templateId} onValueChange={setTemplateId}>
-                  <SelectTrigger><SelectValue placeholder="Select template" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">Template 1 - Standard</SelectItem>
-                    <SelectItem value="2">Template 2 - Modern</SelectItem>
-                    <SelectItem value="3">Template 3 - Classic</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {detectedLevel === 'a-level' ? (
+                <div>
+                  <Label htmlFor="template">A-Level Report Card Template</Label>
+                  <Select value={aLevelTemplateId} onValueChange={saveALevelTemplateSetting}>
+                    <SelectTrigger><SelectValue placeholder="Select A-Level template" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">A-Level Template 1 - Standard</SelectItem>
+                      <SelectItem value="2">A-Level Template 2 - Formal</SelectItem>
+                      <SelectItem value="3">A-Level Template 3 - Detailed</SelectItem>
+                      <SelectItem value="4">A-Level Template 4 - Compact</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">This template applies to all A-Level classes for this school.</p>
+                </div>
+              ) : (
+                <div>
+                  <Label htmlFor="template">O-Level Report Card Template</Label>
+                  <Select value={templateId} onValueChange={setTemplateId}>
+                    <SelectTrigger><SelectValue placeholder="Select template" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">Template 1 - Standard</SelectItem>
+                      <SelectItem value="2">Template 2 - Modern</SelectItem>
+                      <SelectItem value="3">Template 3 - Classic</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <div>
                 <Label htmlFor="color" className="flex items-center gap-2">
