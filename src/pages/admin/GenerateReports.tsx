@@ -13,6 +13,7 @@ import { Link } from 'react-router-dom';
 import { ClassTermSettingsDialog } from '@/components/admin/ClassTermSettingsDialog';
 import ReportCardPreview from '@/components/ReportCardPreview';
 import StampConfigurator, { type StampConfig } from '@/components/admin/StampConfigurator';
+import { getAcademicLevel } from '@/lib/academicLevel';
 
 const REPORT_COLORS = [
   { id: 'white', name: 'White (Default)', value: '#ffffff' },
