@@ -763,7 +763,7 @@ export default function GenerateReports() {
           {previewReportId && (
             <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-4">
               {/* Report preview with single draggable stamp layer */}
-              <div ref={previewContainerRef} className="relative border rounded-lg overflow-hidden">
+              <div ref={previewContainerRef} className="report-print-wrapper relative border rounded-lg overflow-visible">
                 <ReportCardPreview
                   reportId={previewReportId}
                   backgroundColor={REPORT_COLORS.find(c => c.id === selectedColor)?.value || '#ffffff'}
