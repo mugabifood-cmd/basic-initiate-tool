@@ -156,66 +156,74 @@ All colors MUST be HSL.
 
 /* Print styles for report cards */
 @media print {
-  /* Reset html and body for print */
+  @page {
+    size: A4 portrait;
+    margin: 5mm;
+  }
+
   html, body {
     margin: 0 !important;
     padding: 0 !important;
     height: auto !important;
+    width: auto !important;
     overflow: visible !important;
     background: white !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
   }
-  
+
   /* Hide everything except report card */
-  body * {
-    visibility: hidden;
+  body > *:not(#root),
+  #root > *:not(.report-print-wrapper),
+  .report-print-wrapper > *:not(#report-card-preview),
+  nav, header, footer, aside, button, .no-print {
+    display: none !important;
+    visibility: hidden !important;
   }
-  
-  /* Make report card and all its children visible */
-  #report-card-preview,
-  #report-card-preview * {
+
+  /* The wrapper that GenerateReports uses */
+  .report-print-wrapper {
+    display: block !important;
     visibility: visible !important;
+    width: 100% !important;
+    height: auto !important;
+    position: static !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
-  
-  /* Position report card for printing */
+
+  /* Report card itself - block flow, no fixed/absolute */
   #report-card-preview {
-    position: fixed !important;
-    left: 0 !important;
-    top: 0 !important;
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
     width: 100% !important;
     max-width: 100% !important;
     height: auto !important;
     overflow: visible !important;
     background: white !important;
     margin: 0 !important;
-    padding: 10mm !important;
+    padding: 3mm !important;
     box-sizing: border-box !important;
-    z-index: 99999 !important;
+    page-break-inside: avoid !important;
+    page-break-after: auto !important;
+  }
+
+  #report-card-preview,
+  #report-card-preview * {
+    visibility: visible !important;
+    color-adjust: exact !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
-    color-adjust: exact !important;
-  }
-  
-  @page {
-    size: A4 portrait;
-    margin: 0;
   }
 
-  /* Ensure ultra-thin borders in print */
-  .report-thin-border {
-    border: 0.1px solid #ddd !important;
-  }
-
-  .report-thin-border-r {
-    border-right: 0.1px solid #ddd !important;
-  }
-
-  .report-thin-border-b {
-    border-bottom: 0.1px solid #ddd !important;
-  }
-
-  .report-thin-border-t {
-    border-top: 0.1px solid #ddd !important;
-  }
+  /* Keep borders visible */
+  .report-thin-border { border: 0.1px solid #ddd !important; }
+  .report-thin-border-r { border-right: 0.1px solid #ddd !important; }
+  .report-thin-border-b { border-bottom: 0.1px solid #ddd !important; }
+  .report-thin-border-t { border-top: 0.1px solid #ddd !important; }
 
   .report-table {
     border-collapse: collapse !important;
@@ -229,13 +237,15 @@ All colors MUST be HSL.
     vertical-align: middle !important;
     line-height: 1.4 !important;
   }
-  
-  #report-card-preview * {
-    border-color: #ddd !important;
-  }
-  
-  /* Prevent page breaks inside sections */
+
+  /* Prevent tables from breaking */
   #report-card-preview table {
     page-break-inside: avoid !important;
+  }
+
+  /* Ensure stamp prints */
+  #report-card-preview [alt="School Stamp"] {
+    display: block !important;
+    visibility: visible !important;
   }
 }
