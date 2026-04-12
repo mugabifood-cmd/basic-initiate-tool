@@ -213,7 +213,7 @@ export default function ALevelReportCardPreview({
   const overallRemarks = getRemarks(avgPercentage100);
 
   return (
-    <div id="report-card-preview" className="text-black p-4 mx-auto" style={{ fontFamily: 'Arial, sans-serif', fontSize: '9px', maxWidth: '210mm', width: '100%', backgroundColor, position: 'relative', overflow: 'hidden' }}>
+    <div id="report-card-preview" className="report-card text-black p-4 mx-auto" style={{ fontFamily: 'Arial, sans-serif', fontSize: '9px', maxWidth: '210mm', width: '100%', backgroundColor, position: 'relative' }}>
       {/* Header */}
       <div style={{ border: thickBorder }} className="mb-1">
         <div className="flex items-start justify-between p-2">
