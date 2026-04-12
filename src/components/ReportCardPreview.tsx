@@ -303,7 +303,7 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
   }
 
   return (
-    <div id="report-card-preview" className="text-black p-6 mx-auto" style={{ fontFamily: 'Arial, sans-serif', fontSize: '10px', maxWidth: '210mm', width: '100%', backgroundColor: backgroundColor, position: 'relative', overflow: 'hidden' }}>
+    <div id="report-card-preview" className="report-card text-black p-6 mx-auto" style={{ fontFamily: 'Arial, sans-serif', fontSize: '10px', maxWidth: '210mm', width: '100%', backgroundColor: backgroundColor, position: 'relative' }}>
       {/* Header with Logo and Student Photo */}
       <div style={{ border: thickBorder }} className="mb-2">
         <div className="flex items-start justify-between p-3">
