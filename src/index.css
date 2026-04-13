@@ -164,8 +164,8 @@ All colors MUST be HSL.
   html, body {
     margin: 0 !important;
     padding: 0 !important;
-    height: auto !important;
-    width: auto !important;
+    min-height: 297mm !important;
+    width: 210mm !important;
     overflow: visible !important;
     background: white !important;
     -webkit-print-color-adjust: exact !important;
@@ -173,42 +173,61 @@ All colors MUST be HSL.
     color-adjust: exact !important;
   }
 
-  /* Hide everything except report card */
-  body > *:not(#root),
-  #root > *:not(.report-print-wrapper),
-  .report-print-wrapper > *:not(#report-card-preview),
-  nav, header, footer, aside, button, .no-print {
+  body > * {
     display: none !important;
-    visibility: hidden !important;
   }
 
-  /* The wrapper that GenerateReports uses */
-  .report-print-wrapper {
+  body > .report-preview-dialog {
     display: block !important;
-    visibility: visible !important;
-    width: 100% !important;
-    height: auto !important;
     position: static !important;
+    inset: auto !important;
+    transform: none !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: none !important;
+    min-height: auto !important;
     overflow: visible !important;
     margin: 0 !important;
     padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    background: white !important;
   }
 
-  /* Report card itself - block flow, no fixed/absolute */
+  .report-print-hide,
+  .report-preview-sidebar,
+  [data-radix-popper-content-wrapper] {
+    display: none !important;
+  }
+
+  .report-print-area,
+  .report-print-wrapper,
+  .report-print-frame {
+    display: block !important;
+    width: 100% !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: white !important;
+  }
+
   #report-card-preview {
     display: block !important;
-    visibility: visible !important;
-    position: static !important;
+    position: relative !important;
     width: 100% !important;
-    max-width: 100% !important;
+    max-width: 200mm !important;
     height: auto !important;
     overflow: visible !important;
     background: white !important;
-    margin: 0 !important;
-    padding: 3mm !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
     box-sizing: border-box !important;
     page-break-inside: avoid !important;
-    page-break-after: auto !important;
+    break-inside: avoid !important;
   }
 
   #report-card-preview,
@@ -219,7 +238,10 @@ All colors MUST be HSL.
     print-color-adjust: exact !important;
   }
 
-  /* Keep borders visible */
+  .report-card {
+    box-shadow: none !important;
+  }
+
   .report-thin-border { border: 0.1px solid #ddd !important; }
   .report-thin-border-r { border-right: 0.1px solid #ddd !important; }
   .report-thin-border-b { border-bottom: 0.1px solid #ddd !important; }
@@ -238,12 +260,21 @@ All colors MUST be HSL.
     line-height: 1.4 !important;
   }
 
-  /* Prevent tables from breaking */
-  #report-card-preview table {
+  #report-card-preview table,
+  #report-card-preview thead,
+  #report-card-preview tbody,
+  #report-card-preview tr,
+  #report-card-preview td,
+  #report-card-preview th,
+  #report-card-preview img {
     page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 
-  /* Ensure stamp prints */
+  #report-card-preview thead {
+    display: table-header-group !important;
+  }
+
   #report-card-preview [alt="School Stamp"] {
     display: block !important;
     visibility: visible !important;
