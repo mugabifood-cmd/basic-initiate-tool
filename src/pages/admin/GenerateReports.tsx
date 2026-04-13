@@ -334,10 +334,12 @@ export default function GenerateReports() {
       processDownload();
     }
     if (printPending) {
-      setTimeout(() => {
-        window.print();
-        setPrintPending(false);
-      }, 500);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          window.print();
+          setPrintPending(false);
+        });
+      });
     }
   }, [previewReady, downloadPending, printPending]);
 
@@ -756,14 +758,14 @@ export default function GenerateReports() {
           setPreviewSchoolId('');
         }
       }}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-auto print:max-w-full">
-          <DialogHeader>
+        <DialogContent className="report-preview-dialog max-w-[95vw] max-h-[95vh] overflow-auto print:max-w-full">
+          <DialogHeader className="report-print-hide">
             <DialogTitle>Report Card Preview</DialogTitle>
           </DialogHeader>
           {previewReportId && (
-            <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-4">
+            <div className="report-print-area grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-4">
               {/* Report preview with single draggable stamp layer */}
-              <div ref={previewContainerRef} className="report-print-wrapper relative border rounded-lg overflow-visible">
+              <div ref={previewContainerRef} className="report-print-wrapper report-print-frame relative border rounded-lg overflow-visible bg-white">
                 <ReportCardPreview
                   reportId={previewReportId}
                   backgroundColor={REPORT_COLORS.find(c => c.id === selectedColor)?.value || '#ffffff'}
@@ -778,7 +780,7 @@ export default function GenerateReports() {
               </div>
 
               {/* Stamp controls sidebar */}
-              <div className="space-y-3">
+              <div className="report-preview-sidebar report-print-hide space-y-3">
                 {!schoolStampUrl && (
                   <Alert>
                     <Stamp className="h-4 w-4" />
@@ -820,7 +822,7 @@ export default function GenerateReports() {
           )}
           
           {/* Footer with action buttons */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t mt-4 print:hidden">
+          <div className="report-print-hide flex items-center justify-end gap-3 pt-4 border-t mt-4 print:hidden">
             <Button variant="outline" onClick={() => setShowPreview(false)} className="gap-2">
               <X className="h-4 w-4" />
               Close

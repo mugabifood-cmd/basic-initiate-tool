@@ -433,11 +433,12 @@ export default function ReportManagement() {
       processDownload(downloadPending);
     }
     if (previewReady && printPending) {
-      // Small delay to ensure DOM is fully painted
-      setTimeout(() => {
-        window.print();
-        setPrintPending(false);
-      }, 500);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          window.print();
+          setPrintPending(false);
+        });
+      });
     }
   }, [previewReady, downloadPending, printPending]);
 
@@ -761,13 +762,13 @@ export default function ReportManagement() {
           setStampApplied(false);
         }
       }}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-auto print:max-w-full">
-          <DialogHeader>
+        <DialogContent className="report-preview-dialog max-w-[95vw] max-h-[95vh] overflow-auto print:max-w-full">
+          <DialogHeader className="report-print-hide">
             <DialogTitle>Report Card Preview</DialogTitle>
           </DialogHeader>
           {selectedReportId && (
-            <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-4">
-              <div ref={previewContainerRef} className="relative border rounded-lg overflow-hidden">
+            <div className="report-print-area grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-4">
+              <div ref={previewContainerRef} className="report-print-wrapper report-print-frame relative border rounded-lg overflow-visible bg-white">
                 <ReportCardPreview
                   reportId={selectedReportId}
                   onReady={handlePreviewReady}
@@ -781,7 +782,7 @@ export default function ReportManagement() {
               </div>
 
               {/* Stamp controls sidebar */}
-              <div className="space-y-3">
+              <div className="report-preview-sidebar report-print-hide space-y-3">
                 {!schoolStampUrl && (
                   <Alert>
                     <Stamp className="h-4 w-4" />
@@ -821,7 +822,7 @@ export default function ReportManagement() {
           )}
 
           {/* Footer with action buttons */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t mt-4 print:hidden">
+          <div className="report-print-hide flex items-center justify-end gap-3 pt-4 border-t mt-4 print:hidden">
             <Button variant="outline" onClick={() => setPreviewOpen(false)} className="gap-2">
               <X className="h-4 w-4" />
               Close

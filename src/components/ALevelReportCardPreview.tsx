@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { getALevelGrade } from '@/lib/academicLevel';
@@ -208,9 +208,13 @@ export default function ALevelReportCardPreview({
   const avgPercentage20 = subjectGrades.length > 0
     ? subjectGrades.reduce((s, g) => s + (g.percentage_20 || 0), 0) / subjectGrades.length
     : 0;
+  const avgPercentage80 = subjectGrades.length > 0
+    ? subjectGrades.reduce((s, g) => s + (g.percentage_80 || 0), 0) / subjectGrades.length
+    : 0;
   const avgPercentage100 = reportData.overall_average || 0;
   const overallGrade = reportData.overall_grade || getALevelGrade(avgPercentage100);
   const overallRemarks = getRemarks(avgPercentage100);
+  const aggregateValue = avgPercentage100 ? Math.round(avgPercentage100) : 0;
 
   return (
     <div id="report-card-preview" className="report-card text-black p-4 mx-auto" style={{ fontFamily: 'Arial, sans-serif', fontSize: '9px', maxWidth: '210mm', width: '100%', backgroundColor, position: 'relative' }}>
@@ -291,7 +295,7 @@ export default function ALevelReportCardPreview({
             <tr>
               <th rowSpan={2} style={cellStyle({ textAlign: 'left', fontWeight: 'bold' })}>Code Subject</th>
               <th rowSpan={2} style={cellStyle({ fontWeight: 'bold', width: '20px' })}>P<br/>A<br/>P<br/>E<br/>R</th>
-              <th colSpan={4} style={cellStyle({ fontWeight: 'bold' })}>FORMATIVE</th>
+              <th colSpan={5} style={cellStyle({ fontWeight: 'bold' })}>FORMATIVE</th>
               <th colSpan={3} style={cellStyle({ fontWeight: 'bold' })}>SUMMATIVE</th>
               <th rowSpan={2} style={cellStyle({ fontWeight: 'bold' })}>GRADE<br/>S</th>
               <th rowSpan={2} style={cellStyle({ fontWeight: 'bold', textAlign: 'left' })}>COMMENT</th>
@@ -310,9 +314,9 @@ export default function ALevelReportCardPreview({
           </thead>
           <tbody>
             {subjectGrades.map((subject, index) => (
-              <>
+              <Fragment key={`${subject.subject_code}-${index}`}>
                 {/* Paper 1 row */}
-                <tr key={`${index}-p1`}>
+                <tr>
                   <td rowSpan={2} style={cellStyle({ textAlign: 'left', fontWeight: 'bold' })}>
                     {subject.subject_code} &nbsp; {subject.subject_name.toUpperCase()}
                   </td>
@@ -322,15 +326,15 @@ export default function ALevelReportCardPreview({
                   <td style={cellStyle({ fontWeight: 'bold', color: '#8B0000' })}>{subject.a3_score?.toFixed(1) || ''}</td>
                   <td style={cellStyle({ fontWeight: 'bold' })}>{subject.average_score?.toFixed(1) || ''}</td>
                   <td style={cellStyle({ fontWeight: 'bold' })}>{subject.percentage_20 !== null ? subject.percentage_20.toFixed(1) : ''}</td>
+                  <td style={cellStyle({ fontWeight: 'bold' })}></td>
                   <td style={cellStyle({ fontWeight: 'bold' })}>{subject.percentage_80 !== null ? Math.round(subject.percentage_80) : ''}</td>
                   <td style={cellStyle({ fontWeight: 'bold' })}>{subject.percentage_100 !== null ? subject.percentage_100.toFixed(1) : ''}</td>
-                  <td style={cellStyle({ fontWeight: 'bold' })}>{Math.round(subject.percentage_100)}</td>
                   <td rowSpan={2} style={cellStyle({ fontWeight: 'bold', color: '#0000aa' })}>{subject.grade}</td>
                   <td rowSpan={2} style={cellStyle({ fontStyle: 'italic', textAlign: 'left', color: '#8B0000' })}>{subject.remarks}</td>
                   <td rowSpan={2} style={cellStyle({ fontWeight: 'bold' })}>{subject.teacher_initials}</td>
                 </tr>
                 {/* Paper 2 row (empty) */}
-                <tr key={`${index}-p2`}>
+                <tr>
                   <td style={cellStyle()}>2</td>
                   <td style={cellStyle()}></td>
                   <td style={cellStyle()}></td>
@@ -341,7 +345,7 @@ export default function ALevelReportCardPreview({
                   <td style={cellStyle()}></td>
                   <td style={cellStyle()}></td>
                 </tr>
-              </>
+              </Fragment>
             ))}
             {/* Average row */}
             <tr style={{ backgroundColor: '#e8d8ff' }}>
@@ -352,20 +356,30 @@ export default function ALevelReportCardPreview({
               <td style={cellStyle()}></td>
               <td style={cellStyle({ fontWeight: 'bold' })}>{avgPercentage20 ? avgPercentage20.toFixed(2) : ''}</td>
               <td style={cellStyle()}></td>
+              <td style={cellStyle({ fontWeight: 'bold' })}>{avgPercentage80 ? avgPercentage80.toFixed(2) : ''}</td>
               <td style={cellStyle({ fontWeight: 'bold' })}>{avgPercentage100 ? avgPercentage100.toFixed(2) : ''}</td>
-              <td style={cellStyle({ fontWeight: 'bold' })}>{avgPercentage100 ? Math.round(avgPercentage100) : ''}</td>
               <td style={cellStyle({ fontWeight: 'bold', color: '#0000aa' })}>{overallGrade}</td>
-              <td colSpan={2} style={cellStyle({ fontWeight: 'bold', fontStyle: 'italic', color: '#8B0000' })}>{overallRemarks}</td>
+              <td style={cellStyle({ fontWeight: 'bold', fontStyle: 'italic', textAlign: 'left', color: '#8B0000' })}>{overallRemarks}</td>
+              <td style={cellStyle()}></td>
             </tr>
           </tbody>
         </table>
       </div>
 
       {/* Overall Summary Row */}
-      <div style={{ border: thickBorder, borderTop: 'none' }} className="p-1 flex items-center gap-4 text-xs">
-        <span className="font-bold">Overall Identifier</span>
-        <span className="font-bold ml-8">Overall Achievement</span>
-        <span className="ml-8 font-bold">Overall grade</span>
+      <div style={{ border: thickBorder, borderTop: 'none' }} className="grid grid-cols-3 text-xs">
+        <div className="p-2 text-center" style={{ borderRight: thinBorder }}>
+          <p className="font-bold">AGGREGATES</p>
+          <p className="font-bold text-blue-700">{aggregateValue || '-'}</p>
+        </div>
+        <div className="p-2 text-center" style={{ borderRight: thinBorder }}>
+          <p className="font-bold">OVERALL ACHIEVEMENT</p>
+          <p className="font-bold text-blue-700">{reportData.overall_achievement || overallRemarks}</p>
+        </div>
+        <div className="p-2 text-center">
+          <p className="font-bold">OVERALL GRADE</p>
+          <p className="font-bold text-blue-700">{overallGrade}</p>
+        </div>
       </div>
 
       {/* Grade Scale */}
