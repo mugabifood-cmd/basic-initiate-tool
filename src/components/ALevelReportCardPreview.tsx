@@ -34,8 +34,8 @@ interface ALevelReportCardPreviewProps {
   isStampDragging?: boolean;
 }
 
-const thinBorder = '1px solid #8B7355';
-const thickBorder = '1px solid #000000';
+const thinBorder = '0.5px solid #ccc';
+const thickBorder = '0.5px solid #999';
 const cellStyle = (extra: React.CSSProperties = {}): React.CSSProperties => ({
   border: thinBorder,
   padding: '4px 3px',
@@ -250,23 +250,23 @@ export default function ALevelReportCardPreview({
 
         {/* Student info grid */}
         <div className="grid grid-cols-2 text-xs" style={{ fontSize: '9px' }}>
-          <div className="flex gap-2 p-1" style={{ borderBottom: thinBorder, borderRight: thinBorder }}>
+          <div className="flex gap-2 p-1">
             <span className="font-bold">NAME:</span>
             <span className="text-blue-700 font-semibold">{reportData.students.full_name.toUpperCase()}</span>
           </div>
-          <div className="flex gap-2 p-1" style={{ borderBottom: thinBorder }}>
+          <div className="flex gap-2 p-1">
             <span className="font-bold">GENDER:</span>
             <span className="text-blue-700 font-semibold">{reportData.students.gender?.toUpperCase()}</span>
           </div>
-          <div className="flex gap-2 p-1" style={{ borderBottom: thinBorder, borderRight: thinBorder }}>
+          <div className="flex gap-2 p-1">
             <span className="font-bold">AGE:</span>
             <span>{reportData.students.age || 'N/A'}</span>
           </div>
-          <div className="flex gap-2 p-1" style={{ borderBottom: thinBorder }}>
+          <div className="flex gap-2 p-1">
             <span className="font-bold">TERM:</span>
             <span className="text-blue-700 font-semibold">{reportData.classes.term?.toUpperCase()}</span>
           </div>
-          <div className="flex gap-2 p-1" style={{ borderRight: thinBorder }}>
+          <div className="flex gap-2 p-1">
             <span className="font-bold">CLASS:</span>
             <span className="text-blue-700 font-semibold">{reportData.classes.name}</span>
           </div>
@@ -275,7 +275,7 @@ export default function ALevelReportCardPreview({
             <span>{reportData.students.student_number}</span>
           </div>
         </div>
-        <div className="flex gap-2 p-1" style={{ borderTop: thinBorder }}>
+        <div className="flex gap-2 p-1">
           <span className="font-bold" style={{ fontSize: '9px' }}>Stream:</span>
           <span style={{ fontSize: '9px' }}>{reportData.classes.stream}</span>
           <span className="font-bold ml-4" style={{ fontSize: '9px' }}>Combination:</span>

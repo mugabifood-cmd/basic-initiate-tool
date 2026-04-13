@@ -36,8 +36,8 @@ interface ReportCardPreviewProps {
   isStampDragging?: boolean;
 }
 
-const thinBorder = '1px solid #8B7355';
-const thickBorder = '1px solid #000000';
+const thinBorder = '0.5px solid #ccc';
+const thickBorder = '0.5px solid #999';
 
 export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff', onReady, showStamp = false, stampPosition = 'bottom-right', stampConfig, stampInteractive = false, onStampMouseDown, onStampTouchStart, isStampDragging = false }: ReportCardPreviewProps) {
   const [reportData, setReportData] = useState<any>(null);
@@ -342,7 +342,7 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
           </div>
         </div>
 
-        <div style={{ borderTop: thinBorder }} className="p-2 grid grid-cols-3 gap-x-8 text-xs">
+        <div className="p-2 grid grid-cols-3 gap-x-8 text-xs">
           <div className="flex gap-2">
             <span className="font-bold">NAME:</span>
             <span className="text-blue-700 font-semibold">{reportData.students.full_name.toUpperCase()}</span>
