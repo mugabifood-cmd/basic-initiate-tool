@@ -34,8 +34,8 @@ interface ALevelReportCardPreviewProps {
   isStampDragging?: boolean;
 }
 
-const thinBorder = '1px solid #8B7355';
-const thickBorder = '1px solid #000000';
+const thinBorder = '0.5px solid #ccc';
+const thickBorder = '0.5px solid #999';
 const cellStyle = (extra: React.CSSProperties = {}): React.CSSProperties => ({
   border: thinBorder,
   padding: '4px 3px',
