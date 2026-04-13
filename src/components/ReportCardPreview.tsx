@@ -342,7 +342,7 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
           </div>
         </div>
 
-        <div style={{ borderTop: thinBorder }} className="p-2 grid grid-cols-3 gap-x-8 text-xs">
+        <div className="p-2 grid grid-cols-3 gap-x-8 text-xs">
           <div className="flex gap-2">
             <span className="font-bold">NAME:</span>
             <span className="text-blue-700 font-semibold">{reportData.students.full_name.toUpperCase()}</span>
