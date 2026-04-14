@@ -1,10 +1,12 @@
 import { useAuth } from '@/hooks/useAuth';
+import { useSchool } from '@/hooks/useSchool';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, Users, FileText, CheckCircle, Settings, MessageSquare, PenTool, DollarSign } from 'lucide-react';
+import { LogOut, Users, FileText, CheckCircle, Settings, MessageSquare, PenTool, DollarSign, Building2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { SchoolSwitcher } from '@/components/SchoolSwitcher';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { Skeleton } from '@/components/ui/skeleton';
