@@ -1,10 +1,12 @@
 import { useAuth } from '@/hooks/useAuth';
+import { useSchool } from '@/hooks/useSchool';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, Users, FileText, CheckCircle, Settings, MessageSquare, PenTool, DollarSign } from 'lucide-react';
+import { LogOut, Users, FileText, CheckCircle, Settings, MessageSquare, PenTool, DollarSign, Building2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { SchoolSwitcher } from '@/components/SchoolSwitcher';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -14,6 +16,7 @@ export default function Dashboard() {
     profile,
     signOut
   } = useAuth();
+  const { schools, activeSchool, loading: schoolLoading } = useSchool();
 
   // Fetch real-time stats
   const {
@@ -128,8 +131,9 @@ export default function Dashboard() {
       <header className="bg-card shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div>
-              <h1 className="text-xl font-semibold">O-Level Report Card</h1>
+            <div className="flex items-center gap-4">
+              <h1 className="text-xl font-semibold">Report Card System</h1>
+              <SchoolSwitcher />
             </div>
             <div className="flex items-center space-x-4">
               <div className="text-right">
@@ -158,6 +162,25 @@ export default function Dashboard() {
             {profile?.role === 'admin' ? 'Manage your school\'s report card system from this dashboard.' : 'Submit marks and manage your subject submissions.'}
           </p>
         </div>
+
+        {/* No school prompt */}
+        {!schoolLoading && schools.length === 0 && (
+          <Card className="mb-8 border-dashed border-2">
+            <CardContent className="p-8 text-center">
+              <Building2 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-semibold mb-2">No School Connected</h3>
+              <p className="text-muted-foreground mb-4">
+                Register a new school to start managing report cards, or ask your school admin to add you.
+              </p>
+              <Link to="/register-school">
+                <Button>
+                  <Building2 className="h-4 w-4 mr-2" />
+                  Register a School
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Menu Grid */}
         <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
