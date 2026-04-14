@@ -163,6 +163,25 @@ export default function Dashboard() {
           </p>
         </div>
 
+        {/* No school prompt */}
+        {!schoolLoading && schools.length === 0 && (
+          <Card className="mb-8 border-dashed border-2">
+            <CardContent className="p-8 text-center">
+              <Building2 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-semibold mb-2">No School Connected</h3>
+              <p className="text-muted-foreground mb-4">
+                Register a new school to start managing report cards, or ask your school admin to add you.
+              </p>
+              <Link to="/register-school">
+                <Button>
+                  <Building2 className="h-4 w-4 mr-2" />
+                  Register a School
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Menu Grid */}
         <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {getMenuItems().map((item, index) => <Link key={index} to={item.link}>
