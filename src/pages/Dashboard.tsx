@@ -16,6 +16,7 @@ export default function Dashboard() {
     profile,
     signOut
   } = useAuth();
+  const { schools, activeSchool, loading: schoolLoading } = useSchool();
 
   // Fetch real-time stats
   const {
