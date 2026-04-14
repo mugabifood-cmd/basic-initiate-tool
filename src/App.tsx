@@ -2,12 +2,14 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from './hooks/useAuth';
+import { SchoolProvider } from './hooks/useSchool';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import Auth from './pages/Auth';
 import Dashboard from './pages/Dashboard';
+import RegisterSchool from './pages/RegisterSchool';
 import SchoolManagement from './pages/admin/SchoolManagement';
 import TeacherManagement from './pages/admin/TeacherManagement';
 import Approvals from './pages/admin/Approvals';
