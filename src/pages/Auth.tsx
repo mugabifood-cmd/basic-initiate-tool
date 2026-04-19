@@ -260,9 +260,15 @@ export default function Auth() {
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="role">Role</Label>
-                  <Select value={selectedRole} onValueChange={(value: 'admin' | 'teacher' | 'headteacher') => setSelectedRole(value)}>
+                <div className="rounded-md border border-primary/20 bg-primary/5 p-3 text-sm">
+                  <p className="font-medium text-foreground">Admin account</p>
+                  <p className="text-muted-foreground mt-1">
+                    Public sign-up creates a school admin. After registering, you'll set up your
+                    school and then add teachers from inside the dashboard.
+                  </p>
+                </div>
+
+
                     <SelectTrigger>
                       <SelectValue placeholder="Select your role" />
                     </SelectTrigger>
