@@ -4,10 +4,12 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from './hooks/useAuth';
 import { SchoolProvider } from './hooks/useSchool';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { RequireSchool } from './components/RequireSchool';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import Auth from './pages/Auth';
+import Setup from './pages/Setup';
 import Dashboard from './pages/Dashboard';
 import RegisterSchool from './pages/RegisterSchool';
 import SchoolManagement from './pages/admin/SchoolManagement';
@@ -36,9 +38,16 @@ const App = () => (
                   <Route path="/auth" element={<Auth />} />
                   
                   {/* Protected Routes */}
+                  <Route path="/setup" element={
+                    <ProtectedRoute>
+                      <Setup />
+                    </ProtectedRoute>
+                  } />
                   <Route path="/dashboard" element={
                     <ProtectedRoute>
-                      <Dashboard />
+                      <RequireSchool>
+                        <Dashboard />
+                      </RequireSchool>
                     </ProtectedRoute>
                   } />
                   <Route path="/register-school" element={
@@ -50,42 +59,42 @@ const App = () => (
                   {/* Admin Routes */}
                   <Route path="/admin/schools" element={
                     <ProtectedRoute roles={['admin']}>
-                      <SchoolManagement />
+                      <RequireSchool><SchoolManagement /></RequireSchool>
                     </ProtectedRoute>
                   } />
                   <Route path="/admin/teachers" element={
                     <ProtectedRoute roles={['admin']}>
-                      <TeacherManagement />
+                      <RequireSchool><TeacherManagement /></RequireSchool>
                     </ProtectedRoute>
                   } />
                   <Route path="/admin/approvals" element={
                     <ProtectedRoute roles={['admin']}>
-                      <Approvals />
+                      <RequireSchool><Approvals /></RequireSchool>
                     </ProtectedRoute>
                   } />
                   <Route path="/admin/generate" element={
                     <ProtectedRoute roles={['admin']}>
-                      <GenerateReports />
+                      <RequireSchool><GenerateReports /></RequireSchool>
                     </ProtectedRoute>
                   } />
                   <Route path="/admin/reports" element={
                     <ProtectedRoute roles={['admin']}>
-                      <ReportManagement />
+                      <RequireSchool><ReportManagement /></RequireSchool>
                     </ProtectedRoute>
                   } />
                   <Route path="/admin/comments" element={
                     <ProtectedRoute roles={['admin']}>
-                      <CommentSettings />
+                      <RequireSchool><CommentSettings /></RequireSchool>
                     </ProtectedRoute>
                   } />
                   <Route path="/admin/signature" element={
                     <ProtectedRoute roles={['admin']}>
-                      <HeadteacherSignature />
+                      <RequireSchool><HeadteacherSignature /></RequireSchool>
                     </ProtectedRoute>
                   } />
                   <Route path="/admin/finance" element={
                     <ProtectedRoute roles={['admin']}>
-                      <FinanceManagement />
+                      <RequireSchool><FinanceManagement /></RequireSchool>
                     </ProtectedRoute>
                   } />
                   
@@ -100,7 +109,7 @@ const App = () => (
                       <MySubmissions />
                     </ProtectedRoute>
                   } />
-                  
+
                   {/* Default Redirects */}
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   <Route path="*" element={<Navigate to="/dashboard" replace />} />
