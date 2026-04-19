@@ -956,6 +956,10 @@ export type Database = {
         Args: { _school_id: string; _user_id: string }
         Returns: boolean
       }
+      user_is_school_admin: {
+        Args: { _school_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       user_role: "admin" | "teacher" | "headteacher"
