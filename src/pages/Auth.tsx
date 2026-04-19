@@ -43,12 +43,12 @@ export default function Auth() {
   const [signInEmail, setSignInEmail] = useState('');
   const [signInPassword, setSignInPassword] = useState('');
 
-  // Sign Up Form State
+  // Sign Up Form State (admin-only public signup)
   const [signUpName, setSignUpName] = useState('');
   const [signUpEmail, setSignUpEmail] = useState('');
   const [signUpPassword, setSignUpPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [selectedRole, setSelectedRole] = useState<'admin' | 'teacher' | 'headteacher'>('teacher');
+  const selectedRole: 'admin' = 'admin';
 
   // Teacher Assignment State
   const [subjectAssignments, setSubjectAssignments] = useState<SubjectAssignment[]>([]);
