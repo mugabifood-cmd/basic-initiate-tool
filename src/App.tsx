@@ -59,42 +59,42 @@ const App = () => (
                   {/* Admin Routes */}
                   <Route path="/admin/schools" element={
                     <ProtectedRoute roles={['admin']}>
-                      <SchoolManagement />
+                      <RequireSchool><SchoolManagement /></RequireSchool>
                     </ProtectedRoute>
                   } />
                   <Route path="/admin/teachers" element={
                     <ProtectedRoute roles={['admin']}>
-                      <TeacherManagement />
+                      <RequireSchool><TeacherManagement /></RequireSchool>
                     </ProtectedRoute>
                   } />
                   <Route path="/admin/approvals" element={
                     <ProtectedRoute roles={['admin']}>
-                      <Approvals />
+                      <RequireSchool><Approvals /></RequireSchool>
                     </ProtectedRoute>
                   } />
                   <Route path="/admin/generate" element={
                     <ProtectedRoute roles={['admin']}>
-                      <GenerateReports />
+                      <RequireSchool><GenerateReports /></RequireSchool>
                     </ProtectedRoute>
                   } />
                   <Route path="/admin/reports" element={
                     <ProtectedRoute roles={['admin']}>
-                      <ReportManagement />
+                      <RequireSchool><ReportManagement /></RequireSchool>
                     </ProtectedRoute>
                   } />
                   <Route path="/admin/comments" element={
                     <ProtectedRoute roles={['admin']}>
-                      <CommentSettings />
+                      <RequireSchool><CommentSettings /></RequireSchool>
                     </ProtectedRoute>
                   } />
                   <Route path="/admin/signature" element={
                     <ProtectedRoute roles={['admin']}>
-                      <HeadteacherSignature />
+                      <RequireSchool><HeadteacherSignature /></RequireSchool>
                     </ProtectedRoute>
                   } />
                   <Route path="/admin/finance" element={
                     <ProtectedRoute roles={['admin']}>
-                      <FinanceManagement />
+                      <RequireSchool><FinanceManagement /></RequireSchool>
                     </ProtectedRoute>
                   } />
                   
@@ -109,7 +109,7 @@ const App = () => (
                       <MySubmissions />
                     </ProtectedRoute>
                   } />
-                  
+
                   {/* Default Redirects */}
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   <Route path="*" element={<Navigate to="/dashboard" replace />} />
