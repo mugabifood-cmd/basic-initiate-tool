@@ -115,51 +115,11 @@ export default function Auth() {
     }
     
     setIsLoading(true);
-    
-    const assignments = selectedRole === 'teacher' ? {
-      subjectAssignments: subjectAssignments
-        .filter(sa => sa.subjectId) // Only include assignments with a subject
-        .map(sa => {
-          // Expand "All" streams to all available streams
-          const expandedSlots = sa.classSlots
-            .filter(slot => slot.className) // Only include slots with a class
-            .flatMap(slot => {
-              if (slot.stream === 'all') {
-                // Expand to all streams for this class
-                return streams.map(stream => ({
-                  className: slot.className,
-                  stream: stream
-                }));
-              } else if (slot.stream) {
-                // Regular stream selection
-                return [{ className: slot.className, stream: slot.stream }];
-              }
-              return [];
-            });
-          
-          return {
-            subjectId: sa.subjectId,
-            classes: expandedSlots
-          };
-        })
-        .filter(sa => sa.classes.length > 0), // Only include assignments with at least one class
-      classAssignment: (() => {
-        if (classAssignment.className && classAssignment.stream) {
-          if (classAssignment.stream === 'all') {
-            // Expand "All" to all available streams for class teacher
-            return streams.map(stream => ({
-              className: classAssignment.className,
-              stream: stream
-            }));
-          }
-          return [classAssignment];
-        }
-        return []; // Return empty array if not selected
-      })()
-    } : undefined;
-    
-    await signUp(signUpEmail, signUpPassword, signUpName, selectedRole, assignments);
-    
+
+    // Public signup is admin-only. Teachers/headteachers are created by an admin
+    // from within their school dashboard.
+    await signUp(signUpEmail, signUpPassword, signUpName, 'admin');
+
     setIsLoading(false);
   };
 
