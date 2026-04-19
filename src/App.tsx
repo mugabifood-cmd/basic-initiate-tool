@@ -4,10 +4,12 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from './hooks/useAuth';
 import { SchoolProvider } from './hooks/useSchool';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { RequireSchool } from './components/RequireSchool';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import Auth from './pages/Auth';
+import Setup from './pages/Setup';
 import Dashboard from './pages/Dashboard';
 import RegisterSchool from './pages/RegisterSchool';
 import SchoolManagement from './pages/admin/SchoolManagement';
@@ -36,9 +38,16 @@ const App = () => (
                   <Route path="/auth" element={<Auth />} />
                   
                   {/* Protected Routes */}
+                  <Route path="/setup" element={
+                    <ProtectedRoute>
+                      <Setup />
+                    </ProtectedRoute>
+                  } />
                   <Route path="/dashboard" element={
                     <ProtectedRoute>
-                      <Dashboard />
+                      <RequireSchool>
+                        <Dashboard />
+                      </RequireSchool>
                     </ProtectedRoute>
                   } />
                   <Route path="/register-school" element={
