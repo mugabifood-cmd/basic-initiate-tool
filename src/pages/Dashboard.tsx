@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { Skeleton } from '@/components/ui/skeleton';
 import TeacherSignatureSection from '@/components/TeacherSignatureSection';
+import { AddTeacherDialog } from '@/components/admin/AddTeacherDialog';
 export default function Dashboard() {
   const {
     profile,
@@ -161,6 +162,11 @@ export default function Dashboard() {
           <p className="text-muted-foreground">
             {profile?.role === 'admin' ? 'Manage your school\'s report card system from this dashboard.' : 'Submit marks and manage your subject submissions.'}
           </p>
+          {profile?.role === 'admin' && activeSchool && (
+            <div className="mt-4">
+              <AddTeacherDialog />
+            </div>
+          )}
         </div>
 
         {/* No school prompt */}
