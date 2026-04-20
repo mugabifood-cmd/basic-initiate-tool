@@ -2,6 +2,3 @@ project_id = "ivqgmbhadlqgsilekknv"
 
 [functions.generate-report-cards]
 verify_jwt = true
-
-[functions.create-teacher]
-verify_jwt = true

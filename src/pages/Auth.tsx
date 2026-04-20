@@ -43,12 +43,12 @@ export default function Auth() {
   const [signInEmail, setSignInEmail] = useState('');
   const [signInPassword, setSignInPassword] = useState('');
 
-  // Sign Up Form State (admin-only public signup)
+  // Sign Up Form State
   const [signUpName, setSignUpName] = useState('');
   const [signUpEmail, setSignUpEmail] = useState('');
   const [signUpPassword, setSignUpPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const selectedRole: 'admin' = 'admin';
+  const [selectedRole, setSelectedRole] = useState<'admin' | 'teacher' | 'headteacher'>('teacher');
 
   // Teacher Assignment State
   const [subjectAssignments, setSubjectAssignments] = useState<SubjectAssignment[]>([]);
@@ -115,11 +115,51 @@ export default function Auth() {
     }
     
     setIsLoading(true);
-
-    // Public signup is admin-only. Teachers/headteachers are created by an admin
-    // from within their school dashboard.
-    await signUp(signUpEmail, signUpPassword, signUpName, 'admin');
-
+    
+    const assignments = selectedRole === 'teacher' ? {
+      subjectAssignments: subjectAssignments
+        .filter(sa => sa.subjectId) // Only include assignments with a subject
+        .map(sa => {
+          // Expand "All" streams to all available streams
+          const expandedSlots = sa.classSlots
+            .filter(slot => slot.className) // Only include slots with a class
+            .flatMap(slot => {
+              if (slot.stream === 'all') {
+                // Expand to all streams for this class
+                return streams.map(stream => ({
+                  className: slot.className,
+                  stream: stream
+                }));
+              } else if (slot.stream) {
+                // Regular stream selection
+                return [{ className: slot.className, stream: slot.stream }];
+              }
+              return [];
+            });
+          
+          return {
+            subjectId: sa.subjectId,
+            classes: expandedSlots
+          };
+        })
+        .filter(sa => sa.classes.length > 0), // Only include assignments with at least one class
+      classAssignment: (() => {
+        if (classAssignment.className && classAssignment.stream) {
+          if (classAssignment.stream === 'all') {
+            // Expand "All" to all available streams for class teacher
+            return streams.map(stream => ({
+              className: classAssignment.className,
+              stream: stream
+            }));
+          }
+          return [classAssignment];
+        }
+        return []; // Return empty array if not selected
+      })()
+    } : undefined;
+    
+    await signUp(signUpEmail, signUpPassword, signUpName, selectedRole, assignments);
+    
     setIsLoading(false);
   };
 
@@ -260,15 +300,194 @@ export default function Auth() {
                     required
                   />
                 </div>
-                <div className="rounded-md border border-primary/20 bg-primary/5 p-3 text-sm">
-                  <p className="font-medium text-foreground">Admin account</p>
-                  <p className="text-muted-foreground mt-1">
-                    Public sign-up creates a school admin. After registering, you'll set up your
-                    school and then add teachers from inside the dashboard.
-                  </p>
+                <div className="space-y-2">
+                  <Label htmlFor="role">Role</Label>
+                  <Select value={selectedRole} onValueChange={(value: 'admin' | 'teacher' | 'headteacher') => setSelectedRole(value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select your role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="teacher">Teacher</SelectItem>
+                      <SelectItem value="headteacher">Head Teacher</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-
-
+                {selectedRole === 'teacher' && (
+                  <>
+                    <Separator className="my-6" />
+                    
+                    <div className="space-y-6">
+                      <div>
+                        <h3 className="text-lg font-semibold mb-4">Teacher Assignments</h3>
+                        
+                        {/* Subject Teacher Assignments */}
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-base font-medium">Subject Teacher</Label>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={addSubjectAssignment}
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add Subject
+                            </Button>
+                          </div>
+                          
+                          {subjectAssignments.map((assignment, index) => (
+                            <div key={index} className="border rounded-lg p-4 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <Select
+                                  value={assignment.subjectId}
+                                  onValueChange={(value) => updateSubjectAssignment(index, value)}
+                                >
+                                  <SelectTrigger className="w-full max-w-xs">
+                                    <SelectValue placeholder="Select subject" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {subjects
+                                      .filter((subject) => subject && subject.id && subject.name)
+                                      .map((subject) => (
+                                        <SelectItem key={subject.id} value={subject.id}>
+                                          {subject.name}{subject.code ? ` (${subject.code})` : ''}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => removeSubjectAssignment(index)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                              
+                               <div>
+                                 <Label className="text-sm font-medium mb-3 block">Classes & Streams</Label>
+                                 <div className="space-y-3">
+                                   {assignment.classSlots.map((slot, slotIndex) => (
+                                     <div key={slotIndex} className="grid grid-cols-2 gap-3">
+                                       <div>
+                                         <Label className="text-xs text-muted-foreground">Class {slotIndex + 1}</Label>
+                                          <Select
+                                            value={slot.className || 'none'}
+                                            onValueChange={(value) => updateClassSlot(index, slotIndex, 'className', value)}
+                                          >
+                                           <SelectTrigger className="h-8">
+                                             <SelectValue placeholder="Select class" />
+                                           </SelectTrigger>
+                                            <SelectContent>
+                                              <SelectItem value="none">None</SelectItem>
+                                              {classes
+                                                .filter(Boolean)
+                                                .map((className) => (
+                                                  <SelectItem 
+                                                    key={className} 
+                                                    value={className}
+                                                    disabled={isClassDisabledForSlot(index, slotIndex, className)}
+                                                  >
+                                                    {className}
+                                                  </SelectItem>
+                                                ))}
+                                           </SelectContent>
+                                         </Select>
+                                       </div>
+                                       <div>
+                                         <Label className="text-xs text-muted-foreground">Stream</Label>
+                                          <Select
+                                            value={slot.stream || 'none'}
+                                            onValueChange={(value) => updateClassSlot(index, slotIndex, 'stream', value)}
+                                            disabled={!slot.className}
+                                          >
+                                           <SelectTrigger className="h-8">
+                                             <SelectValue placeholder="Select stream" />
+                                           </SelectTrigger>
+                                           <SelectContent>
+                                             <SelectItem value="none">None</SelectItem>
+                                             <SelectItem value="all">All</SelectItem>
+                                             {streams
+                                               .filter((s) => s && s.trim() !== '')
+                                               .map((stream) => (
+                                                 <SelectItem key={stream} value={stream}>
+                                                   {stream}
+                                                 </SelectItem>
+                                               ))}
+                                          </SelectContent>
+                                         </Select>
+                                       </div>
+                                     </div>
+                                   ))}
+                                 </div>
+                               </div>
+                            </div>
+                          ))}
+                          
+                          {subjectAssignments.length === 0 && (
+                            <p className="text-sm text-muted-foreground">No subject assignments added yet.</p>
+                          )}
+                        </div>
+                        
+                        <Separator className="my-4" />
+                        
+                        {/* Class Teacher Assignment */}
+                        <div className="space-y-3">
+                          <Label className="text-base font-medium">Class Teacher (Optional)</Label>
+                          <div className="grid grid-cols-2 gap-4">
+                             <div>
+                               <Label htmlFor="class-teacher-class" className="text-sm">Class</Label>
+                                <Select
+                                  value={classAssignment.className || 'none'}
+                                  onValueChange={(value) => setClassAssignment({ ...classAssignment, className: value === 'none' ? '' : value, stream: '' })}
+                                >
+                                 <SelectTrigger>
+                                   <SelectValue placeholder="Select class" />
+                                 </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="none">None</SelectItem>
+                                    {classes
+                                      .filter(Boolean)
+                                      .map((className) => (
+                                       <SelectItem key={className} value={className}>
+                                         {className}
+                                       </SelectItem>
+                                     ))}
+                                 </SelectContent>
+                               </Select>
+                             </div>
+                             <div>
+                               <Label htmlFor="class-teacher-stream" className="text-sm">Stream</Label>
+                                <Select
+                                  value={classAssignment.stream || 'none'}
+                                  onValueChange={(value) => setClassAssignment({ ...classAssignment, stream: value === 'none' ? '' : value })}
+                                  disabled={!classAssignment.className}
+                                >
+                                 <SelectTrigger>
+                                   <SelectValue placeholder="Select stream" />
+                                 </SelectTrigger>
+                                 <SelectContent>
+                                   <SelectItem value="none">None</SelectItem>
+                                   <SelectItem value="all">All</SelectItem>
+                                   {streams
+                                     .filter((s) => s && s.trim() !== '')
+                                     .map((stream) => (
+                                      <SelectItem key={stream} value={stream}>
+                                        {stream}
+                                      </SelectItem>
+                                    ))}
+                                </SelectContent>
+                               </Select>
+                             </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+                
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? 'Creating Account...' : 'Create Account'}
                 </Button>
