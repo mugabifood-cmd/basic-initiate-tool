@@ -36,7 +36,15 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { email, password, full_name, school_id, initials } = body ?? {};
+    const {
+      email,
+      password,
+      full_name,
+      school_id,
+      initials,
+      subject_assignments,
+      class_teacher,
+    } = body ?? {};
     if (!email || !password || !full_name || !school_id) {
       return new Response(
         JSON.stringify({ error: "Missing required fields" }),
@@ -132,6 +140,49 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         },
       );
+    }
+
+    // Insert teacher_assignments (subjects + optional class_teacher)
+    const assignmentRows: Array<Record<string, unknown>> = [];
+    if (Array.isArray(subject_assignments)) {
+      for (const a of subject_assignments) {
+        if (a?.subjectId && a?.className && a?.stream) {
+          assignmentRows.push({
+            teacher_id: profileId,
+            school_id,
+            assignment_type: "subject_teacher",
+            subject_id: a.subjectId,
+            class_name: a.className,
+            stream: a.stream,
+          });
+        }
+      }
+    }
+    if (class_teacher?.className && class_teacher?.stream) {
+      assignmentRows.push({
+        teacher_id: profileId,
+        school_id,
+        assignment_type: "class_teacher",
+        subject_id: null,
+        class_name: class_teacher.className,
+        stream: class_teacher.stream,
+      });
+    }
+    if (assignmentRows.length > 0) {
+      const { error: assignErr } = await admin
+        .from("teacher_assignments")
+        .insert(assignmentRows);
+      if (assignErr) {
+        return new Response(
+          JSON.stringify({
+            ok: true,
+            profile_id: profileId,
+            user_id: newUserId,
+            warning: `Teacher created but assignments failed: ${assignErr.message}`,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
     }
 
     return new Response(
