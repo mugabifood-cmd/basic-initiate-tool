@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Eye, Edit, Trash2, Printer, FileText, Download, Share2, DollarSign, Stamp, X, UserPlus } from 'lucide-react';
+import { ArrowLeft, Eye, Edit, Trash2, Printer, FileText, Download, Share2, DollarSign, Stamp, X } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -609,14 +609,8 @@ export default function ReportManagement() {
                   Back to Dashboard
                 </Button>
               </Link>
-              <h1 className="text-xl font-semibold text-gray-900">Report Card System</h1>
+              <h1 className="text-xl font-semibold text-gray-900">Report Card Management</h1>
             </div>
-            <Link to="/admin/teachers">
-              <Button>
-                <UserPlus className="w-4 h-4 mr-2" />
-                Add Teacher
-              </Button>
-            </Link>
           </div>
         </div>
       </header>

@@ -952,20 +952,12 @@ export type Database = {
         Args: { _class_id: string; _subject_id: string; _teacher_id: string }
         Returns: boolean
       }
-      user_belongs_to_class: {
-        Args: { _class_id: string; _user_id: string }
-        Returns: boolean
-      }
       user_belongs_to_school: {
         Args: { _school_id: string; _user_id: string }
         Returns: boolean
       }
       user_is_school_admin: {
         Args: { _school_id: string; _user_id: string }
-        Returns: boolean
-      }
-      user_shares_school_with_profile: {
-        Args: { _profile_id: string; _user_id: string }
         Returns: boolean
       }
     }
