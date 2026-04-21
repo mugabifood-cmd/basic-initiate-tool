@@ -10,7 +10,6 @@ export default function HeadteacherSignature() {
             <Link to="/dashboard">
               <Button variant="ghost" size="sm">
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Dashboard
               </Button>
             </Link>
             <h1 className="ml-4 text-xl font-semibold">Headteacher Signature</h1>
