@@ -1386,13 +1386,15 @@ export default function SchoolManagement() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Subjects</CardTitle>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Subject
-                    </Button>
-                  </DialogTrigger>
+                <div className="flex gap-2">
+                  <SeedDefaultsButton kind="subjects" onSeeded={fetchData} />
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Subject
+                      </Button>
+                    </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
                       <DialogTitle>Create New Subject</DialogTitle>
@@ -1478,6 +1480,7 @@ export default function SchoolManagement() {
                     </form>
                   </DialogContent>
                 </Dialog>
+                </div>
               </CardHeader>
               <CardContent>
                 <Table>
