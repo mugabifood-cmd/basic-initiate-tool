@@ -408,63 +408,71 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
         PERFORMANCE RECORDS
       </div>
 
-      {/* Subjects Table */}
-      <div style={{ border: thickBorder, borderTop: 'none' }}>
-        <table className="w-full text-xs report-table" style={{ borderCollapse: 'collapse', borderSpacing: 0 }}>
+      {/* Subjects Table — flex:1 fills remaining A4 height; ≥10 rows always rendered */}
+      <div style={{ border: thickBorder, borderTop: 'none', flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <table className="w-full report-table" style={{ borderCollapse: 'collapse', borderSpacing: 0, fontSize: tableFontSize, height: '100%', tableLayout: 'fixed' }}>
           <thead>
             <tr className="bg-gray-50">
-              <th style={{ border: thinBorder, padding: '6px 4px', textAlign: 'left', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: '1.4' }}>Code</th>
-              <th style={{ border: thinBorder, padding: '6px 4px', textAlign: 'left', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: '1.4' }}>Subject</th>
-              <th style={{ border: thinBorder, padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: '1.4' }}>A1</th>
-              <th style={{ border: thinBorder, padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: '1.4' }}>A2</th>
-              <th style={{ border: thinBorder, padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: '1.4' }}>A3</th>
-              <th style={{ border: thinBorder, padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: '1.4' }}>AVG</th>
-              <th style={{ border: thinBorder, padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: '1.4' }}>20%</th>
-              <th style={{ border: thinBorder, padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: '1.4' }}>80%</th>
-              <th style={{ border: thinBorder, padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: '1.4' }}>100%</th>
-              <th style={{ border: thinBorder, padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: '1.4' }}>Ident</th>
-              <th style={{ border: thinBorder, padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: '1.4' }}>GRADE</th>
-              <th style={{ border: thinBorder, padding: '6px 4px', textAlign: 'left', fontWeight: 'bold', fontStyle: 'italic', verticalAlign: 'middle', lineHeight: '1.4' }}>Remarks/Descriptors</th>
-              <th style={{ border: thinBorder, padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: '1.4' }}>TR</th>
+              <th style={{ border: thinBorder, padding: rowPad, textAlign: 'left', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: rowLine }}>Code</th>
+              <th style={{ border: thinBorder, padding: rowPad, textAlign: 'left', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: rowLine }}>Subject</th>
+              <th style={{ border: thinBorder, padding: rowPad, textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: rowLine }}>A1</th>
+              <th style={{ border: thinBorder, padding: rowPad, textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: rowLine }}>A2</th>
+              <th style={{ border: thinBorder, padding: rowPad, textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: rowLine }}>A3</th>
+              <th style={{ border: thinBorder, padding: rowPad, textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: rowLine }}>AVG</th>
+              <th style={{ border: thinBorder, padding: rowPad, textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: rowLine }}>20%</th>
+              <th style={{ border: thinBorder, padding: rowPad, textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: rowLine }}>80%</th>
+              <th style={{ border: thinBorder, padding: rowPad, textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: rowLine }}>100%</th>
+              <th style={{ border: thinBorder, padding: rowPad, textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: rowLine }}>Ident</th>
+              <th style={{ border: thinBorder, padding: rowPad, textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: rowLine }}>GRADE</th>
+              <th style={{ border: thinBorder, padding: rowPad, textAlign: 'left', fontWeight: 'bold', fontStyle: 'italic', verticalAlign: 'middle', lineHeight: rowLine }}>Remarks/Descriptors</th>
+              <th style={{ border: thinBorder, padding: rowPad, textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: rowLine }}>TR</th>
             </tr>
           </thead>
           <tbody>
             {subjectGrades.map((subject, index) => (
               <tr key={index}>
-                <td style={{ border: thinBorder, padding: '6px 4px', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: '1.4' }}>{subject.subject_code}</td>
-                <td style={{ border: thinBorder, padding: '6px 4px', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: '1.4' }}>{subject.subject_name}</td>
-                <td style={{ border: thinBorder, padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle', lineHeight: '1.4' }}>{subject.a1_score?.toFixed(1) || ''}</td>
-                <td style={{ border: thinBorder, padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle', lineHeight: '1.4' }}>{subject.a2_score?.toFixed(1) || ''}</td>
-                <td style={{ border: thinBorder, padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle', lineHeight: '1.4' }}>{subject.a3_score?.toFixed(1) || ''}</td>
-                <td style={{ border: thinBorder, padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle', lineHeight: '1.4' }}>{subject.average_score?.toFixed(1) || ''}</td>
-                <td style={{ border: thinBorder, padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle', lineHeight: '1.4' }}>{subject.percentage_20 !== null ? Math.round(subject.percentage_20) : ''}</td>
-                <td style={{ border: thinBorder, padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle', lineHeight: '1.4' }}>{subject.percentage_80 !== null ? Math.round(subject.percentage_80) : ''}</td>
-                <td style={{ border: thinBorder, padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle', lineHeight: '1.4' }}>{Math.round(subject.percentage_100)}</td>
-                <td style={{ border: thinBorder, padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle', lineHeight: '1.4' }}>{subject.identifier || ''}</td>
-                <td style={{ border: thinBorder, padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: '1.4' }}>{subject.grade || ''}</td>
-                <td style={{ border: thinBorder, padding: '6px 4px', verticalAlign: 'middle', lineHeight: '1.4' }}>{subject.remarks || ''}</td>
-                <td style={{ border: thinBorder, padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: '1.4' }}>{subject.teacher_initials}</td>
+                <td style={{ border: thinBorder, padding: rowPad, fontWeight: 'bold', verticalAlign: 'middle', lineHeight: rowLine }}>{subject.subject_code}</td>
+                <td style={{ border: thinBorder, padding: rowPad, fontWeight: 'bold', verticalAlign: 'middle', lineHeight: rowLine }}>{subject.subject_name}</td>
+                <td style={{ border: thinBorder, padding: rowPad, textAlign: 'center', verticalAlign: 'middle', lineHeight: rowLine }}>{subject.a1_score?.toFixed(1) || ''}</td>
+                <td style={{ border: thinBorder, padding: rowPad, textAlign: 'center', verticalAlign: 'middle', lineHeight: rowLine }}>{subject.a2_score?.toFixed(1) || ''}</td>
+                <td style={{ border: thinBorder, padding: rowPad, textAlign: 'center', verticalAlign: 'middle', lineHeight: rowLine }}>{subject.a3_score?.toFixed(1) || ''}</td>
+                <td style={{ border: thinBorder, padding: rowPad, textAlign: 'center', verticalAlign: 'middle', lineHeight: rowLine }}>{subject.average_score?.toFixed(1) || ''}</td>
+                <td style={{ border: thinBorder, padding: rowPad, textAlign: 'center', verticalAlign: 'middle', lineHeight: rowLine }}>{subject.percentage_20 !== null ? Math.round(subject.percentage_20) : ''}</td>
+                <td style={{ border: thinBorder, padding: rowPad, textAlign: 'center', verticalAlign: 'middle', lineHeight: rowLine }}>{subject.percentage_80 !== null ? Math.round(subject.percentage_80) : ''}</td>
+                <td style={{ border: thinBorder, padding: rowPad, textAlign: 'center', verticalAlign: 'middle', lineHeight: rowLine }}>{Math.round(subject.percentage_100)}</td>
+                <td style={{ border: thinBorder, padding: rowPad, textAlign: 'center', verticalAlign: 'middle', lineHeight: rowLine }}>{subject.identifier || ''}</td>
+                <td style={{ border: thinBorder, padding: rowPad, textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: rowLine }}>{subject.grade || ''}</td>
+                <td style={{ border: thinBorder, padding: rowPad, verticalAlign: 'middle', lineHeight: rowLine }}>{subject.remarks || ''}</td>
+                <td style={{ border: thinBorder, padding: rowPad, textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: rowLine }}>{subject.teacher_initials}</td>
+              </tr>
+            ))}
+            {/* Empty placeholder rows so the table always has at least MIN_ROWS rows */}
+            {Array.from({ length: placeholderCount }).map((_, i) => (
+              <tr key={`empty-${i}`}>
+                {Array.from({ length: 13 }).map((__, j) => (
+                  <td key={j} style={{ border: thinBorder, padding: rowPad, lineHeight: rowLine }}>&nbsp;</td>
+                ))}
               </tr>
             ))}
             {/* Average Row */}
             <tr className="font-bold bg-gray-50">
-              <td colSpan={2} style={{ border: thinBorder, padding: '6px 4px', verticalAlign: 'middle', lineHeight: '1.4' }}>AVERAGE:</td>
-              <td style={{ border: thinBorder, padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle', lineHeight: '1.4' }}></td>
-              <td style={{ border: thinBorder, padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle', lineHeight: '1.4' }}></td>
-              <td style={{ border: thinBorder, padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle', lineHeight: '1.4' }}></td>
-              <td style={{ border: thinBorder, padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle', lineHeight: '1.4' }}>{reportData.identifier || '2'}</td>
-              <td style={{ border: thinBorder, padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle', lineHeight: '1.4' }}>
-                {subjectGrades.length > 0 
+              <td colSpan={2} style={{ border: thinBorder, padding: rowPad, verticalAlign: 'middle', lineHeight: rowLine }}>AVERAGE:</td>
+              <td style={{ border: thinBorder, padding: rowPad, textAlign: 'center', verticalAlign: 'middle', lineHeight: rowLine }}></td>
+              <td style={{ border: thinBorder, padding: rowPad, textAlign: 'center', verticalAlign: 'middle', lineHeight: rowLine }}></td>
+              <td style={{ border: thinBorder, padding: rowPad, textAlign: 'center', verticalAlign: 'middle', lineHeight: rowLine }}></td>
+              <td style={{ border: thinBorder, padding: rowPad, textAlign: 'center', verticalAlign: 'middle', lineHeight: rowLine }}>{reportData.identifier || '2'}</td>
+              <td style={{ border: thinBorder, padding: rowPad, textAlign: 'center', verticalAlign: 'middle', lineHeight: rowLine }}>
+                {subjectGrades.length > 0
                   ? Math.round(subjectGrades.reduce((sum, s) => sum + (s.percentage_20 || 0), 0) / subjectGrades.length)
                   : ''}
               </td>
-              <td style={{ border: thinBorder, padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle', lineHeight: '1.4' }}>
-                {subjectGrades.length > 0 
+              <td style={{ border: thinBorder, padding: rowPad, textAlign: 'center', verticalAlign: 'middle', lineHeight: rowLine }}>
+                {subjectGrades.length > 0
                   ? Math.round(subjectGrades.reduce((sum, s) => sum + (s.percentage_80 || 0), 0) / subjectGrades.length)
                   : ''}
               </td>
-              <td style={{ border: thinBorder, padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle', lineHeight: '1.4' }}>{reportData.overall_average ? Math.round(reportData.overall_average) : ''}</td>
-              <td colSpan={4} style={{ border: thinBorder, padding: '6px 4px', verticalAlign: 'middle', lineHeight: '1.4' }}></td>
+              <td style={{ border: thinBorder, padding: rowPad, textAlign: 'center', verticalAlign: 'middle', lineHeight: rowLine }}>{reportData.overall_average ? Math.round(reportData.overall_average) : ''}</td>
+              <td colSpan={4} style={{ border: thinBorder, padding: rowPad, verticalAlign: 'middle', lineHeight: rowLine }}></td>
             </tr>
           </tbody>
         </table>
