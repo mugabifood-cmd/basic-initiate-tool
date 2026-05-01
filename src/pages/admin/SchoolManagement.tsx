@@ -1033,6 +1033,7 @@ export default function SchoolManagement() {
                     </form>
                   </DialogContent>
                 </Dialog>
+                </div>
               </CardHeader>
               <CardContent>
                 <Table>
