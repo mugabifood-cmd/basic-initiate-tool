@@ -216,8 +216,28 @@ export default function ALevelReportCardPreview({
   const overallRemarks = getRemarks(avgPercentage100);
   const aggregateValue = avgPercentage100 ? Math.round(avgPercentage100) : 0;
 
+  const MIN_ROWS = 10;
+  const subjectCount = subjectGrades.length;
+  const placeholderCount = Math.max(0, MIN_ROWS - subjectCount);
+
   return (
-    <div id="report-card-preview" className="report-card text-black p-4 mx-auto" style={{ fontFamily: 'Arial, sans-serif', fontSize: '9px', maxWidth: '210mm', width: '100%', backgroundColor, position: 'relative' }}>
+    <div
+      id="report-card-preview"
+      className="report-card text-black mx-auto"
+      style={{
+        fontFamily: 'Arial, sans-serif',
+        fontSize: subjectCount > 14 ? '8px' : '9px',
+        width: '210mm',
+        minHeight: '297mm',
+        maxWidth: '210mm',
+        padding: '5mm',
+        backgroundColor,
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+        boxSizing: 'border-box',
+      }}
+    >
       {/* Header */}
       <div style={{ border: thickBorder }} className="mb-1">
         <div className="flex items-start justify-between p-2">
@@ -288,9 +308,9 @@ export default function ALevelReportCardPreview({
         TERM PERFORMANCE RECORDS
       </div>
 
-      {/* Subject Table */}
-      <div style={{ border: thickBorder, borderTop: 'none' }}>
-        <table className="w-full" style={{ borderCollapse: 'collapse' }}>
+      {/* Subject Table — flex:1 fills remaining A4 height; ≥MIN_ROWS rows always */}
+      <div style={{ border: thickBorder, borderTop: 'none', flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <table className="w-full" style={{ borderCollapse: 'collapse', height: '100%' }}>
           <thead>
             <tr>
               <th rowSpan={2} style={cellStyle({ textAlign: 'left', fontWeight: 'bold' })}>Code Subject</th>
