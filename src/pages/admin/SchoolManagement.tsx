@@ -14,6 +14,7 @@ import { toast } from '@/hooks/use-toast';
 import { Plus, Edit, Trash2, ArrowLeft, Upload, Image as ImageIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import SeedDefaultsButton from '@/components/admin/SeedDefaultsButton';
 
 interface School {
   id: string;
@@ -879,13 +880,15 @@ export default function SchoolManagement() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Classes</CardTitle>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Class
-                    </Button>
-                  </DialogTrigger>
+                <div className="flex gap-2">
+                  <SeedDefaultsButton kind="classes" onSeeded={fetchData} />
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Class
+                      </Button>
+                    </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
                       <DialogTitle>Create New Class</DialogTitle>
