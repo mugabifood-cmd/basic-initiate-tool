@@ -367,6 +367,27 @@ export default function ALevelReportCardPreview({
                 </tr>
               </Fragment>
             ))}
+            {/* Empty placeholder subject rows so total ≥ MIN_ROWS */}
+            {Array.from({ length: placeholderCount }).map((_, i) => (
+              <Fragment key={`empty-${i}`}>
+                <tr>
+                  <td rowSpan={2} style={cellStyle({ textAlign: 'left' })}>&nbsp;</td>
+                  <td style={cellStyle()}>1</td>
+                  {Array.from({ length: 8 }).map((__, j) => (
+                    <td key={j} style={cellStyle()}>&nbsp;</td>
+                  ))}
+                  <td rowSpan={2} style={cellStyle()}>&nbsp;</td>
+                  <td rowSpan={2} style={cellStyle()}>&nbsp;</td>
+                  <td rowSpan={2} style={cellStyle()}>&nbsp;</td>
+                </tr>
+                <tr>
+                  <td style={cellStyle()}>2</td>
+                  {Array.from({ length: 8 }).map((__, j) => (
+                    <td key={j} style={cellStyle()}>&nbsp;</td>
+                  ))}
+                </tr>
+              </Fragment>
+            ))}
             {/* Average row */}
             <tr style={{ backgroundColor: '#e8d8ff' }}>
               <td colSpan={2} style={cellStyle({ fontWeight: 'bold', textAlign: 'left' })}>AVERAGE SCORES</td>
