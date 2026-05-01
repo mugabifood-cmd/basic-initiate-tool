@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import SeedDefaultsButton from '@/components/admin/SeedDefaultsButton';
 
 interface GradeBoundary {
   id: string;
@@ -210,10 +211,13 @@ export default function GradeSettingsTab() {
             Define the score ranges for each grade
           </p>
         </div>
-        <Button onClick={handleAdd}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add New Grade
-        </Button>
+        <div className="flex gap-2">
+          <SeedDefaultsButton kind="grades" onSeeded={fetchBoundaries} />
+          <Button onClick={handleAdd}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add New Grade
+          </Button>
+        </div>
       </div>
 
       {loading ? (

@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import SeedDefaultsButton from '@/components/admin/SeedDefaultsButton';
 
 interface GradeComment {
   id: string;
@@ -184,10 +185,13 @@ export default function ReportCommentsTab() {
             Set comments that appear on report cards based on student grades
           </p>
         </div>
-        <Button onClick={handleAdd}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add New Comment
-        </Button>
+        <div className="flex gap-2">
+          <SeedDefaultsButton kind="grade_comments" onSeeded={fetchComments} />
+          <Button onClick={handleAdd}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add New Comment
+          </Button>
+        </div>
       </div>
 
       {loading ? (

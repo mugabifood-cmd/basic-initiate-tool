@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Pencil, Trash2, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import SeedDefaultsButton from '@/components/admin/SeedDefaultsButton';
 
 interface CommentTemplate {
   id: string;
@@ -186,10 +187,13 @@ export default function CommentTemplatesTab() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Comment Templates</h3>
-        <Button onClick={handleAdd}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Comment Template
-        </Button>
+        <div className="flex gap-2">
+          <SeedDefaultsButton kind="comment_templates" onSeeded={fetchTemplates} />
+          <Button onClick={handleAdd}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Comment Template
+          </Button>
+        </div>
       </div>
 
       <p className="text-sm text-muted-foreground">
