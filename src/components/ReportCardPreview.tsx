@@ -302,8 +302,33 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
     return <div className="text-center py-8">Report card not found</div>;
   }
 
+  // ===== Dynamic A4 layout: ensure ≥10 subject rows; shrink density when many subjects =====
+  const MIN_ROWS = 10;
+  const subjectCount = subjectGrades.length;
+  const placeholderCount = Math.max(0, MIN_ROWS - subjectCount);
+  const dense = subjectCount > 14;
+  const rowPad = dense ? '2px 4px' : '6px 4px';
+  const rowLine = dense ? '1.15' : '1.4';
+  const tableFontSize = dense ? '9px' : '10px';
+
   return (
-    <div id="report-card-preview" className="report-card text-black p-6 mx-auto" style={{ fontFamily: 'Arial, sans-serif', fontSize: '10px', maxWidth: '210mm', width: '100%', backgroundColor: backgroundColor, position: 'relative' }}>
+    <div
+      id="report-card-preview"
+      className="report-card text-black mx-auto"
+      style={{
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '10px',
+        width: '210mm',
+        minHeight: '297mm',
+        maxWidth: '210mm',
+        padding: '5mm',
+        backgroundColor: backgroundColor,
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+        boxSizing: 'border-box',
+      }}
+    >
       {/* Header with Logo and Student Photo */}
       <div style={{ border: thickBorder }} className="mb-2">
         <div className="flex items-start justify-between p-3">
