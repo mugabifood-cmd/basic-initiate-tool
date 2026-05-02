@@ -14,6 +14,7 @@ import { toast } from '@/hooks/use-toast';
 import { Plus, Edit, Trash2, ArrowLeft, Upload, Image as ImageIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { StudentAvatarImage } from '@/components/StudentAvatarImage';
 import SeedDefaultsButton from '@/components/admin/SeedDefaultsButton';
 
 interface School {
@@ -1286,7 +1287,7 @@ export default function SchoolManagement() {
                           {editingStudent?.photo_url && (
                             <div className="flex items-center gap-2">
                               <Avatar className="h-12 w-12">
-                                <AvatarImage src={editingStudent.photo_url} alt="Current photo" />
+                                <StudentAvatarImage photoRef={editingStudent.photo_url} alt="Current photo" />
                                 <AvatarFallback>{editingStudent.full_name.charAt(0)}</AvatarFallback>
                               </Avatar>
                               <span className="text-xs text-muted-foreground">Current photo</span>
@@ -1336,7 +1337,7 @@ export default function SchoolManagement() {
                       <TableRow key={student.id}>
                         <TableCell>
                           <Avatar className="h-10 w-10">
-                            <AvatarImage src={student.photo_url || undefined} alt={student.full_name} />
+                            <StudentAvatarImage photoRef={student.photo_url} alt={student.full_name} />
                             <AvatarFallback>{student.full_name.charAt(0)}</AvatarFallback>
                           </Avatar>
                         </TableCell>
