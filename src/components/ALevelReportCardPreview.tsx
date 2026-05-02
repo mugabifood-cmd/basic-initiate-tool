@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { getALevelGrade } from '@/lib/academicLevel';
 import type { StampConfig } from '@/components/admin/StampConfigurator';
+import { StudentPhoto } from '@/components/StudentPhoto';
 
 export type StampPosition = 'bottom-right' | 'center' | 'over-signatures';
 
