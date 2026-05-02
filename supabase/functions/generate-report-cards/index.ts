@@ -295,6 +295,7 @@ serve(async (req) => {
             .insert({
               student_id,
               class_id,
+              school_id: classData.school_id,
               overall_average: overallAverage,
               overall_grade: overallGrade,
               class_teacher_comment: commentTemplate?.class_teacher_comment || null,
