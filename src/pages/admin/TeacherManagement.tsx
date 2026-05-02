@@ -199,9 +199,17 @@ export default function TeacherManagement() {
   };
   const saveAssignments = async () => {
     if (!editingTeacher) return;
+    if (!activeSchool) {
+      toast({ title: "No active school", description: "Select a school before assigning.", variant: "destructive" });
+      return;
+    }
     try {
-      // Delete existing assignments
-      await supabase.from('teacher_assignments').delete().eq('teacher_id', editingTeacher.id);
+      // Delete existing assignments for this teacher within the active school
+      await supabase
+        .from('teacher_assignments')
+        .delete()
+        .eq('teacher_id', editingTeacher.id)
+        .eq('school_id', activeSchool.id);
       const newAssignments = [];
 
       // Add subject assignments
@@ -210,6 +218,7 @@ export default function TeacherManagement() {
           if (slot.className && slot.stream) {
             newAssignments.push({
               teacher_id: editingTeacher.id,
+              school_id: activeSchool.id,
               assignment_type: 'subject_teacher',
               subject_id: assignment.subjectId,
               class_name: slot.className,
@@ -223,6 +232,7 @@ export default function TeacherManagement() {
       if (classAssignment && classAssignment.className && classAssignment.stream) {
         newAssignments.push({
           teacher_id: editingTeacher.id,
+          school_id: activeSchool.id,
           assignment_type: 'class_teacher',
           subject_id: null,
           class_name: classAssignment.className,
