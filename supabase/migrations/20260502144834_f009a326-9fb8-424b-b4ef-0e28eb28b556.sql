@@ -1,0 +1,2 @@
+-- Remove self-service teacher membership insert; only admins (or service-role edge function) can add teachers
+DROP POLICY IF EXISTS "Users can insert their own teacher membership" ON public.profile_schools;
