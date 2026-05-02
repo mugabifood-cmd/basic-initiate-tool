@@ -85,6 +85,34 @@ serve(async (req) => {
       throw new Error('Class not found');
     }
 
+    // Authorization: caller must be admin of the school owning this class
+    const { data: isAdmin, error: adminCheckErr } = await supabase.rpc('user_is_school_admin', {
+      _user_id: user.id,
+      _school_id: classData.school_id,
+    });
+    if (adminCheckErr || !isAdmin) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Forbidden: not a school admin' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+      );
+    }
+
+    // Validate that all student_ids belong to the target class
+    const { data: classMembers, error: membersErr } = await supabase
+      .from('class_students')
+      .select('student_id')
+      .eq('class_id', class_id)
+      .in('student_id', student_ids);
+    if (membersErr) throw membersErr;
+    const validIds = new Set((classMembers || []).map((r: any) => r.student_id));
+    const filteredStudentIds = student_ids.filter((id: string) => validIds.has(id));
+    if (filteredStudentIds.length === 0) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'No valid students found in this class' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+
     const results = [];
 
     // Process each student

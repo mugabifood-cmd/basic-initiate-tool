@@ -139,6 +139,7 @@ export type Database = {
           new_value: string | null
           old_value: string | null
           performed_by: string | null
+          school_id: string | null
           student_id: string | null
         }
         Insert: {
@@ -149,6 +150,7 @@ export type Database = {
           new_value?: string | null
           old_value?: string | null
           performed_by?: string | null
+          school_id?: string | null
           student_id?: string | null
         }
         Update: {
@@ -159,6 +161,7 @@ export type Database = {
           new_value?: string | null
           old_value?: string | null
           performed_by?: string | null
+          school_id?: string | null
           student_id?: string | null
         }
         Relationships: [
