@@ -565,6 +565,7 @@ export default function TeacherSubmissions() {
         
         return {
           teacher_id: profile.id,
+          school_id: classRow.school_id,
           class_id: selectedClass,
           subject_id: entry.subjectId,
           student_id: selectedStudent,
