@@ -191,11 +191,8 @@ export default function SchoolManagement() {
 
     if (uploadError) throw uploadError;
 
-    const { data: { publicUrl } } = supabase.storage
-      .from('student-photos')
-      .getPublicUrl(filePath);
-
-    return publicUrl;
+    // Bucket is private — store the path; resolve to signed URL at display time.
+    return filePath;
   };
 
   const handleCreateSchool = async (e: React.FormEvent) => {
