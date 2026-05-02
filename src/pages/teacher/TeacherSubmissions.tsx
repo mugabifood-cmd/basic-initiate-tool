@@ -542,6 +542,16 @@ export default function TeacherSubmissions() {
         return;
       }
 
+      // Look up the school for the selected class so submissions are visible to admins
+      const { data: classRow, error: classErr } = await supabase
+        .from('classes')
+        .select('school_id')
+        .eq('id', selectedClass)
+        .single();
+      if (classErr || !classRow?.school_id) {
+        throw new Error('Could not resolve school for the selected class');
+      }
+
       const submissions = subjectEntries.map(entry => {
         const a1 = parseFloat(entry.a1Score) || 0;
         const a2 = parseFloat(entry.a2Score) || 0;
