@@ -71,10 +71,11 @@ export default function TeacherManagement() {
     stream: string;
   } | null>(null);
   useEffect(() => {
+    if (!activeSchool) return;
     fetchTeachers();
     fetchSubjects();
     fetchClasses();
-  }, []);
+  }, [activeSchool]);
   const fetchTeachers = async () => {
     try {
       // Fetch teachers
