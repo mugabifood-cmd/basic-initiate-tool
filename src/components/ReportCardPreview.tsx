@@ -358,7 +358,7 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
 
           <div className="w-24 h-28 flex-shrink-0">
             {reportData.students.photo_url ? (
-              <img src={reportData.students.photo_url} alt="Student" className="w-full h-full object-cover" style={{ border: thinBorder }} />
+              <StudentPhoto photoRef={reportData.students.photo_url} alt="Student" className="w-full h-full object-cover" style={{ border: thinBorder }} />
             ) : (
               <div className="w-full h-full bg-gray-100 flex items-center justify-center text-xs" style={{ border: thinBorder }}>
                 Photo
