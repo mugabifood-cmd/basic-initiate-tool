@@ -50,6 +50,7 @@ interface TeacherWithAssignments extends Teacher {
 }
 export default function TeacherManagement() {
   const navigate = useNavigate();
+  const { activeSchool } = useSchool();
   const [teachers, setTeachers] = useState<TeacherWithAssignments[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
