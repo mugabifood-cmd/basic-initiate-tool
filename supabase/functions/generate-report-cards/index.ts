@@ -116,7 +116,7 @@ serve(async (req) => {
     const results = [];
 
     // Process each student
-    for (const student_id of student_ids) {
+    for (const student_id of filteredStudentIds) {
       try {
         // Fetch student information
         const { data: studentData, error: studentError } = await supabase
