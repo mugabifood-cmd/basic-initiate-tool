@@ -13,9 +13,14 @@ import { Link } from 'react-router-dom';
 
 export default function RegisterSchool() {
   const { user, profile } = useAuth();
-  const { refreshSchools } = useSchool();
+  const { refreshSchools, schools } = useSchool();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+
+  // Each account can only register one school
+  if (schools.length >= 1) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const [schoolName, setSchoolName] = useState('');
   const [location, setLocation] = useState('');
