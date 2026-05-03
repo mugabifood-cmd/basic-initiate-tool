@@ -98,6 +98,11 @@ const App = () => (
                       <RequireSchool><FinanceManagement /></RequireSchool>
                     </ProtectedRoute>
                   } />
+                  <Route path="/admin/report-settings" element={
+                    <ProtectedRoute roles={['admin']}>
+                      <RequireSchool><ReportSettings /></RequireSchool>
+                    </ProtectedRoute>
+                  } />
                   
                   {/* Teacher Routes */}
                   <Route path="/teacher/submissions" element={
