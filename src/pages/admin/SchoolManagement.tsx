@@ -622,10 +622,14 @@ export default function SchoolManagement() {
                 <CardTitle>Schools</CardTitle>
                 <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button onClick={() => {
-                      setSchoolForm({ name: '', location: '', po_box: '', telephone: '', email: '', website: '', motto: '' });
-                      setIsCreateDialogOpen(true);
-                    }}>
+                    <Button
+                      disabled={schools.length >= 1}
+                      title={schools.length >= 1 ? 'Each account can register only one school' : ''}
+                      onClick={() => {
+                        if (schools.length >= 1) return;
+                        setSchoolForm({ name: '', location: '', po_box: '', telephone: '', email: '', website: '', motto: '' });
+                        setIsCreateDialogOpen(true);
+                      }}>
                       <Plus className="w-4 h-4 mr-2" />
                       Add School
                     </Button>
