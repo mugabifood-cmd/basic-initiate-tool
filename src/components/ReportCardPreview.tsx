@@ -317,7 +317,7 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
       id="report-card-preview"
       className="report-card text-black mx-auto"
       style={{
-        fontFamily: 'Arial, sans-serif',
+        fontFamily: reportData.school?.report_font_family || 'Arial, sans-serif',
         fontSize: '10px',
         width: '210mm',
         minHeight: '297mm',
