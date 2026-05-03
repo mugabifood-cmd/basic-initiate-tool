@@ -22,6 +22,7 @@ import HeadteacherSignature from './pages/admin/HeadteacherSignature';
 import FinanceManagement from './pages/admin/FinanceManagement';
 import TeacherSubmissions from './pages/teacher/TeacherSubmissions';
 import MySubmissions from './pages/teacher/MySubmissions';
+import ReportSettings from './pages/admin/ReportSettings';
 
 const queryClient = new QueryClient();
 
