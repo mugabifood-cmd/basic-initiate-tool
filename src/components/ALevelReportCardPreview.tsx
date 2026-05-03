@@ -226,7 +226,7 @@ export default function ALevelReportCardPreview({
       id="report-card-preview"
       className="report-card text-black mx-auto"
       style={{
-        fontFamily: 'Arial, sans-serif',
+        fontFamily: reportData.school?.report_font_family || 'Arial, sans-serif',
         fontSize: subjectCount > 14 ? '8px' : '9px',
         width: '210mm',
         minHeight: '297mm',
