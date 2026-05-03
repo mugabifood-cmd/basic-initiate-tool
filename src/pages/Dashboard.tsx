@@ -110,6 +110,12 @@ export default function Dashboard() {
         icon: DollarSign,
         link: '/admin/finance',
         color: 'bg-emerald-50 hover:bg-emerald-100'
+      }, {
+        title: 'Report Card Settings',
+        description: 'Choose the font used for typed text on report cards',
+        icon: Settings,
+        link: '/admin/report-settings',
+        color: 'bg-yellow-50 hover:bg-yellow-100'
       }];
     } else {
       return [{
