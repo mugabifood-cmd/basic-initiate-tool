@@ -314,7 +314,7 @@ export type Database = {
           {
             foreignKeyName: "profile_schools_profile_id_fkey"
             columns: ["profile_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -475,6 +475,7 @@ export type Database = {
           motto: string | null
           name: string
           po_box: string | null
+          report_font_family: string
           stamp_opacity: number | null
           stamp_position_x: number | null
           stamp_position_y: number | null
@@ -494,6 +495,7 @@ export type Database = {
           motto?: string | null
           name: string
           po_box?: string | null
+          report_font_family?: string
           stamp_opacity?: number | null
           stamp_position_x?: number | null
           stamp_position_y?: number | null
@@ -513,6 +515,7 @@ export type Database = {
           motto?: string | null
           name?: string
           po_box?: string | null
+          report_font_family?: string
           stamp_opacity?: number | null
           stamp_position_x?: number | null
           stamp_position_y?: number | null
