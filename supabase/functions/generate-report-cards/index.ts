@@ -269,6 +269,7 @@ serve(async (req) => {
           const { data: updatedReport, error: updateError } = await supabase
             .from('report_cards')
             .update({
+              school_id: classData.school_id,
               overall_average: overallAverage,
               overall_grade: overallGrade,
               class_teacher_comment: commentTemplate?.class_teacher_comment || null,
