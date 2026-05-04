@@ -27,6 +27,8 @@ const FONT_OPTIONS: { label: string; value: string }[] = [
 export default function ReportSettings() {
   const { activeSchool, refreshSchools } = useSchool();
   const [font, setFont] = useState<string>('Arial, sans-serif');
+  const [activeTerm, setActiveTerm] = useState<string>('Term 1');
+  const [activeYear, setActiveYear] = useState<string>(String(new Date().getFullYear()));
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -36,10 +38,12 @@ export default function ReportSettings() {
       setLoading(true);
       const { data } = await supabase
         .from('schools')
-        .select('report_font_family')
+        .select('report_font_family, active_term, active_academic_year')
         .eq('id', activeSchool.id)
         .single();
       if (data?.report_font_family) setFont(data.report_font_family);
+      if (data?.active_term) setActiveTerm(data.active_term);
+      if (data?.active_academic_year) setActiveYear(data.active_academic_year);
       setLoading(false);
     };
     load();
@@ -50,7 +54,11 @@ export default function ReportSettings() {
     setSaving(true);
     const { error } = await supabase
       .from('schools')
-      .update({ report_font_family: font })
+      .update({
+        report_font_family: font,
+        active_term: activeTerm,
+        active_academic_year: activeYear,
+      })
       .eq('id', activeSchool.id);
     setSaving(false);
     if (error) {
