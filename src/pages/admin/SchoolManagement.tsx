@@ -1214,7 +1214,7 @@ export default function SchoolManagement() {
                     setEditingStudent(null);
                   }
                 }}>
-                  <DialogContent>
+                  <DialogContent className="max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>Edit Student</DialogTitle>
                     </DialogHeader>
