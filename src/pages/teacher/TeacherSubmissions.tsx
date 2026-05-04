@@ -155,6 +155,19 @@ export default function TeacherSubmissions() {
       
       if (error) throw error;
       setTeacherAssignments(data || []);
+
+      // Resolve teacher's school via profile_schools and load active term/year
+      const { data: ps } = await supabase
+        .from('profile_schools')
+        .select('school_id, schools:school_id(active_term, active_academic_year)')
+        .eq('profile_id', profile.id)
+        .limit(1)
+        .maybeSingle();
+      const sch = (ps as any)?.schools;
+      if (sch) {
+        setActiveTerm(sch.active_term || 'Term 1');
+        setActiveYear(sch.active_academic_year || String(new Date().getFullYear()));
+      }
     } catch (error: any) {
       toast({
         title: "Error fetching assignments",
