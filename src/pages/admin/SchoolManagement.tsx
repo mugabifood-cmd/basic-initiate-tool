@@ -36,6 +36,7 @@ interface Class {
   stream: string;
   academic_year: string;
   term: string;
+  school_id?: string;
   schools: {
     id: string;
     name: string;
@@ -51,6 +52,7 @@ interface Student {
   house: string;
   age: number;
   photo_url?: string | null;
+  school_id?: string;
   class_students?: {
     classes: {
       id: string;
