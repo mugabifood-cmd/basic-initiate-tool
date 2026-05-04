@@ -89,6 +89,40 @@ export default function ReportSettings() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
+              <Label>Active Term</Label>
+              <Select value={activeTerm} onValueChange={setActiveTerm} disabled={loading}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select active term" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Term 1">Term 1</SelectItem>
+                  <SelectItem value="Term 2">Term 2</SelectItem>
+                  <SelectItem value="Term 3">Term 3</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Teachers' mark submissions are automatically tagged with this term.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Active Academic Year</Label>
+              <Select value={activeYear} onValueChange={setActiveYear} disabled={loading}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select academic year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 7 }, (_, i) => {
+                    const y = new Date().getFullYear() - 2 + i;
+                    return (
+                      <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
               <Label>Report Card Font</Label>
               <Select value={font} onValueChange={setFont} disabled={loading}>
                 <SelectTrigger>
