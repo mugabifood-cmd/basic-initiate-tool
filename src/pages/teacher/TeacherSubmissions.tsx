@@ -73,7 +73,8 @@ export default function TeacherSubmissions() {
   const [assignedSubjects, setAssignedSubjects] = useState<Subject[]>([]);
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedStudent, setSelectedStudent] = useState('');
-  const [selectedTerm, setSelectedTerm] = useState('');
+  const [activeTerm, setActiveTerm] = useState('');
+  const [activeYear, setActiveYear] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState<SortOrder>('az');
   const [subjectEntries, setSubjectEntries] = useState<SubjectEntry[]>([
