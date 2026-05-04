@@ -992,7 +992,7 @@ export default function TeacherSubmissions() {
             <Button
               type="submit"
               size="lg"
-              disabled={isLoading || !selectedClass || !selectedStudent || !selectedTerm}
+              disabled={isLoading || !selectedClass || !selectedStudent || !activeTerm}
               className="w-full md:w-auto"
             >
               {isLoading ? 'Submitting...' : 'Submit All Marks'}
