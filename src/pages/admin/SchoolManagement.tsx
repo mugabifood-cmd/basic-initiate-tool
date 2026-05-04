@@ -101,6 +101,38 @@ export default function SchoolManagement() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
+  // Bulk assign students to class
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [assignSchoolId, setAssignSchoolId] = useState('');
+  const [assignClassId, setAssignClassId] = useState('');
+  const [assignSelectedIds, setAssignSelectedIds] = useState<string[]>([]);
+  const [assigning, setAssigning] = useState(false);
+
+  const handleBulkAssign = async () => {
+    if (!assignClassId || assignSelectedIds.length === 0) {
+      toast({ title: 'Select a class and at least one student', variant: 'destructive' });
+      return;
+    }
+    try {
+      setAssigning(true);
+      // Replace each student's existing class membership with the chosen one
+      await supabase.from('class_students').delete().in('student_id', assignSelectedIds);
+      const rows = assignSelectedIds.map((sid) => ({ student_id: sid, class_id: assignClassId }));
+      const { error } = await supabase.from('class_students').insert(rows);
+      if (error) throw error;
+      toast({ title: `Assigned ${assignSelectedIds.length} student(s)` });
+      setIsAssignDialogOpen(false);
+      setAssignSelectedIds([]);
+      setAssignClassId('');
+      setAssignSchoolId('');
+      fetchData();
+    } catch (error: any) {
+      toast({ title: 'Assignment failed', description: error.message, variant: 'destructive' });
+    } finally {
+      setAssigning(false);
+    }
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
