@@ -472,10 +472,10 @@ export default function TeacherSubmissions() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!profile || !selectedClass || !selectedStudent || !selectedTerm) {
+    if (!profile || !selectedClass || !selectedStudent || !activeTerm) {
       toast({
         title: "Missing Information",
-        description: "Please select a class, student, and term",
+        description: "Please select a class and student. The active term is set by your school admin.",
         variant: "destructive"
       });
       return;
