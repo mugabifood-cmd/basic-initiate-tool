@@ -1244,6 +1244,7 @@ export default function SchoolManagement() {
                     </form>
                   </DialogContent>
                 </Dialog>
+                </div>
 
                 {/* Edit Student Dialog */}
                 <Dialog open={isEditDialogOpen && editingStudent !== null} onOpenChange={(open) => {
