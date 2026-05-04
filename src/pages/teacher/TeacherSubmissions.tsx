@@ -626,7 +626,6 @@ export default function TeacherSubmissions() {
       }]);
       setSelectedClass('');
       setSelectedStudent('');
-      setSelectedTerm('');
       setSearchQuery('');
       
     } catch (error: any) {
