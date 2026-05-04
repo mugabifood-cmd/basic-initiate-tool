@@ -681,17 +681,15 @@ export default function TeacherSubmissions() {
             </div>
 
             <div className="space-y-2">
-              <Label>Term</Label>
-              <Select value={selectedTerm} onValueChange={setSelectedTerm}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select term" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Term 1">Term 1</SelectItem>
-                  <SelectItem value="Term 2">Term 2</SelectItem>
-                  <SelectItem value="Term 3">Term 3</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label>Active Term</Label>
+              <Input
+                value={activeTerm && activeYear ? `${activeTerm} — ${activeYear}` : 'Loading…'}
+                readOnly
+                className="bg-muted"
+              />
+              <p className="text-xs text-muted-foreground">
+                Set by your school admin. All marks are recorded under this term.
+              </p>
             </div>
           </div>
 
