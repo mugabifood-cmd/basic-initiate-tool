@@ -1119,6 +1119,11 @@ export default function SchoolManagement() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Students</CardTitle>
+                <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setIsAssignDialogOpen(true)}>
+                  <Users className="w-4 h-4 mr-2" />
+                  Assign Students to Class
+                </Button>
                 <Dialog>
                   <DialogTrigger asChild>
                     <Button>
