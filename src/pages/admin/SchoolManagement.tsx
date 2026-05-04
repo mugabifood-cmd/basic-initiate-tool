@@ -1360,6 +1360,104 @@ export default function SchoolManagement() {
                     </form>
                   </DialogContent>
                 </Dialog>
+
+                {/* Bulk Assign Students to Class Dialog */}
+                <Dialog open={isAssignDialogOpen} onOpenChange={(open) => {
+                  setIsAssignDialogOpen(open);
+                  if (!open) { setAssignSelectedIds([]); setAssignClassId(''); setAssignSchoolId(''); }
+                }}>
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Assign Students to a Class</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>School</Label>
+                          <Select value={assignSchoolId} onValueChange={(v) => { setAssignSchoolId(v); setAssignClassId(''); setAssignSelectedIds([]); }}>
+                            <SelectTrigger><SelectValue placeholder="Select school" /></SelectTrigger>
+                            <SelectContent>
+                              {schools.map((s) => (
+                                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label>Target Class</Label>
+                          <Select value={assignClassId} onValueChange={setAssignClassId} disabled={!assignSchoolId}>
+                            <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
+                            <SelectContent>
+                              {classes.filter((c) => c.school_id === assignSchoolId || (c as any).schools?.id === assignSchoolId).map((c) => (
+                                <SelectItem key={c.id} value={c.id}>{c.name} {c.stream}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="border rounded-md">
+                        <div className="flex items-center justify-between p-2 border-b bg-muted/50">
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              checked={(() => {
+                                const list = students.filter((st) => st.school_id === assignSchoolId || (st as any).schools?.id === assignSchoolId);
+                                return list.length > 0 && assignSelectedIds.length === list.length;
+                              })()}
+                              onCheckedChange={(checked) => {
+                                const list = students.filter((st) => st.school_id === assignSchoolId || (st as any).schools?.id === assignSchoolId);
+                                setAssignSelectedIds(checked ? list.map((s) => s.id) : []);
+                              }}
+                              disabled={!assignSchoolId}
+                            />
+                            <span className="text-sm font-medium">Select all</span>
+                          </div>
+                          <span className="text-sm text-muted-foreground">{assignSelectedIds.length} selected</span>
+                        </div>
+                        <div className="max-h-[40vh] overflow-y-auto">
+                          {!assignSchoolId && (
+                            <p className="text-sm text-muted-foreground p-4 text-center">Select a school to list students.</p>
+                          )}
+                          {assignSchoolId && students.filter((st) => st.school_id === assignSchoolId || (st as any).schools?.id === assignSchoolId).length === 0 && (
+                            <p className="text-sm text-muted-foreground p-4 text-center">No students in this school.</p>
+                          )}
+                          {assignSchoolId && students
+                            .filter((st) => st.school_id === assignSchoolId || (st as any).schools?.id === assignSchoolId)
+                            .map((st) => {
+                              const current = st.class_students?.[0]?.classes;
+                              const checked = assignSelectedIds.includes(st.id);
+                              return (
+                                <label key={st.id} className="flex items-center gap-3 p-2 border-b last:border-b-0 hover:bg-muted/30 cursor-pointer">
+                                  <Checkbox
+                                    checked={checked}
+                                    onCheckedChange={(c) => {
+                                      setAssignSelectedIds((prev) => c ? [...prev, st.id] : prev.filter((id) => id !== st.id));
+                                    }}
+                                  />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-sm font-medium truncate">{st.full_name}</div>
+                                    <div className="text-xs text-muted-foreground">#{st.student_number} • {st.gender}</div>
+                                  </div>
+                                  {current ? (
+                                    <Badge variant="secondary" className="text-xs">{current.name} {current.stream}</Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="text-xs">Unassigned</Badge>
+                                  )}
+                                </label>
+                              );
+                            })}
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => setIsAssignDialogOpen(false)} disabled={assigning}>Cancel</Button>
+                        <Button onClick={handleBulkAssign} disabled={assigning || !assignClassId || assignSelectedIds.length === 0}>
+                          {assigning ? 'Assigning...' : `Assign ${assignSelectedIds.length || ''}`}
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </CardHeader>
               <CardContent>
                 <Table>
