@@ -1719,6 +1719,45 @@ export default function SchoolManagement() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Per-student Subject Assignment Dialog */}
+      <Dialog open={subjectAssignStudent !== null} onOpenChange={(open) => { if (!open) { setSubjectAssignStudent(null); setSubjectAssignSelected([]); } }}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Assign Subjects — {subjectAssignStudent?.full_name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            {subjects
+              .filter((s) => !subjectAssignStudent?.school_id || (s as any).school_id === subjectAssignStudent.school_id)
+              .map((s) => {
+                const checked = subjectAssignSelected.includes(s.id);
+                return (
+                  <label key={s.id} className="flex items-center gap-3 p-2 rounded hover:bg-muted cursor-pointer">
+                    <Checkbox
+                      checked={checked}
+                      onCheckedChange={(v) => {
+                        setSubjectAssignSelected((prev) =>
+                          v ? [...prev, s.id] : prev.filter((x) => x !== s.id)
+                        );
+                      }}
+                    />
+                    <span className="font-medium">{s.name}</span>
+                    <span className="text-xs text-muted-foreground">{s.code}</span>
+                  </label>
+                );
+              })}
+            {subjects.length === 0 && (
+              <p className="text-sm text-muted-foreground">No subjects available. Create subjects first.</p>
+            )}
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => { setSubjectAssignStudent(null); setSubjectAssignSelected([]); }}>Cancel</Button>
+            <Button onClick={saveStudentSubjects} disabled={subjectAssignSaving}>
+              {subjectAssignSaving ? 'Saving…' : 'Save'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
