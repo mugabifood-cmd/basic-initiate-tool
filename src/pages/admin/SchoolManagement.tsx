@@ -1543,8 +1543,11 @@ export default function SchoolManagement() {
                             <Button variant="outline" size="sm" onClick={() => handleEditStudent(student)}>
                               <Edit className="w-4 h-4" />
                             </Button>
-                            <Button 
-                              variant="outline" 
+                            <Button variant="outline" size="sm" onClick={() => openSubjectAssign(student)}>
+                              Assign Subjects
+                            </Button>
+                            <Button
+                              variant="outline"
                               size="sm"
                               onClick={() => setDeleteItem({ type: 'students', id: student.id, name: student.full_name })}
                             >
