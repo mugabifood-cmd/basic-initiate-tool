@@ -1,1005 +1,393 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Plus, ArrowUp, ArrowRight, Trash2 } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 
-interface Class {
-  id: string;
-  name: string;
-  stream: string;
-  term: string;
-  academic_year: string;
+interface ClassRow { id: string; name: string; stream: string; school_id: string; }
+interface SubjectRow { id: string; name: string; code: string; }
+interface StudentRow { id: string; full_name: string; student_number: string; }
+
+interface MarkRow {
+  a1: string;
+  a2: string;
+  a3: string;
+  p20: string;
+  p80: string;
+  p100: string; // auto
+  identifier: string; // auto
+  assigned: boolean;
 }
 
-interface Subject {
-  id: string;
-  name: string;
-  code: string;
-}
+const computeIdentifier = (p100: number) => {
+  if (p100 <= 50) return 'Basic';
+  if (p100 <= 80) return 'Moderate';
+  return 'Outstanding';
+};
 
-interface Student {
-  id: string;
-  full_name: string;
-  student_number: string;
-  created_at?: string;
-}
-
-interface SubjectEntry {
-  id: string;
-  subjectId: string;
-  subjectCode: string;
-  a1Score: string;
-  a2Score: string;
-  a3Score: string;
-  teacherInitials: string;
-  identifier: string;
-  percentage20: string;
-  percentage80: string;
-  percentage100: string;
-}
-
-interface GradeBoundary {
-  id: string;
-  grade: string;
-  min_score: number;
-  max_score: number;
-}
-
-type SortOrder = 'az' | 'za' | 'new-old' | 'old-new';
-
-interface TeacherAssignment {
-  assignment_type: string;
-  subject_id: string | null;
-  class_name: string | null;
-  stream: string | null;
-}
+const num = (v: string) => {
+  const n = parseFloat(v);
+  return isNaN(n) ? 0 : n;
+};
 
 export default function TeacherSubmissions() {
   const { profile } = useAuth();
-  const [classes, setClasses] = useState<Class[]>([]);
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [students, setStudents] = useState<Student[]>([]);
-  const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
-  const [gradeBoundaries, setGradeBoundaries] = useState<GradeBoundary[]>([]);
-  const [teacherAssignments, setTeacherAssignments] = useState<TeacherAssignment[]>([]);
-  const [assignedClasses, setAssignedClasses] = useState<Class[]>([]);
-  const [assignedSubjects, setAssignedSubjects] = useState<Subject[]>([]);
+  const [assignedClasses, setAssignedClasses] = useState<ClassRow[]>([]);
+  const [assignedSubjects, setAssignedSubjects] = useState<SubjectRow[]>([]);
+  const [allTeacherAssignments, setAllTeacherAssignments] = useState<any[]>([]);
+  const [students, setStudents] = useState<StudentRow[]>([]);
+  const [studentSubjects, setStudentSubjects] = useState<Record<string, Set<string>>>({});
   const [selectedClass, setSelectedClass] = useState('');
-  const [selectedStudent, setSelectedStudent] = useState('');
+  const [selectedSubject, setSelectedSubject] = useState('');
   const [activeTerm, setActiveTerm] = useState('');
   const [activeYear, setActiveYear] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('az');
-  const [subjectEntries, setSubjectEntries] = useState<SubjectEntry[]>([
-    {
-      id: '1',
-      subjectId: '',
-      subjectCode: '',
-      a1Score: '',
-      a2Score: '',
-      a3Score: '',
-      teacherInitials: '',
-      identifier: '1',
-      percentage20: '',
-      percentage80: '',
-      percentage100: ''
-    }
-  ]);
-  const [isLoading, setIsLoading] = useState(false);
-  const newSubjectRef = useRef<HTMLDivElement>(null);
+  const [schoolId, setSchoolId] = useState<string>('');
+  const [marks, setMarks] = useState<Record<string, MarkRow>>({});
+  const [submitting, setSubmitting] = useState(false);
 
+  // Load teacher's assignments + active term
   useEffect(() => {
-    if (profile) {
-      fetchTeacherAssignments();
-      // Pre-populate teacher initials if available
-      if (profile.initials) {
-        setSubjectEntries(entries => 
-          entries.map(entry => ({
-            ...entry,
-            teacherInitials: entry.teacherInitials || profile.initials || ''
-          }))
-        );
-      }
-    }
-  }, [profile]);
-
-  useEffect(() => {
-    if (teacherAssignments.length > 0) {
-      fetchClasses();
-      fetchGradeBoundaries();
-    }
-  }, [teacherAssignments]);
-
-  useEffect(() => {
-    if (teacherAssignments.length > 0 && selectedClass) {
-      fetchSubjects();
-      // Reset subject entries when class changes
-      setSubjectEntries([{
-        id: '1', subjectId: '', subjectCode: '',
-        a1Score: '', a2Score: '', a3Score: '',
-        teacherInitials: profile?.initials || '', identifier: '1',
-        percentage20: '', percentage80: '', percentage100: ''
-      }]);
-    }
-  }, [teacherAssignments, selectedClass]);
-
-  useEffect(() => {
-    if (selectedClass) {
-      fetchStudentsInClass();
-    }
-  }, [selectedClass]);
-
-  useEffect(() => {
-    filterAndSortStudents();
-  }, [students, searchQuery, sortOrder]);
-
-  useEffect(() => {
-    filterAndSortStudents();
-  }, [students, searchQuery, sortOrder]);
-
-  const fetchTeacherAssignments = async () => {
     if (!profile) return;
-    
-    try {
-      const { data, error } = await supabase
+    (async () => {
+      const { data: assignments } = await supabase
         .from('teacher_assignments')
         .select('*')
         .eq('teacher_id', profile.id);
-      
-      if (error) throw error;
-      setTeacherAssignments(data || []);
+      setAllTeacherAssignments(assignments || []);
 
-      // Resolve teacher's school via profile_schools and load active term/year
       const { data: ps } = await supabase
         .from('profile_schools')
         .select('school_id, schools:school_id(active_term, active_academic_year)')
         .eq('profile_id', profile.id)
         .limit(1)
         .maybeSingle();
-      const sch = (ps as any)?.schools;
+      const sch: any = (ps as any)?.schools;
+      if (ps?.school_id) setSchoolId(ps.school_id);
       if (sch) {
         setActiveTerm(sch.active_term || 'Term 1');
         setActiveYear(sch.active_academic_year || String(new Date().getFullYear()));
       }
-    } catch (error: any) {
-      toast({
-        title: "Error fetching assignments",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
-  };
 
-  const fetchClasses = async () => {
-    try {
-      // Get unique class names and streams from teacher assignments
-      const assignedClassStreams = teacherAssignments.map(a => ({
-        class_name: a.class_name,
-        stream: a.stream
-      })).filter(a => a.class_name && a.stream);
+      // load classes assigned
+      const classKeys = (assignments || [])
+        .filter((a: any) => a.class_name && a.stream)
+        .map((a: any) => `${a.class_name}__${a.stream}`);
+      const uniqueKeys = [...new Set(classKeys)];
+      if (uniqueKeys.length === 0) return;
 
-      if (assignedClassStreams.length === 0) {
-        setAssignedClasses([]);
-        return;
-      }
-
-      // Fetch all classes
-      const { data, error } = await supabase
-        .from('classes')
-        .select('*')
-        .order('name');
-      
-      if (error) throw error;
-
-      // Filter to only assigned classes
-      const filtered = (data || []).filter(cls => 
-        assignedClassStreams.some(assigned => 
-          assigned.class_name === cls.name && assigned.stream === cls.stream
-        )
+      const { data: cls } = await supabase.from('classes').select('id, name, stream, school_id');
+      const filtered = (cls || []).filter((c: any) =>
+        uniqueKeys.includes(`${c.name}__${c.stream}`)
       );
-
       setAssignedClasses(filtered);
-    } catch (error: any) {
-      toast({
-        title: "Error fetching classes",
-        description: error.message,
-        variant: "destructive"
-      });
+    })();
+  }, [profile]);
+
+  // When class changes, derive subjects assigned to teacher for that class
+  useEffect(() => {
+    if (!selectedClass) {
+      setAssignedSubjects([]);
+      setSelectedSubject('');
+      setStudents([]);
+      setMarks({});
+      return;
     }
-  };
+    const cls = assignedClasses.find((c) => c.id === selectedClass);
+    if (!cls) return;
 
-  const fetchSubjects = async () => {
-    try {
-      // Find the selected class details to match assignments
-      const selectedClassObj = assignedClasses.find(c => c.id === selectedClass);
-      
-      // Filter assignments to only subjects assigned to this teacher in the selected class
-      const assignedSubjectIds = teacherAssignments
-        .filter(a => {
-          if (a.assignment_type !== 'subject_teacher' || !a.subject_id) return false;
-          // If a class is selected, only show subjects assigned to that class
-          if (selectedClassObj) {
-            return a.class_name === selectedClassObj.name && a.stream === selectedClassObj.stream;
-          }
-          return true;
-        })
-        .map(a => a.subject_id);
-
-      // Remove duplicates
-      const uniqueSubjectIds = [...new Set(assignedSubjectIds)];
-
-      if (uniqueSubjectIds.length === 0) {
-        setAssignedSubjects([]);
-        return;
-      }
-
-      // Fetch assigned subjects for this class
-      const { data, error } = await supabase
+    const subjectIds = [
+      ...new Set(
+        allTeacherAssignments
+          .filter(
+            (a: any) =>
+              a.assignment_type === 'subject_teacher' &&
+              a.subject_id &&
+              a.class_name === cls.name &&
+              a.stream === cls.stream
+          )
+          .map((a: any) => a.subject_id)
+      ),
+    ];
+    if (subjectIds.length === 0) {
+      setAssignedSubjects([]);
+      setSelectedSubject('');
+      return;
+    }
+    (async () => {
+      const { data } = await supabase
         .from('subjects')
-        .select('*')
-        .in('id', uniqueSubjectIds)
+        .select('id, name, code')
+        .in('id', subjectIds as string[])
         .order('name');
-      
-      if (error) throw error;
-      setAssignedSubjects(data || []);
-    } catch (error: any) {
-      toast({
-        title: "Error fetching subjects",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
-  };
+      setAssignedSubjects((data as SubjectRow[]) || []);
+    })();
+  }, [selectedClass, assignedClasses, allTeacherAssignments]);
 
-  const fetchStudentsInClass = async () => {
+  // Load students for class + their subject assignments
+  useEffect(() => {
     if (!selectedClass) return;
-    
-    try {
-      const { data, error } = await supabase
+    (async () => {
+      const { data: cs } = await supabase
         .from('class_students')
-        .select('student_id, students(id, full_name, student_number, created_at)')
+        .select('student_id, students(id, full_name, student_number)')
         .eq('class_id', selectedClass);
-      
-      if (error) throw error;
-      
-      const studentData = (data || [])
-        .map(cs => cs.students)
-        .filter(s => s !== null) as Student[];
-      
-      setStudents(studentData);
-    } catch (error: any) {
-      toast({
-        title: "Error fetching students",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
-  };
+      const list = ((cs as any[]) || [])
+        .map((r) => r.students)
+        .filter(Boolean) as StudentRow[];
+      list.sort((a, b) => a.full_name.localeCompare(b.full_name));
+      setStudents(list);
 
-  const fetchGradeBoundaries = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('grade_boundaries')
-        .select('*')
-        .order('min_score', { ascending: false });
-      
-      if (error) throw error;
-      setGradeBoundaries(data || []);
-    } catch (error: any) {
-      toast({
-        title: "Error fetching grade boundaries",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
-  };
-
-  const filterAndSortStudents = () => {
-    let filtered = [...students];
-
-    // Apply search filter
-    if (searchQuery) {
-      filtered = filtered.filter(student =>
-        student.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        student.student_number.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    // Apply sorting
-    filtered.sort((a, b) => {
-      switch (sortOrder) {
-        case 'az':
-          return a.full_name.localeCompare(b.full_name);
-        case 'za':
-          return b.full_name.localeCompare(a.full_name);
-        case 'new-old':
-          return new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime();
-        case 'old-new':
-          return new Date(a.created_at || '').getTime() - new Date(b.created_at || '').getTime();
-        default:
-          return 0;
+      if (list.length > 0) {
+        const ids = list.map((s) => s.id);
+        const { data: ss } = await supabase
+          .from('student_subjects')
+          .select('student_id, subject_id')
+          .in('student_id', ids);
+        const map: Record<string, Set<string>> = {};
+        (ss || []).forEach((row: any) => {
+          if (!map[row.student_id]) map[row.student_id] = new Set();
+          map[row.student_id].add(row.subject_id);
+        });
+        setStudentSubjects(map);
+      } else {
+        setStudentSubjects({});
       }
-    });
+    })();
+  }, [selectedClass]);
 
-    setFilteredStudents(filtered);
-  };
-
-  const toggleSort = () => {
-    const orders: SortOrder[] = ['az', 'za', 'new-old', 'old-new'];
-    const currentIndex = orders.indexOf(sortOrder);
-    const nextIndex = (currentIndex + 1) % orders.length;
-    setSortOrder(orders[nextIndex]);
-  };
-
-  const getSortIcon = () => {
-    switch (sortOrder) {
-      case 'az':
-        return '↑ → Z';
-      case 'za':
-        return '↓ → A';
-      case 'new-old':
-        return 'New → Old';
-      case 'old-new':
-        return 'Old → New';
-    }
-  };
-
-  const calculateAVG = (a1: string, a2: string, a3: string) => {
-    const a1Num = parseFloat(a1) || 0;
-    const a2Num = parseFloat(a2) || 0;
-    const a3Num = parseFloat(a3) || 0;
-    return ((a1Num + a2Num + a3Num) / 3).toFixed(2);
-  };
-
-  const calculateGrade = (avg: number) => {
-    // Use grade boundaries from database
-    for (const boundary of gradeBoundaries) {
-      if (avg >= boundary.min_score && avg <= boundary.max_score) {
-        return boundary.grade;
-      }
-    }
-    // Fallback to 'F' if no boundary matches
-    return 'F';
-  };
-
-  const calculateAchievementLevel = (avg: number) => {
-    if (avg >= 90) return 'Outstanding';
-    if (avg >= 75) return 'Exceptional';
-    if (avg >= 60) return 'Satisfactory';
-    return 'Basic';
-  };
-
-  const getIdentifierText = (identifier: string) => {
-    switch (identifier) {
-      case '1':
-        return '1 - Basic';
-      case '2':
-        return '2 - Moderate';
-      case '3':
-        return '3 - Outstanding';
-      default:
-        return '1 - Basic';
-    }
-  };
-
-  const addNewSubject = () => {
-    const newEntry: SubjectEntry = {
-      id: Date.now().toString(),
-      subjectId: '',
-      subjectCode: '',
-      a1Score: '',
-      a2Score: '',
-      a3Score: '',
-      teacherInitials: profile?.initials || '',
-      identifier: '1',
-      percentage20: '',
-      percentage80: '',
-      percentage100: ''
-    };
-    setSubjectEntries([...subjectEntries, newEntry]);
-    
-    // Scroll to new subject after a brief delay
-    setTimeout(() => {
-      newSubjectRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
-  };
-
-  const deleteSubjectEntry = (id: string) => {
-    // Don't allow deleting if there's only one entry
-    if (subjectEntries.length === 1) {
-      toast({
-        title: "Cannot Delete",
-        description: "At least one subject entry is required",
-        variant: "destructive"
-      });
+  // When subject or students change, init/refresh mark rows + load existing submissions
+  useEffect(() => {
+    if (!selectedSubject || students.length === 0) {
+      setMarks({});
       return;
     }
-    
-    setSubjectEntries(entries => entries.filter(entry => entry.id !== id));
-    toast({
-      title: "Subject Removed",
-      description: "Subject entry has been deleted"
-    });
-  };
-
-  const updateSubjectEntry = (id: string, field: keyof SubjectEntry, value: string) => {
-    // Directly update subject entries; numeric validation is handled on submit
-    setSubjectEntries(entries =>
-      entries.map(entry =>
-        entry.id === id ? { ...entry, [field]: value } : entry
-      )
-    );
-  };
-
-  const handleSubjectChange = (id: string, subjectId: string) => {
-    const subject = assignedSubjects.find(s => s.id === subjectId);
-    setSubjectEntries(entries =>
-      entries.map(entry =>
-        entry.id === id
-          ? { ...entry, subjectId, subjectCode: subject?.code || '' }
-          : entry
-      )
-    );
-  };
-
-  const handleClassChange = (classId: string) => {
-    setSelectedClass(classId);
-    setSelectedStudent('');
-    setStudents([]);
-    // Reset subject entries when class changes
-    setSubjectEntries([{
-      id: '1',
-      subjectId: '',
-      subjectCode: '',
-      a1Score: '',
-      a2Score: '',
-      a3Score: '',
-      teacherInitials: profile?.initials || '',
-      identifier: '1',
-      percentage20: '',
-      percentage80: '',
-      percentage100: ''
-    }]);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!profile || !selectedClass || !selectedStudent || !activeTerm) {
-      toast({
-        title: "Missing Information",
-        description: "Please select a class and student. The active term is set by your school admin.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Validate all subject entries
-    for (const entry of subjectEntries) {
-      if (!entry.subjectId || !entry.a1Score || !entry.a2Score || !entry.a3Score || 
-          !entry.percentage20 || !entry.percentage80 || !entry.percentage100 || !entry.teacherInitials) {
-        toast({
-          title: "Incomplete Subject Entry",
-          description: "Please fill in all fields for each subject including A scores and % scores",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      // Validate all score fields are valid numbers (integers or decimals)
-      const numberPattern = /^\d+(\.\d+)?$/;
-      const scoresToCheck = [
-        entry.a1Score,
-        entry.a2Score,
-        entry.a3Score,
-        entry.percentage20,
-        entry.percentage80,
-        entry.percentage100,
-      ];
-      const hasInvalidScore = scoresToCheck.some((score) => !numberPattern.test(score));
-      if (hasInvalidScore) {
-        toast({
-          title: "Invalid Score Format",
-          description: "Scores must be valid numbers (e.g., 85 or 85.5).",
-          variant: "destructive"
-        });
-        return;
-      }
-    }
-
-    setIsLoading(true);
-    
-    try {
-      // Update teacher's profile initials if not already set
-      const firstEntryWithInitials = subjectEntries.find(e => e.teacherInitials);
-      if (firstEntryWithInitials && profile) {
-        const { data: currentProfile } = await supabase
-          .from('profiles')
-          .select('initials')
-          .eq('id', profile.id)
-          .single();
-        
-        if (currentProfile && !currentProfile.initials) {
-          await supabase
-            .from('profiles')
-            .update({ initials: firstEntryWithInitials.teacherInitials })
-            .eq('id', profile.id);
-        }
-      }
-
-      // Check if any submissions already exist for this student
-      const { data: existingSubmissions, error: checkError } = await supabase
+    (async () => {
+      const studentIds = students.map((s) => s.id);
+      const { data: existing } = await supabase
         .from('subject_submissions')
-        .select('subject_id, status')
+        .select('student_id, a1_score, a2_score, a3_score, percentage_20, percentage_80, percentage_100, remarks, status')
         .eq('class_id', selectedClass)
-        .eq('student_id', selectedStudent)
-        .in('subject_id', subjectEntries.map(e => e.subjectId));
+        .eq('subject_id', selectedSubject)
+        .in('student_id', studentIds);
 
-      if (checkError) throw checkError;
+      const next: Record<string, MarkRow> = {};
+      students.forEach((st) => {
+        const assigned = studentSubjects[st.id]?.has(selectedSubject) ?? false;
+        const found = (existing || []).find((e: any) => e.student_id === st.id);
+        next[st.id] = {
+          a1: found?.a1_score?.toString() ?? '',
+          a2: found?.a2_score?.toString() ?? '',
+          a3: found?.a3_score?.toString() ?? '',
+          p20: found?.percentage_20?.toString() ?? '',
+          p80: found?.percentage_80?.toString() ?? '',
+          p100: found?.percentage_100?.toString() ?? '',
+          identifier: found?.remarks ?? '',
+          assigned,
+        };
+      });
+      setMarks(next);
+    })();
+  }, [selectedSubject, students, studentSubjects, selectedClass]);
 
-      // Check if any existing submissions are not pending
-      const approvedOrRejected = existingSubmissions?.filter(s => s.status !== 'pending') || [];
-      if (approvedOrRejected.length > 0) {
-        toast({
-          title: "Cannot Submit",
-          description: "Some subjects have already been approved or rejected. You can only update pending submissions.",
-          variant: "destructive"
-        });
-        setIsLoading(false);
-        return;
+  const updateCell = (studentId: string, field: keyof MarkRow, value: string) => {
+    setMarks((prev) => {
+      const row = prev[studentId];
+      if (!row || !row.assigned) return prev;
+      const updated: MarkRow = { ...row, [field]: value } as MarkRow;
+      if (field === 'p20' || field === 'p80') {
+        const total = num(updated.p20) + num(updated.p80);
+        updated.p100 = total ? String(total) : '';
+        updated.identifier = total ? computeIdentifier(total) : '';
       }
+      return { ...prev, [studentId]: updated };
+    });
+  };
 
-      // Look up the school for the selected class so submissions are visible to admins
-      const { data: classRow, error: classErr } = await supabase
-        .from('classes')
-        .select('school_id')
-        .eq('id', selectedClass)
-        .single();
-      if (classErr || !classRow?.school_id) {
-        throw new Error('Could not resolve school for the selected class');
-      }
+  const selectedClassObj = useMemo(
+    () => assignedClasses.find((c) => c.id === selectedClass),
+    [assignedClasses, selectedClass]
+  );
 
-      const submissions = subjectEntries.map(entry => {
-        const a1 = parseFloat(entry.a1Score) || 0;
-        const a2 = parseFloat(entry.a2Score) || 0;
-        const a3 = parseFloat(entry.a3Score) || 0;
-        const avg = parseFloat(calculateAVG(entry.a1Score, entry.a2Score, entry.a3Score));
-        
-        // Use the manually entered percentage values (as integers)
-        const percentage20 = parseInt(entry.percentage20) || 0;
-        const percentage80 = parseInt(entry.percentage80) || 0;
-        const percentage100 = parseInt(entry.percentage100) || 0;
-        
+  const handleSubmit = async () => {
+    if (!profile || !selectedClass || !selectedSubject || !activeTerm) {
+      toast({ title: 'Select class & subject first', variant: 'destructive' });
+      return;
+    }
+    const cls = selectedClassObj;
+    if (!cls) return;
+
+    const rows = Object.entries(marks)
+      .filter(([sid, m]) => m.assigned && (m.a1 || m.a2 || m.a3 || m.p20 || m.p80))
+      .map(([sid, m]) => {
+        const p20 = num(m.p20);
+        const p80 = num(m.p80);
+        const p100 = p20 + p80;
         return {
           teacher_id: profile.id,
-          school_id: classRow.school_id,
+          school_id: cls.school_id,
           class_id: selectedClass,
-          subject_id: entry.subjectId,
-          student_id: selectedStudent,
-          a1_score: a1,
-          a2_score: a2,
-          a3_score: a3,
-          average_score: avg,
-          percentage_20: percentage20,
-          percentage_80: percentage80,
-          percentage_100: percentage100,
-          grade: calculateGrade(percentage100), // Use percentage_100 for grade
-          remarks: calculateAchievementLevel(percentage100), // Use percentage_100 for remarks
-          teacher_comment: `Teacher Initials: ${entry.teacherInitials}, Identifier: ${getIdentifierText(entry.identifier)}`,
-          status: 'pending'
+          subject_id: selectedSubject,
+          student_id: sid,
+          a1_score: num(m.a1),
+          a2_score: num(m.a2),
+          a3_score: num(m.a3),
+          average_score: (num(m.a1) + num(m.a2) + num(m.a3)) / 3,
+          percentage_20: p20,
+          percentage_80: p80,
+          percentage_100: p100,
+          remarks: computeIdentifier(p100),
+          status: 'pending',
         };
       });
 
+    if (rows.length === 0) {
+      toast({ title: 'No marks to submit', variant: 'destructive' });
+      return;
+    }
+
+    setSubmitting(true);
+    try {
       const { error } = await supabase
         .from('subject_submissions')
-        .upsert(submissions, {
-          onConflict: 'class_id,student_id,subject_id'
-        });
-
+        .upsert(rows, { onConflict: 'class_id,student_id,subject_id' });
       if (error) throw error;
-
-      toast({
-        title: "Submission Successful",
-        description: `Marks for ${subjectEntries.length} subject(s) have been submitted for review`
-      });
-
-      // Reset form
-      setSubjectEntries([{
-        id: '1',
-        subjectId: '',
-        subjectCode: '',
-        a1Score: '',
-        a2Score: '',
-        a3Score: '',
-        teacherInitials: '',
-        identifier: '1',
-        percentage20: '',
-        percentage80: '',
-        percentage100: ''
-      }]);
-      setSelectedClass('');
-      setSelectedStudent('');
-      setSearchQuery('');
-      
-    } catch (error: any) {
-      toast({
-        title: "Submission Failed",
-        description: error.message,
-        variant: "destructive"
-      });
+      toast({ title: 'Marks submitted', description: `${rows.length} student row(s) saved` });
+    } catch (e: any) {
+      toast({ title: 'Submission failed', description: e.message, variant: 'destructive' });
     } finally {
-      setIsLoading(false);
+      setSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <Link to="/dashboard">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
-            </Button>
-          </Link>
-        </div>
+    <TooltipProvider>
+      <div className="min-h-screen bg-background">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-6">
+            <Link to="/dashboard">
+              <Button variant="outline" size="sm">
+                <ArrowLeft className="w-4 h-4 mr-2" /> Back to Dashboard
+              </Button>
+            </Link>
+          </div>
 
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground">Mark Submission Form</h1>
-        </div>
+          <h1 className="text-3xl font-bold mb-6">Mark Submission</h1>
 
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Class and Term Selection */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="space-y-2">
-              <Label>Class (Only Your Assigned Classes)</Label>
-              <Select value={selectedClass} onValueChange={handleClassChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select class" />
-                </SelectTrigger>
+              <Label>Class & Stream</Label>
+              <Select value={selectedClass} onValueChange={setSelectedClass}>
+                <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
                 <SelectContent>
                   {assignedClasses.length === 0 ? (
-                    <SelectItem value="none" disabled>
-                      No classes assigned to you
-                    </SelectItem>
-                  ) : (
-                    assignedClasses.map((cls) => (
-                      <SelectItem key={cls.id} value={cls.id}>
-                        {cls.name} {cls.stream} - {cls.term} {cls.academic_year}
-                      </SelectItem>
-                    ))
-                  )}
+                    <SelectItem value="none" disabled>No classes assigned</SelectItem>
+                  ) : assignedClasses.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name} {c.stream}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Subject</Label>
+              <Select value={selectedSubject} onValueChange={setSelectedSubject} disabled={!selectedClass}>
+                <SelectTrigger><SelectValue placeholder={!selectedClass ? 'Select class first' : 'Select subject'} /></SelectTrigger>
+                <SelectContent>
+                  {assignedSubjects.length === 0 ? (
+                    <SelectItem value="none" disabled>No subjects assigned</SelectItem>
+                  ) : assignedSubjects.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
               <Label>Active Term</Label>
-              <Input
-                value={activeTerm && activeYear ? `${activeTerm} — ${activeYear}` : 'Loading…'}
-                readOnly
-                className="bg-muted"
-              />
-              <p className="text-xs text-muted-foreground">
-                Set by your school admin. All marks are recorded under this term.
-              </p>
+              <Input readOnly className="bg-muted" value={activeTerm && activeYear ? `${activeTerm} — ${activeYear}` : 'Loading…'} />
             </div>
           </div>
 
-          {/* Student Selection Row */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-end">
-            <div className="lg:col-span-6 space-y-2">
-              <Label>Student</Label>
-              <Input
-                placeholder="Search students..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full"
-              />
+          {selectedSubject && students.length > 0 && (
+            <div className="border rounded-lg overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="min-w-[200px]">Student Name</TableHead>
+                    <TableHead className="w-20 text-center">A1</TableHead>
+                    <TableHead className="w-20 text-center">A2</TableHead>
+                    <TableHead className="w-20 text-center">A3</TableHead>
+                    <TableHead className="w-24 text-center">20%</TableHead>
+                    <TableHead className="w-24 text-center">80%</TableHead>
+                    <TableHead className="w-24 text-center">100%</TableHead>
+                    <TableHead className="w-32 text-center">Identifier</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {students.map((st) => {
+                    const m = marks[st.id];
+                    if (!m) return null;
+                    const disabled = !m.assigned;
+                    const rowClass = disabled ? 'bg-muted/50 opacity-60' : '';
+                    const rowContent = (
+                      <TableRow key={st.id} className={rowClass}>
+                        <TableCell className="font-medium">
+                          {st.full_name}
+                          <div className="text-xs text-muted-foreground">#{st.student_number}</div>
+                        </TableCell>
+                        {(['a1','a2','a3','p20','p80'] as const).map((f) => (
+                          <TableCell key={f} className="p-1">
+                            <Input
+                              disabled={disabled}
+                              value={(m as any)[f]}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                if (v === '' || /^\d*\.?\d*$/.test(v)) updateCell(st.id, f, v);
+                              }}
+                              className="h-9 text-center"
+                            />
+                          </TableCell>
+                        ))}
+                        <TableCell className="p-1">
+                          <Input readOnly value={m.p100} className="h-9 text-center bg-muted" />
+                        </TableCell>
+                        <TableCell className="p-1 text-center text-sm">
+                          {disabled ? <span className="text-muted-foreground">Disabled</span> : (m.identifier || '—')}
+                        </TableCell>
+                      </TableRow>
+                    );
+                    return disabled ? (
+                      <Tooltip key={st.id}>
+                        <TooltipTrigger asChild>{rowContent}</TooltipTrigger>
+                        <TooltipContent>Subject not assigned to this student</TooltipContent>
+                      </Tooltip>
+                    ) : rowContent;
+                  })}
+                </TableBody>
+              </Table>
             </div>
+          )}
 
-            <div className="lg:col-span-2 flex justify-center">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={toggleSort}
-                className="h-10 px-3 mt-auto"
-              >
-                {getSortIcon()}
+          {selectedSubject && students.length === 0 && (
+            <p className="text-muted-foreground">No students in this class.</p>
+          )}
+
+          {selectedSubject && students.length > 0 && (
+            <div className="mt-6 flex justify-end">
+              <Button onClick={handleSubmit} disabled={submitting}>
+                {submitting ? 'Submitting…' : 'Submit Marks'}
               </Button>
             </div>
-
-            <div className="lg:col-span-4 flex justify-end">
-              <Button
-                type="button"
-                onClick={addNewSubject}
-                className="w-full lg:w-auto mt-auto"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                New Subject
-              </Button>
-            </div>
-          </div>
-
-          {/* Student Dropdown */}
-          <div className="space-y-2">
-            <Select value={selectedStudent} onValueChange={setSelectedStudent}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a student" />
-              </SelectTrigger>
-              <SelectContent className="max-h-[300px]">
-                {filteredStudents.map((student) => (
-                  <SelectItem key={student.id} value={student.id}>
-                    {student.student_number} - {student.full_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Subject Marks Section */}
-          <div className="space-y-6">
-            <h2 className="text-xl font-semibold text-foreground">Subject Marks</h2>
-
-            {subjectEntries.map((entry, index) => (
-              <div
-                key={entry.id}
-                ref={index === subjectEntries.length - 1 ? newSubjectRef : null}
-                className="space-y-4 p-6 border rounded-lg bg-card"
-              >
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-medium text-foreground">
-                    Subject {index + 1}
-                  </h3>
-                  {subjectEntries.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => deleteSubjectEntry(entry.id)}
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete
-                    </Button>
-                  )}
-                </div>
-
-                {/* Subject and Subject Code */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Subject (Only Your Assigned Subjects for This Class)</Label>
-                    <Select
-                      value={entry.subjectId}
-                      onValueChange={(value) => handleSubjectChange(entry.id, value)}
-                      disabled={!selectedClass}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={!selectedClass ? "Select class first" : "Select subject"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {!selectedClass ? (
-                          <SelectItem value="none" disabled>
-                            Please select a class first
-                          </SelectItem>
-                        ) : assignedSubjects.length === 0 ? (
-                          <SelectItem value="none" disabled>
-                            No subjects assigned for this class
-                          </SelectItem>
-                        ) : (
-                          assignedSubjects.map((subject) => (
-                            <SelectItem key={subject.id} value={subject.id}>
-                              {subject.name}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Subject Code</Label>
-                    <Input
-                      value={entry.subjectCode}
-                      readOnly
-                      placeholder="Auto-filled"
-                      className="bg-muted"
-                    />
-                  </div>
-                </div>
-
-                {/* A1, A2, A3, AVG */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="space-y-2">
-                    <Label>A1 Score (must include decimal)</Label>
-                    <Input
-                      type="text"
-                      value={entry.a1Score}
-                      onChange={(e) => {
-                        let value = e.target.value;
-                        
-                        // If user types "." first, convert to "0."
-                        if (value === '.') {
-                          value = '0.';
-                        }
-                        
-                        // Allow only numbers and one decimal point during typing
-                        if (value === '' || /^\d*\.?\d*$/.test(value)) {
-                          updateSubjectEntry(entry.id, 'a1Score', value);
-                        }
-                      }}
-                      placeholder="e.g., 12.5"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>A2 Score (must include decimal)</Label>
-                    <Input
-                      type="text"
-                      value={entry.a2Score}
-                      onChange={(e) => {
-                        let value = e.target.value;
-                        
-                        // If user types "." first, convert to "0."
-                        if (value === '.') {
-                          value = '0.';
-                        }
-                        
-                        // Allow only numbers and one decimal point during typing
-                        if (value === '' || /^\d*\.?\d*$/.test(value)) {
-                          updateSubjectEntry(entry.id, 'a2Score', value);
-                        }
-                      }}
-                      placeholder="e.g., 8.0"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>A3 Score (must include decimal)</Label>
-                    <Input
-                      type="text"
-                      value={entry.a3Score}
-                      onChange={(e) => {
-                        let value = e.target.value;
-                        
-                        // If user types "." first, convert to "0."
-                        if (value === '.') {
-                          value = '0.';
-                        }
-                        
-                        // Allow only numbers and one decimal point during typing
-                        if (value === '' || /^\d*\.?\d*$/.test(value)) {
-                          updateSubjectEntry(entry.id, 'a3Score', value);
-                        }
-                      }}
-                      placeholder="e.g., 0.5"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>AVG</Label>
-                    <Input
-                      value={calculateAVG(entry.a1Score, entry.a2Score, entry.a3Score)}
-                      readOnly
-                      className="bg-muted"
-                    />
-                  </div>
-                </div>
-
-                {/* 20%, 80%, 100%, Teacher Initials */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="space-y-2">
-                    <Label>20% Score</Label>
-                    <Input
-                      type="number"
-                      step="1"
-                      min="0"
-                      max="100"
-                      value={entry.percentage20}
-                      onChange={(e) => updateSubjectEntry(entry.id, 'percentage20', e.target.value)}
-                      placeholder="0-100"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>80% Score</Label>
-                    <Input
-                      type="number"
-                      step="1"
-                      min="0"
-                      max="100"
-                      value={entry.percentage80}
-                      onChange={(e) => updateSubjectEntry(entry.id, 'percentage80', e.target.value)}
-                      placeholder="0-100"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>100% Score</Label>
-                    <Input
-                      type="number"
-                      step="1"
-                      min="0"
-                      max="100"
-                      value={entry.percentage100}
-                      onChange={(e) => updateSubjectEntry(entry.id, 'percentage100', e.target.value)}
-                      placeholder="0-100"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Teacher Initials</Label>
-                    <Input
-                      value={entry.teacherInitials}
-                      onChange={(e) => updateSubjectEntry(entry.id, 'teacherInitials', e.target.value)}
-                      placeholder="e.g, B.S."
-                    />
-                  </div>
-                </div>
-
-                {/* Identifier, Grade, Achievement Level */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label>Identifier</Label>
-                    <Select
-                      value={entry.identifier}
-                      onValueChange={(value) => updateSubjectEntry(entry.id, 'identifier', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">1 - Basic</SelectItem>
-                        <SelectItem value="2">2 - Moderate</SelectItem>
-                        <SelectItem value="3">3 - Outstanding</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Grade (Auto-calculated)</Label>
-                    <Input
-                      value={entry.percentage100 ? calculateGrade(parseFloat(entry.percentage100)) : ''}
-                      readOnly
-                      className="bg-muted"
-                      placeholder="Auto"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Achievement Level (Auto-calculated)</Label>
-                    <Input
-                      value={entry.percentage100 ? calculateAchievementLevel(parseFloat(entry.percentage100)) : ''}
-                      readOnly
-                      className="bg-muted"
-                      placeholder="Auto"
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Submit Button */}
-          <div className="flex justify-end">
-            <Button
-              type="submit"
-              size="lg"
-              disabled={isLoading || !selectedClass || !selectedStudent || !activeTerm}
-              className="w-full md:w-auto"
-            >
-              {isLoading ? 'Submitting...' : 'Submit All Marks'}
-            </Button>
-          </div>
-        </form>
-      </main>
-    </div>
+          )}
+        </main>
+      </div>
+    </TooltipProvider>
   );
 }
