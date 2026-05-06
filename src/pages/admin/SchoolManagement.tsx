@@ -110,6 +110,44 @@ export default function SchoolManagement() {
   const [assignSelectedIds, setAssignSelectedIds] = useState<string[]>([]);
   const [assigning, setAssigning] = useState(false);
 
+  // Per-student subject assignment
+  const [subjectAssignStudent, setSubjectAssignStudent] = useState<Student | null>(null);
+  const [subjectAssignSelected, setSubjectAssignSelected] = useState<string[]>([]);
+  const [subjectAssignSaving, setSubjectAssignSaving] = useState(false);
+
+  const openSubjectAssign = async (student: Student) => {
+    setSubjectAssignStudent(student);
+    const { data } = await supabase
+      .from('student_subjects')
+      .select('subject_id')
+      .eq('student_id', student.id);
+    setSubjectAssignSelected((data || []).map((d: any) => d.subject_id));
+  };
+
+  const saveStudentSubjects = async () => {
+    if (!subjectAssignStudent) return;
+    try {
+      setSubjectAssignSaving(true);
+      await supabase.from('student_subjects').delete().eq('student_id', subjectAssignStudent.id);
+      if (subjectAssignSelected.length > 0) {
+        const rows = subjectAssignSelected.map((sid) => ({
+          student_id: subjectAssignStudent.id,
+          subject_id: sid,
+          school_id: subjectAssignStudent.school_id,
+        }));
+        const { error } = await supabase.from('student_subjects').insert(rows);
+        if (error) throw error;
+      }
+      toast({ title: 'Subjects assigned', description: `${subjectAssignSelected.length} subject(s) saved.` });
+      setSubjectAssignStudent(null);
+      setSubjectAssignSelected([]);
+    } catch (e: any) {
+      toast({ title: 'Failed', description: e.message, variant: 'destructive' });
+    } finally {
+      setSubjectAssignSaving(false);
+    }
+  };
+
   const handleBulkAssign = async () => {
     if (!assignClassId || assignSelectedIds.length === 0) {
       toast({ title: 'Select a class and at least one student', variant: 'destructive' });
