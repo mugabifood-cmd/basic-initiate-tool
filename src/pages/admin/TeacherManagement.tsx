@@ -264,27 +264,30 @@ export default function TeacherManagement() {
       });
     }
   };
-  const deleteTeacherAssignments = async (teacherId: string, teacherName: string) => {
-    if (!confirm(`Are you sure you want to delete all assignments for ${teacherName}? This action cannot be undone.`)) {
+  const confirmDeleteTeacher = async () => {
+    if (!deletingTeacher) return;
+    if (!activeSchool) {
+      toast({ title: "No active school", variant: "destructive" });
       return;
     }
+    setDeleting(true);
     try {
-      const {
-        error
-      } = await supabase.from('teacher_assignments').delete().eq('teacher_id', teacherId);
-      if (error) throw error;
-      toast({
-        title: "Success",
-        description: "Teacher assignments deleted successfully"
+      const { data, error } = await supabase.functions.invoke('delete-teacher', {
+        body: { teacher_profile_id: deletingTeacher.id, school_id: activeSchool.id },
       });
+      if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message);
+      toast({ title: "Teacher deleted successfully" });
+      setDeletingTeacher(null);
       fetchTeachers();
-    } catch (error) {
-      console.error('Error deleting assignments:', error);
+    } catch (error: any) {
+      console.error('Error deleting teacher:', error);
       toast({
-        title: "Error",
-        description: "Failed to delete assignments",
+        title: "Failed to delete teacher",
+        description: error.message,
         variant: "destructive"
       });
+    } finally {
+      setDeleting(false);
     }
   };
   const addSubjectAssignment = () => {
