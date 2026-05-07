@@ -59,6 +59,8 @@ export default function TeacherManagement() {
   const [loading, setLoading] = useState(true);
   const [editingTeacher, setEditingTeacher] = useState<TeacherWithAssignments | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [deletingTeacher, setDeletingTeacher] = useState<TeacherWithAssignments | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Edit form state
   const [subjectAssignments, setSubjectAssignments] = useState<Array<{
