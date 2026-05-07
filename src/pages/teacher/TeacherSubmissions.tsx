@@ -207,16 +207,18 @@ export default function TeacherSubmissions() {
       students.forEach((st) => {
         const assigned = studentSubjects[st.id]?.has(selectedSubject) ?? false;
         const found = (existing || []).find((e: any) => e.student_id === st.id);
-        next[st.id] = {
+        const base: MarkRow = {
           a1: found?.a1_score?.toString() ?? '',
           a2: found?.a2_score?.toString() ?? '',
           a3: found?.a3_score?.toString() ?? '',
+          ave: '',
           p20: found?.percentage_20?.toString() ?? '',
           p80: found?.percentage_80?.toString() ?? '',
           p100: found?.percentage_100?.toString() ?? '',
           identifier: found?.remarks ?? '',
           assigned,
         };
+        next[st.id] = recalc(base);
       });
       setMarks(next);
     })();
