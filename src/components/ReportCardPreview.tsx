@@ -149,21 +149,26 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
 
       if (submissionsError) throw submissionsError;
 
-      const grades = submissions.map((sub: any) => ({
-        subject_name: sub.subjects.name,
-        subject_code: sub.subjects.code,
-        a1_score: sub.a1_score,
-        a2_score: sub.a2_score,
-        a3_score: sub.a3_score,
-        average_score: sub.average_score,
-        percentage_20: sub.percentage_20,
-        percentage_80: sub.percentage_80,
-        percentage_100: sub.percentage_100,
-        identifier: sub.identifier || calculateIdentifier(sub.percentage_100),
-        grade: sub.grade,
-        remarks: sub.remarks,
-        teacher_initials: sub.profiles?.initials || 'N/A'
-      }));
+      const grades = submissions.map((sub: any) => {
+        // sub.remarks stores identifier text e.g. "B - Outstanding"
+        const identText: string = sub.remarks || '';
+        const [letterPart, descPart] = identText.split(' - ');
+        return {
+          subject_name: sub.subjects.name,
+          subject_code: sub.subjects.code,
+          a1_score: sub.a1_score,
+          a2_score: sub.a2_score,
+          a3_score: sub.a3_score,
+          average_score: sub.average_score,
+          percentage_20: sub.percentage_20,
+          percentage_80: sub.percentage_80,
+          percentage_100: sub.percentage_100,
+          identifier: sub.identifier ?? calculateIdentifier(sub.percentage_100 || 0),
+          grade: sub.grade || (letterPart || '').trim(),
+          remarks: (descPart || '').trim() || getAchievementText(calculateIdentifier(sub.percentage_100 || 0)),
+          teacher_initials: sub.profiles?.initials || 'N/A'
+        };
+      });
 
       setReportData({ ...report, school });
       setSubjectGrades(grades);
