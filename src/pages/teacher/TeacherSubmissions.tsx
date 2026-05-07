@@ -229,12 +229,7 @@ export default function TeacherSubmissions() {
       const row = prev[studentId];
       if (!row || !row.assigned) return prev;
       const updated: MarkRow = { ...row, [field]: value } as MarkRow;
-      if (field === 'p20' || field === 'p80') {
-        const total = num(updated.p20) + num(updated.p80);
-        updated.p100 = total ? String(total) : '';
-        updated.identifier = total ? computeIdentifier(total) : '';
-      }
-      return { ...prev, [studentId]: updated };
+      return { ...prev, [studentId]: recalc(updated) };
     });
   };
 
