@@ -246,26 +246,36 @@ export default function TeacherSubmissions() {
     const cls = selectedClassObj;
     if (!cls) return;
 
+    // Validate A scores
+    const invalid = Object.values(marks).some((m) => m.assigned && [m.a1, m.a2, m.a3].some((v) => v !== '' && (num(v) < 0 || num(v) > 3)));
+    if (invalid) {
+      toast({ title: 'Invalid A scores', description: 'A1, A2, A3 must be between 0 and 3', variant: 'destructive' });
+      return;
+    }
+
     const rows = Object.entries(marks)
-      .filter(([sid, m]) => m.assigned && (m.a1 || m.a2 || m.a3 || m.p20 || m.p80))
+      .filter(([sid, m]) => m.assigned && (m.a1 || m.a2 || m.a3 || m.p80))
       .map(([sid, m]) => {
-        const p20 = num(m.p20);
+        const a1 = num(m.a1), a2 = num(m.a2), a3 = num(m.a3);
+        const sum = a1 + a2 + a3;
+        const ave = round2(sum / 3);
+        const p20 = round1((sum / 9) * 20);
         const p80 = num(m.p80);
-        const p100 = p20 + p80;
+        const p100 = round1(p20 + p80);
         return {
           teacher_id: profile.id,
           school_id: cls.school_id,
           class_id: selectedClass,
           subject_id: selectedSubject,
           student_id: sid,
-          a1_score: num(m.a1),
-          a2_score: num(m.a2),
-          a3_score: num(m.a3),
-          average_score: (num(m.a1) + num(m.a2) + num(m.a3)) / 3,
+          a1_score: a1,
+          a2_score: a2,
+          a3_score: a3,
+          average_score: ave,
           percentage_20: p20,
           percentage_80: p80,
           percentage_100: p100,
-          remarks: computeIdentifier(p100),
+          remarks: computeIdentifier(sum / 3),
           status: 'pending',
         };
       });
