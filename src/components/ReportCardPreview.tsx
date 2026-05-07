@@ -412,6 +412,21 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
       {/* Subjects Table — flex:1 fills remaining A4 height; ≥10 rows always rendered */}
       <div style={{ border: thickBorder, borderTop: 'none', flex: 1, display: 'flex', flexDirection: 'column' }}>
         <table className="w-full report-table" style={{ borderCollapse: 'collapse', borderSpacing: 0, fontSize: tableFontSize, height: '100%', tableLayout: 'fixed' }}>
+          <colgroup>
+            <col style={{ width: '5%' }} />
+            <col style={{ width: '14%' }} />
+            <col style={{ width: '5%' }} />
+            <col style={{ width: '5%' }} />
+            <col style={{ width: '5%' }} />
+            <col style={{ width: '5%' }} />
+            <col style={{ width: '5%' }} />
+            <col style={{ width: '5%' }} />
+            <col style={{ width: '6%' }} />
+            <col style={{ width: '6%' }} />
+            <col style={{ width: '7%' }} />
+            <col style={{ width: '27%' }} />
+            <col style={{ width: '5%' }} />
+          </colgroup>
           <thead>
             <tr className="bg-gray-50">
               <th style={{ border: thinBorder, padding: rowPad, textAlign: 'left', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: rowLine }}>Code</th>
@@ -425,7 +440,7 @@ export default function ReportCardPreview({ reportId, backgroundColor = '#ffffff
               <th style={{ border: thinBorder, padding: rowPad, textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: rowLine }}>100%</th>
               <th style={{ border: thinBorder, padding: rowPad, textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: rowLine }}>Ident</th>
               <th style={{ border: thinBorder, padding: rowPad, textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: rowLine }}>GRADE</th>
-              <th style={{ border: thinBorder, padding: rowPad, textAlign: 'left', fontWeight: 'bold', fontStyle: 'italic', verticalAlign: 'middle', lineHeight: rowLine }}>Remarks/Descriptors</th>
+              <th style={{ border: thinBorder, padding: rowPad, textAlign: 'left', fontWeight: 'bold', fontStyle: 'italic', verticalAlign: 'middle', lineHeight: rowLine }}>Remark</th>
               <th style={{ border: thinBorder, padding: rowPad, textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', lineHeight: rowLine }}>TR</th>
             </tr>
           </thead>
