@@ -548,5 +548,22 @@ export default function TeacherManagement() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deletingTeacher} onOpenChange={(o) => !o && setDeletingTeacher(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to delete this teacher?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove {deletingTeacher?.full_name}, their account, subject assignments, and submissions. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteTeacher} disabled={deleting}>
+              {deleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>;
 }
