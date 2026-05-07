@@ -357,10 +357,11 @@ export default function TeacherSubmissions() {
                     <TableHead className="w-20 text-center">A1</TableHead>
                     <TableHead className="w-20 text-center">A2</TableHead>
                     <TableHead className="w-20 text-center">A3</TableHead>
+                    <TableHead className="w-20 text-center">AVE</TableHead>
                     <TableHead className="w-24 text-center">20%</TableHead>
                     <TableHead className="w-24 text-center">80%</TableHead>
                     <TableHead className="w-24 text-center">100%</TableHead>
-                    <TableHead className="w-32 text-center">Identifier</TableHead>
+                    <TableHead className="w-40 text-center">Identifier</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -369,29 +370,51 @@ export default function TeacherSubmissions() {
                     if (!m) return null;
                     const disabled = !m.assigned;
                     const rowClass = disabled ? 'bg-muted/50 opacity-60' : '';
+                    const aFields: Array<'a1' | 'a2' | 'a3'> = ['a1', 'a2', 'a3'];
                     const rowContent = (
                       <TableRow key={st.id} className={rowClass}>
                         <TableCell className="font-medium">
                           {st.full_name}
                           <div className="text-xs text-muted-foreground">#{st.student_number}</div>
                         </TableCell>
-                        {(['a1','a2','a3','p20','p80'] as const).map((f) => (
-                          <TableCell key={f} className="p-1">
-                            <Input
-                              disabled={disabled}
-                              value={(m as any)[f]}
-                              onChange={(e) => {
-                                const v = e.target.value;
-                                if (v === '' || /^\d*\.?\d*$/.test(v)) updateCell(st.id, f, v);
-                              }}
-                              className="h-9 text-center"
-                            />
-                          </TableCell>
-                        ))}
+                        {aFields.map((f) => {
+                          const val = m[f];
+                          const invalid = val !== '' && num(val) > 3;
+                          return (
+                            <TableCell key={f} className="p-1">
+                              <Input
+                                disabled={disabled}
+                                value={val}
+                                onChange={(e) => {
+                                  const v = e.target.value;
+                                  if (v === '' || /^\d*\.?\d*$/.test(v)) updateCell(st.id, f, v);
+                                }}
+                                className={`h-9 text-center ${invalid ? 'border-destructive text-destructive' : ''}`}
+                              />
+                            </TableCell>
+                          );
+                        })}
+                        <TableCell className="p-1">
+                          <Input readOnly value={m.ave} className="h-9 text-center bg-muted" />
+                        </TableCell>
+                        <TableCell className="p-1">
+                          <Input readOnly value={m.p20} className="h-9 text-center bg-muted" />
+                        </TableCell>
+                        <TableCell className="p-1">
+                          <Input
+                            disabled={disabled}
+                            value={m.p80}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              if (v === '' || /^\d*\.?\d*$/.test(v)) updateCell(st.id, 'p80', v);
+                            }}
+                            className="h-9 text-center"
+                          />
+                        </TableCell>
                         <TableCell className="p-1">
                           <Input readOnly value={m.p100} className="h-9 text-center bg-muted" />
                         </TableCell>
-                        <TableCell className="p-1 text-center text-sm">
+                        <TableCell className="p-1 text-center text-xs">
                           {disabled ? <span className="text-muted-foreground">Disabled</span> : (m.identifier || '—')}
                         </TableCell>
                       </TableRow>
