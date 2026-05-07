@@ -19,22 +19,48 @@ interface MarkRow {
   a1: string;
   a2: string;
   a3: string;
-  p20: string;
+  ave: string; // auto
+  p20: string; // auto
   p80: string;
   p100: string; // auto
   identifier: string; // auto
   assigned: boolean;
 }
 
-const computeIdentifier = (p100: number) => {
-  if (p100 <= 50) return 'Basic';
-  if (p100 <= 80) return 'Moderate';
-  return 'Outstanding';
+// Identifier based on AVE (out of 3)
+const computeIdentifier = (ave: number) => {
+  if (ave >= 2.5) return 'A - Exceptional';
+  if (ave >= 2.0) return 'B - Outstanding';
+  if (ave >= 1.5) return 'C - Satisfactory';
+  if (ave >= 1.0) return 'D - Basic';
+  return 'E - Elementary';
 };
 
 const num = (v: string) => {
   const n = parseFloat(v);
   return isNaN(n) ? 0 : n;
+};
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
+const round1 = (n: number) => Math.round(n * 10) / 10;
+
+const recalc = (row: MarkRow): MarkRow => {
+  const a1 = num(row.a1);
+  const a2 = num(row.a2);
+  const a3 = num(row.a3);
+  const sum = a1 + a2 + a3;
+  const ave = sum / 3;
+  const p20 = (sum / 9) * 20;
+  const p80 = num(row.p80);
+  const p100 = round1(p20) + p80;
+  const hasA = row.a1 || row.a2 || row.a3;
+  return {
+    ...row,
+    ave: hasA ? round2(ave).toFixed(2) : '',
+    p20: hasA ? round1(p20).toFixed(1) : '',
+    p100: hasA || row.p80 ? String(round1(p100)) : '',
+    identifier: hasA ? computeIdentifier(ave) : '',
+  };
 };
 
 export default function TeacherSubmissions() {
